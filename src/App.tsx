@@ -4,6 +4,7 @@ import Numbers from "./screens/Numbers";
 import Ask from "./screens/Ask";
 import Settings from "./screens/Settings";
 import Onboarding from "./screens/Onboarding";
+import Engine from "./screens/Engine";
 
 const TABS = [
   {
@@ -78,6 +79,7 @@ export default function App() {
           <Route path="/numbers" element={<Numbers />} />
           <Route path="/ask" element={<Ask />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/engine" element={<Engine />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

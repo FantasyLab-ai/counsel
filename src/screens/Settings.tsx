@@ -3,6 +3,7 @@
 // restrained briefings, and the honest Privacy & data section.
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getConnections, type Source } from "../api/counsel";
 import { Reveal } from "../components/ui";
 
@@ -40,6 +41,7 @@ const SRC_ICONS: Record<string, JSX.Element> = {
 };
 
 export default function Settings() {
+  const nav = useNavigate();
   const [sources, setSources] = useState<Source[]>([]);
   useEffect(() => {
     let on = true;
@@ -171,6 +173,18 @@ export default function Settings() {
                 <div className="rs">Beta — your numbers never leave your phone. Slower, fully private.</div>
               </div>
               <div className="rr"><Toggle /></div>
+            </div>
+            <div className="srow" role="link" tabIndex={0} style={{ cursor: "pointer" }}
+                 onClick={() => nav("/engine")}
+                 onKeyDown={(e) => { if (e.key === "Enter") nav("/engine"); }}>
+              <div className="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h7l-1 8 10-12h-7z" /></svg>
+              </div>
+              <div className="rl">
+                <div className="rt">See the engine run on this device</div>
+                <div className="rs">Live demo — Aurora's Rust core computing in your hand.</div>
+              </div>
+              <div className="rr">{CHEV}</div>
             </div>
             <div className="srow">
               <div className="rl">

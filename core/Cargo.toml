@@ -11,8 +11,17 @@ license = "MIT"
 crate-type = ["rlib", "cdylib", "staticlib"]
 
 [dependencies]
-# NONE. The core is pure-std by design: no runtime deps means trivial
-# cross-compilation to iOS/Android and no supply-chain surface.
+# The math core is pure-std by design: no runtime deps means trivial
+# cross-compilation and no supply-chain surface. uniffi appears ONLY behind
+# the `ffi` feature, used to build the mobile (Swift/Kotlin) bindings.
+uniffi = { version = "0.29", optional = true, features = ["cli"] }
+
+[features]
+ffi = ["dep:uniffi"]
+
+[[bin]]
+name = "uniffi-bindgen"
+required-features = ["ffi"]
 
 [dev-dependencies]
 serde = { version = "1", features = ["derive"] }

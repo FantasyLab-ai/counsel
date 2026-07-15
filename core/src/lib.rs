@@ -22,6 +22,14 @@
 mod ar1;
 mod pelt;
 mod stats;
+#[cfg(target_arch = "wasm32")]
+mod wasm_ffi;
+#[cfg(feature = "ffi")]
+mod ffi;
+// uniffi requires its scaffolding at the crate root (it defines UniFfiTag
+// that the export macros reference via `crate::`).
+#[cfg(feature = "ffi")]
+uniffi::setup_scaffolding!();
 
 pub use ar1::{ar1_forecast, Ar1Forecast};
 pub use pelt::{detect_changepoints, CostModel};
