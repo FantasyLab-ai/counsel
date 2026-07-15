@@ -1,8 +1,40 @@
-# Counsel — Phase 1 → Phase 2 Handoff
+# Counsel — Phase 1 + Phase 2 Handoff
 
-Phase 1 (this repo) is a **clickable, mobile-first prototype**: all five screens,
-real navigation, the full design identity, and a **typed mock API seam**. There
-is no backend, no auth, no persistence — by design.
+Phase 1: a **clickable, mobile-first prototype** — five screens, the design
+identity, and a typed mock API seam.
+
+**Phase 2 (wired): the real brain.** `server/` is a thin Flask service whose
+numbers all come from **Aurora's actual methods** run over a real ledger:
+
+- **Change point:** `fantasyai.aurora.advanced_models.detect_changepoints`
+  (ruptures/PELT, rbf) + Welch's t-test → real break date, p-value, effect + CI.
+- **Forecast:** `fantasyai.aurora.math.forecasting.forecast_worldclass`
+  (model-zoo: ETS/SARIMAX/seasonal-naive/AR1, backtest-selected) → honest range.
+- Margin band / runway arithmetic / attribution / repeat trend: transparent
+  pandas + scipy computations, cited as exactly that.
+
+The engine is IMPORTED from the Aurora repo (`AURORA_REPO` env var), never
+forked — the one-engine rule. Verdicts adapt to the data: the demo ledger's
+post-break P&L genuinely flips the hire answer to "not right now."
+
+### Run real mode
+
+```powershell
+# 1. backend (reuses the Aurora venv — all deps already there)
+$env:AURORA_REPO = "C:\Users\bgrut\Desktop\Aurora_QIE"
+C:\Users\bgrut\Desktop\Aurora_QIE\.venv\Scripts\python.exe server\server.py
+
+# 2. frontend in real mode
+$env:VITE_COUNSEL_API = "http://127.0.0.1:8100"
+npm run dev
+```
+
+Unset `VITE_COUNSEL_API` (or deploy the static build) → mock replay mode.
+`server/data/generate_ledger.py` regenerates the seeded demo ledger.
+
+### Still Phase 3 / future
+Real Stripe/Shopify OAuth · auth/accounts · persistence · hosted backend ·
+on-device Rust core (see the local-vision brief; golden-parity required).
 
 ## The API contract (what the real backend must implement)
 

@@ -149,35 +149,30 @@ export interface AskAnswer extends Insight {
 export type Period = "month" | "lastMonth" | "quarter";
 
 // ---------------------------------------------------------------------------
-// The interface. PHASE 2: replace the mock import with real calls to the
-// Counsel backend (which wraps Aurora). Types must remain identical.
+// The interface — PHASE 2 wired. When VITE_COUNSEL_API is set, every call
+// goes to the real Counsel backend (server/server.py), whose numbers come
+// from Aurora's actual methods over the ledger. Otherwise: mock replay.
+// Components never know the difference — that's the seam doing its job.
 // ---------------------------------------------------------------------------
 import * as mock from "./mockData";
+import * as real from "./real";
 
 export function getBrief(): Promise<Brief> {
-  // TODO(PHASE 2): GET /api/brief from the Counsel backend (Aurora findings
-  // mapped into Insight[]). Mock for now.
-  return mock.brief();
+  return real.enabled ? real.brief() : mock.brief();
 }
 
 export function getMetrics(period: Period): Promise<Metric[]> {
-  // TODO(PHASE 2): GET /api/metrics?period=… — each Metric.math comes from a
-  // real Aurora method run (change-point, band, arithmetic, attribution, trend).
-  return mock.metrics(period);
+  return real.enabled ? real.metrics(period) : mock.metrics(period);
 }
 
 export function ask(question: string): Promise<AskAnswer> {
-  // TODO(PHASE 2): POST /api/ask — Aurora computes; an LLM only narrates the
-  // cited result. Falls back to an HONEST "not enough data" — never a guess.
-  return mock.ask(question);
+  return real.enabled ? real.ask(question) : mock.ask(question);
 }
 
 export function getSeededAsk(): Promise<AskAnswer[]> {
-  // The two canned exchanges shown in the Ask thread (prototype only).
-  return mock.seededAsk();
+  return real.enabled ? real.seededAsk() : mock.seededAsk();
 }
 
 export function getConnections(): Promise<Source[]> {
-  // TODO(PHASE 2): real connection status from OAuth-backed integrations.
-  return mock.connections();
+  return real.enabled ? real.connections() : mock.connections();
 }
