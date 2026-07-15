@@ -1,0 +1,22 @@
+[package]
+name = "aurora-core"
+version = "0.1.0"
+edition = "2021"
+description = "Aurora's mobile-relevant analysis methods, ported to Rust with golden-test parity against the Python engine. One numerical source of truth, everywhere."
+license = "MIT"
+
+[lib]
+# rlib for Rust consumers; cdylib + staticlib so uniffi can bind
+# Swift (iOS) and Kotlin (Android) in the next milestone.
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[dependencies]
+# NONE. The core is pure-std by design: no runtime deps means trivial
+# cross-compilation to iOS/Android and no supply-chain surface.
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+lto = true
