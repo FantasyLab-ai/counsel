@@ -10,6 +10,7 @@ import Packet from "./screens/Packet";
 import Insights from "./screens/Insights";
 import Ops from "./screens/Ops";
 import Power from "./screens/Power";
+import Decisions from "./screens/Decisions";
 import Money from "./screens/Money";
 
 const TABS = [
@@ -101,6 +102,7 @@ export default function App() {
           <Route path="/insights" element={<Insights />} />
           <Route path="/ops" element={<Ops />} />
           <Route path="/power" element={<Power />} />
+          <Route path="/decisions" element={<Decisions />} />
           <Route path="/money" element={<Money />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

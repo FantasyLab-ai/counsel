@@ -304,6 +304,7 @@ function WorthItCard() {
 /* ------------------------------- decisions log ---------------------------- */
 
 function DecisionsCard() {
+  const nav = useNavigate();
   const [items, setItems] = useState<Decision[]>([]);
   useEffect(() => { setItems(listDecisions()); }, []);
   // Re-read when a scenario logs a new one (simple poll on visibility).
@@ -313,21 +314,21 @@ function DecisionsCard() {
   }, []);
   return (
     <article className="mcard open plan-card">
-      {items.map((d) => (
+      {items.slice(0, 3).map((d) => (
         <div className="dl-row" key={d.id}>
           <div className="dl-head">
             <span className="dl-action">{d.action}</span>
             {d.grade
               ? <span className={`pill lite-${d.grade.verdict === "held" ? "hi" : d.grade.verdict === "mixed" ? "mod" : "none"}`}><span className="dot" />{d.grade.verdict}</span>
-              : <span className="pill lite-fc"><span className="dot" />grades {d.gradeAt}</span>}
+              : <span className="pill lite-fc"><span className="dot" />judge by {d.gradeAt}</span>}
           </div>
           <div className="dl-expected">expected: {d.expected}</div>
           {d.grade && <div className="dl-note">{d.grade.note}</div>}
         </div>
       ))}
-      <div className="honest-note" style={{ marginTop: 8 }}>
-        Every recommendation gets graded against what actually happened. My batting average is yours to see.
-      </div>
+      <button className="dbtn primary log-btn" onClick={() => nav("/decisions")}>
+        Open the tracker — add, advance, grade →
+      </button>
     </article>
   );
 }

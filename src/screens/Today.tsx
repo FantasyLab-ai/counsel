@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
+import { hasUserData } from "../engine/dataSource";
 import { CitePill, ConfidencePill, CountUp, Html, Reveal } from "../components/ui";
 import { BreakSpark } from "../components/charts";
 
@@ -66,6 +67,25 @@ export default function Today() {
         </section>
       </Reveal>
 
+      {/* Power Up — the app-wide activation banner. Front and center until
+          real data is loaded; slims down once your data is active. */}
+      <Reveal i={1}>
+        <button className="setup-banner" onClick={() => nav("/power")}>
+          <div className="sb-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M13 2L3 14h7l-1 8 10-12h-7z" /></svg>
+          </div>
+          <div className="sb-body">
+            {hasUserData() ? (
+              <><div className="sb-title">Your data is active</div>
+                <div className="sb-sub">Manage sources, drop in more files, see what else unlocks →</div></>
+            ) : (
+              <><div className="sb-title">You're on demo data — power up Counsel</div>
+                <div className="sb-sub">The checklist: connect a source or drop in your CSV (on-device, never uploaded) →</div></>
+            )}
+          </div>
+        </button>
+      </Reveal>
+
       <div className="eyebrow">Needs your attention</div>
       <div className="rows">
         {brief.attention.map((a, i) => (
@@ -120,17 +140,31 @@ export default function Today() {
         </div>
       </Reveal>
 
+      {/* The hub — every deep section, one grid. Fixes discovery. */}
+      <div className="eyebrow">Go deeper</div>
       <Reveal i={9}>
-        <button className="packet-card" onClick={() => nav("/insights")}>
-          <div className="pc-ico">
+        <div className="hub-grid">
+          <button className="hub-card" onClick={() => nav("/insights")}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 3v6L4 20a1.5 1.5 0 0 0 1.4 2h13.2a1.5 1.5 0 0 0 1.4-2L15 9V3M7 3h10" /></svg>
-          </div>
-          <div className="pc-body">
-            <div className="pc-title">The Insights Lab</div>
-            <div className="pc-sub">Nine deep reads on your business — price power, at-risk customers, the audit, stress-tested runway…</div>
-          </div>
-          <span className="pc-go">→</span>
-        </button>
+            <span className="hc-t">Insights Lab</span>
+            <span className="hc-s">nine deep reads</span>
+          </button>
+          <button className="hub-card" onClick={() => nav("/money")}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></svg>
+            <span className="hc-t">Money</span>
+            <span className="hc-s">calendar · AR · tax pot</span>
+          </button>
+          <button className="hub-card" onClick={() => nav("/ops")}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5m0 0l9-5m-9 5v8" /></svg>
+            <span className="hc-t">Stock &amp; shipping</span>
+            <span className="hc-s">cover · reorders · stalls</span>
+          </button>
+          <button className="hub-card" onClick={() => nav("/decisions")}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+            <span className="hc-t">Decisions</span>
+            <span className="hc-s">the track record</span>
+          </button>
+        </div>
       </Reveal>
 
       <div className="sources">

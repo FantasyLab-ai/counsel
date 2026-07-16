@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getConnections, type Source } from "../api/counsel";
 import { getOnDeviceOnly, setOnDeviceOnly } from "../engine/router";
+import { cycleSetting, getSettings, setSetting } from "../engine/settings";
+import { clearUserData, hasUserData, userCharges, userExpenses, userMeta } from "../engine/dataSource";
+import { listDecisions } from "../engine/decisions";
 import { Reveal } from "../components/ui";
 
 const CHEV = (
@@ -45,11 +48,42 @@ const SRC_ICONS: Record<string, JSX.Element> = {
 export default function Settings() {
   const nav = useNavigate();
   const [sources, setSources] = useState<Source[]>([]);
+  const [prefs, setPrefs] = useState(getSettings());
+  const cycle = (k: "alertThreshold" | "tone" | "briefTime" | "quietHours") => setPrefs(cycleSetting(k));
   useEffect(() => {
     let on = true;
     getConnections().then((s) => on && setSources(s));
     return () => { on = false; };
   }, []);
+
+  function exportEverything() {
+    const bundle = {
+      exportedAt: new Date().toISOString(),
+      settings: getSettings(),
+      decisions: listDecisions(),
+      userData: {
+        meta: userMeta(),
+        charges: userCharges() ?? "none loaded — demo mode",
+        expenses: userExpenses() ?? "none loaded — demo mode",
+      },
+    };
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `counsel-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function deleteMyData() {
+    const sure = window.confirm(
+      "Delete everything Counsel stores on this device? Your dropped-in data, decisions and preferences will be removed. (Demo data stays — it ships with the app.)"
+    );
+    if (!sure) return;
+    clearUserData();
+    try { localStorage.clear(); } catch { /* already gone */ }
+    window.location.assign("/");
+  }
 
   return (
     <div className="app">
@@ -105,7 +139,7 @@ export default function Settings() {
                 <div className="rt">Always show the math</div>
                 <div className="rs">Expand the reasoning behind every insight by default.</div>
               </div>
-              <div className="rr"><Toggle initial /></div>
+              <div className="rr"><Toggle initial={prefs.showMathByDefault} onChange={(v) => setPrefs(setSetting("showMathByDefault", v))} /></div>
             </div>
             <div className="srow">
               <div className="rl">
@@ -114,19 +148,21 @@ export default function Settings() {
               </div>
               <div className="rr"><span className="coretag">Core</span><Toggle locked /></div>
             </div>
-            <div className="srow">
+            <div className="srow tap" role="button" tabIndex={0} onClick={() => cycle("alertThreshold")}
+                 onKeyDown={(e) => { if (e.key === "Enter") cycle("alertThreshold"); }}>
               <div className="rl">
                 <div className="rt">Alert me only above</div>
-                <div className="rs">Skip low-confidence noise.</div>
+                <div className="rs">Skip low-confidence noise. Tap to change.</div>
               </div>
-              <div className="rr"><span className="rv">Moderate</span>{CHEV}</div>
+              <div className="rr"><span className="rv">{prefs.alertThreshold}</span>{CHEV}</div>
             </div>
-            <div className="srow">
+            <div className="srow tap" role="button" tabIndex={0} onClick={() => cycle("tone")}
+                 onKeyDown={(e) => { if (e.key === "Enter") cycle("tone"); }}>
               <div className="rl">
                 <div className="rt">Advisor tone</div>
-                <div className="rs">How direct the plain-English reads.</div>
+                <div className="rs">How direct the plain-English reads. Tap to change.</div>
               </div>
-              <div className="rr"><span className="rv">Direct</span>{CHEV}</div>
+              <div className="rr"><span className="rv">{prefs.tone}</span>{CHEV}</div>
             </div>
           </div>
         </section>
@@ -136,26 +172,28 @@ export default function Settings() {
         <section className="sec">
           <div className="sec-h">Briefings &amp; alerts</div>
           <div className="group">
-            <div className="srow">
+            <div className="srow tap" role="button" tabIndex={0} onClick={() => cycle("briefTime")}
+                 onKeyDown={(e) => { if (e.key === "Enter") cycle("briefTime"); }}>
               <div className="rl">
                 <div className="rt">Morning brief</div>
-                <div className="rs">Your one-glance read, every day.</div>
+                <div className="rs">Your one-glance read, every day. Tap to change.</div>
               </div>
-              <div className="rr"><span className="rv">7:30 AM</span>{CHEV}</div>
+              <div className="rr"><span className="rv">{prefs.briefTime}</span>{CHEV}</div>
             </div>
             <div className="srow">
               <div className="rl">
                 <div className="rt">Only alert on real changes</div>
                 <div className="rs">Stay quiet unless something structurally shifts.</div>
               </div>
-              <div className="rr"><Toggle initial /></div>
+              <div className="rr"><Toggle initial={prefs.onlyRealChanges} onChange={(v) => setPrefs(setSetting("onlyRealChanges", v))} /></div>
             </div>
-            <div className="srow">
+            <div className="srow tap" role="button" tabIndex={0} onClick={() => cycle("quietHours")}
+                 onKeyDown={(e) => { if (e.key === "Enter") cycle("quietHours"); }}>
               <div className="rl">
                 <div className="rt">Quiet hours</div>
-                <div className="rs">No pings overnight.</div>
+                <div className="rs">No pings overnight. Tap to change.</div>
               </div>
-              <div className="rr"><span className="rv">9 PM–7 AM</span>{CHEV}</div>
+              <div className="rr"><span className="rv">{prefs.quietHours}</span>{CHEV}</div>
             </div>
           </div>
         </section>
@@ -203,27 +241,29 @@ export default function Settings() {
             <div className="srow">
               <div className="rl">
                 <div className="rt">Where your data lives</div>
-                <div className="rs">Encrypted at rest.</div>
+                <div className="rs">{hasUserData() ? "Your dropped-in data is on THIS device only — nothing was uploaded." : "Demo ledger ships with the app; anything you drop in stays on this device."}</div>
               </div>
-              <div className="rr"><span className="rv">US · encrypted</span>{CHEV}</div>
+              <div className="rr"><span className="rv">{hasUserData() ? "this device" : "demo"}</span></div>
             </div>
-            <div className="srow">
+            <div className="srow tap" role="button" tabIndex={0} onClick={exportEverything}
+                 onKeyDown={(e) => { if (e.key === "Enter") exportEverything(); }}>
               <div className="ico">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
               </div>
               <div className="rl">
                 <div className="rt">Export everything</div>
-                <div className="rs">Download all your data as CSV.</div>
+                <div className="rs">Downloads your data, decisions and preferences as one JSON file.</div>
               </div>
               <div className="rr">{CHEV}</div>
             </div>
-            <div className="srow danger">
+            <div className="srow danger tap" role="button" tabIndex={0} onClick={deleteMyData}
+                 onKeyDown={(e) => { if (e.key === "Enter") deleteMyData(); }}>
               <div className="ico">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
               </div>
               <div className="rl">
                 <div className="rt">Delete my data</div>
-                <div className="rs">Permanent. Removes everything from our servers.</div>
+                <div className="rs">Permanent. Clears everything Counsel stores on this device.</div>
               </div>
               <div className="rr">{CHEV}</div>
             </div>
