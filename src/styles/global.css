@@ -552,3 +552,28 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   .pk-table td[data-label="Confidence"]::before { content: "confidence · "; font-family: "JetBrains Mono", monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
   .pk-table td[data-label="Method · source"] { margin-top: 2px; }
 }
+
+/* ---- Insights Lab (Tier A-C) ---- */
+.il-loading { text-align: center; color: var(--muted); font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 46px 0; }
+.il-card { margin-bottom: 14px; }
+.il-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.il-kick { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--brass); }
+.il-cite { font-family: "JetBrains Mono", monospace; font-size: 9.5px; color: var(--muted); line-height: 1.6; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.il-row { padding: 9px 0; border-top: 1px solid var(--line); }
+.il-row:first-of-type { border-top: none; }
+.il-row-main { font-size: 13.5px; color: var(--ink); }
+.il-row-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+.il-bench { margin: 12px 0; }
+.il-bench-top { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink); margin-bottom: 7px; }
+.il-bench-bar { position: relative; height: 8px; border-radius: 6px; background: linear-gradient(90deg, var(--card-2), var(--forest-tint)); }
+.il-bench-bar .q { position: absolute; top: -2px; width: 1.5px; height: 12px; background: var(--faint); }
+.il-bench-bar .you { position: absolute; top: -4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--forest); border: 3px solid var(--card); box-shadow: 0 1px 6px rgba(20,30,24,.3); }
+.il-bench-lbl { display: flex; justify-content: space-between; font-family: "JetBrains Mono", monospace; font-size: 9px; color: var(--faint); margin-top: 5px; }
+.il-comp { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.il-comp-name { flex: 0 0 46%; font-size: 11.5px; color: var(--ink); }
+.il-comp-track { flex: 1; height: 6px; border-radius: 5px; background: var(--card-2); overflow: hidden; }
+.il-comp-fill { display: block; height: 100%; border-radius: 5px; background: var(--forest); }
+.il-comp-pts { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--muted); flex: 0 0 auto; }
+.il-factors { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.il-factor { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--muted); background: var(--card-2); border-radius: 6px; padding: 4px 9px; }
+.il-factor b { color: var(--forest); }

@@ -8,6 +8,7 @@
 // says which is which — that's the glass box.
 
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BASELINE, cashSentry, evaluateContracts, hireScenario, money,
   priceScenario, purchaseScenario, seasonality, wasItWorthIt,
@@ -17,6 +18,7 @@ import { listDecisions, logDecision, type Decision } from "../engine/decisions";
 import { Reveal } from "../components/ui";
 
 export default function Plan() {
+  const nav2 = useNavigate();
   const [sentry, setSentry] = useState<CashSentry | null>(null);
   const [contracts, setContracts] = useState<ContractStatus[]>([]);
   const [season, setSeason] = useState<Seasonality | null>(null);
@@ -112,6 +114,20 @@ export default function Plan() {
       {/* ---- decisions log ---- */}
       <div className="eyebrow">The decisions log — I grade my own advice</div>
       <Reveal i={6}><DecisionsCard /></Reveal>
+
+      {/* ---- insights lab entry ---- */}
+      <Reveal i={7}>
+        <button className="packet-card" onClick={() => nav2("/insights")}>
+          <div className="pc-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 3v6L4 20a1.5 1.5 0 0 0 1.4 2h13.2a1.5 1.5 0 0 0 1.4-2L15 9V3M7 3h10" /></svg>
+          </div>
+          <div className="pc-body">
+            <div className="pc-title">The Insights Lab</div>
+            <div className="pc-sub">Nine deep reads — price power, at-risk customers, restock math, the audit, credit readiness, stress-tested runway…</div>
+          </div>
+          <span className="pc-go">→</span>
+        </button>
+      </Reveal>
     </div>
   );
 }

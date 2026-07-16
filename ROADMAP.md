@@ -73,7 +73,12 @@ rehearses what happens *next*, and keeps a public score of its own advice.
 
 ---
 
-## LOCKED · 2026-07-15 — the math/data expansion (build after connectors)
+## LOCKED · 2026-07-15 — the math/data expansion
+
+**STATUS 2026-07-16: all nine SHIPPED v1 in the Insights Lab (/insights)** —
+on-device TS/wasm engines over the enriched demo ledger (tools/gen_insights_data.py
+plants findable truths; engines recover them, confounder-controlled). Phase 2B
+swaps demo fuel for connector data behind the same signatures (src/engine/tierMath.ts).
 
 Agreed order: **A1 → B5 → A2**, then the rest. All build on aurora-core /
 Aurora methods; each output stays cited + confidence-scored + honest.
