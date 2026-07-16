@@ -177,6 +177,18 @@ export default function Settings() {
               <div className="rr"><Toggle initial={getOnDeviceOnly()} onChange={setOnDeviceOnly} /></div>
             </div>
             <div className="srow" role="link" tabIndex={0} style={{ cursor: "pointer" }}
+                 onClick={() => nav("/power")}
+                 onKeyDown={(e) => { if (e.key === "Enter") nav("/power"); }}>
+              <div className="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+              </div>
+              <div className="rl">
+                <div className="rt">Power up Counsel</div>
+                <div className="rs">The checklist — what to connect and what each source unlocks.</div>
+              </div>
+              <div className="rr">{CHEV}</div>
+            </div>
+            <div className="srow" role="link" tabIndex={0} style={{ cursor: "pointer" }}
                  onClick={() => nav("/engine")}
                  onKeyDown={(e) => { if (e.key === "Enter") nav("/engine"); }}>
               <div className="ico">

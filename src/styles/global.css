@@ -577,3 +577,35 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .il-factors { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
 .il-factor { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--muted); background: var(--card-2); border-radius: 6px; padding: 4px 9px; }
 .il-factor b { color: var(--forest); }
+
+/* ---- Ops: inventory + shipments ---- */
+.inv-row { padding: 12px 0; border-top: 1px solid var(--line); }
+.inv-row:first-of-type { border-top: none; padding-top: 0; }
+.inv-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.inv-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+.inv-bar { position: relative; height: 8px; border-radius: 6px; background: var(--card-2); overflow: visible; }
+.inv-fill { display: block; height: 100%; border-radius: 6px; background: var(--forest); }
+.inv-fill.reorder { background: var(--brass); }
+.inv-fill.overstocked { background: var(--faint); }
+.inv-lead { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--brass); opacity: .7; }
+.inv-meta { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--muted); margin-top: 7px; line-height: 1.6; }
+.inv-meta b { color: var(--ink); }
+.ship-row { display: flex; gap: 11px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); }
+.ship-row:first-of-type { border-top: none; }
+.ship-row.stalled { background: rgba(156,122,70,.06); margin: 0 -8px; padding: 10px 8px; border-radius: 10px; border-top: none; }
+.ship-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; }
+.ship-dot.delivered { background: var(--hi); }
+.ship-dot.in_transit { background: var(--brass); }
+.ship-dot.label_created { background: var(--faint); }
+.ship-body { flex: 1; min-width: 0; }
+.ship-main { font-size: 13px; color: var(--ink); }
+.ship-status { font-family: "JetBrains Mono", monospace; font-size: 9.5px; color: var(--muted); margin-left: 6px; }
+.ship-sub { font-family: "JetBrains Mono", monospace; font-size: 9.5px; color: var(--muted); margin-top: 3px; }
+
+/* ---- Power Up checklist ---- */
+.pw-progress { margin-top: 16px; height: 7px; border-radius: 6px; background: rgba(236,233,223,.14); overflow: hidden; }
+.pw-progress span { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--brass), #d8c19a); }
+.pw-connectors { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--forest); margin-top: 2px; }
+.pw-csv { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; background: var(--card-2); border-radius: 8px; padding: 8px 11px; }
+.pw-csv-lbl { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); flex: 0 0 auto; }
+.pw-csv code { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--ink); line-height: 1.5; }

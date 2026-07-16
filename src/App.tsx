@@ -8,6 +8,8 @@ import Engine from "./screens/Engine";
 import Plan from "./screens/Plan";
 import Packet from "./screens/Packet";
 import Insights from "./screens/Insights";
+import Ops from "./screens/Ops";
+import Power from "./screens/Power";
 
 const TABS = [
   {
@@ -96,6 +98,8 @@ export default function App() {
           <Route path="/plan" element={<Plan />} />
           <Route path="/packet" element={<Packet />} />
           <Route path="/insights" element={<Insights />} />
+          <Route path="/ops" element={<Ops />} />
+          <Route path="/power" element={<Power />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
