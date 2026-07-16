@@ -537,3 +537,18 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .packet-card .pc-title { font-family: "Fraunces", serif; font-size: 16.5px; color: var(--bone); }
 .packet-card .pc-sub { font-size: 11.5px; color: var(--bone-dim); line-height: 1.5; margin-top: 3px; }
 .packet-card .pc-go { color: #d8c19a; font-size: 18px; flex: 0 0 auto; }
+
+/* Banker's Packet — responsive. Wide/print keeps the ledger table; narrow
+   screens restack each row as a readable entry (no horizontal cutoff). */
+.pk-tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pk-table { min-width: 560px; }
+@media screen and (max-width: 640px) {
+  .pk-table { min-width: 0; }
+  .pk-table thead { display: none; }
+  .pk-table tr { display: block; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .pk-table td { display: block; border-bottom: none; padding: 2px 0; }
+  .pk-table td[data-label="Metric"] { font-weight: 600; font-size: 13.5px; }
+  .pk-table td[data-label="Value"] { font-size: 15px; color: var(--forest); }
+  .pk-table td[data-label="Confidence"]::before { content: "confidence · "; font-family: "JetBrains Mono", monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .pk-table td[data-label="Method · source"] { margin-top: 2px; }
+}

@@ -45,22 +45,24 @@ export default function Packet() {
 
       <section className="pk-sec">
         <h2>Key figures</h2>
-        <table className="pk-table">
-          <thead>
-            <tr><th>Metric</th><th>Value</th><th>Reading</th><th>Confidence</th><th>Method · source</th></tr>
-          </thead>
-          <tbody>
-            {metrics.map((m) => (
-              <tr key={m.id}>
-                <td>{m.label}</td>
-                <td className="pk-num">{m.value}{m.delta ? ` (${m.delta.text})` : ""}</td>
-                <td><Html text={m.meaning} /></td>
-                <td>{m.confidenceLabel}</td>
-                <td className="pk-cite">{m.math ? `${m.math.citation.method} · ${m.math.citation.source}` : "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="pk-tablewrap">
+          <table className="pk-table">
+            <thead>
+              <tr><th>Metric</th><th>Value</th><th>Reading</th><th>Confidence</th><th>Method · source</th></tr>
+            </thead>
+            <tbody>
+              {metrics.map((m) => (
+                <tr key={m.id}>
+                  <td data-label="Metric">{m.label}</td>
+                  <td data-label="Value" className="pk-num">{m.value}{m.delta ? ` (${m.delta.text})` : ""}</td>
+                  <td data-label="Reading"><Html text={m.meaning} /></td>
+                  <td data-label="Confidence">{m.confidenceLabel}</td>
+                  <td data-label="Method · source" className="pk-cite">{m.math ? `${m.math.citation.method} · ${m.math.citation.source}` : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="pk-sec">
