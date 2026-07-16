@@ -3,6 +3,7 @@
 // order. Same honesty rules: derived numbers labeled, assumptions visible.
 
 import { useEffect, useState } from "react";
+import { displayName } from "../engine/persona";
 import {
   arAging, cashCalendar, taxSetAside,
   type ArOut, type CalendarOut, type TaxOut,
@@ -28,7 +29,7 @@ export default function Money() {
     <div className="app">
       <div className="appbar">
         <div className="titleblock">
-          <div className="kicker">Kiln &amp; Co. · the money map</div>
+          <div className="kicker">{displayName()} · the money map</div>
           <h1>Money</h1>
         </div>
         <div className="avatar">B</div>

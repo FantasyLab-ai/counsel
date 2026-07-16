@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import { parseCharges, parseExpenses, parsePosts } from "../engine/csvParse";
 import { clearUserData, hasUserData, storeUserData, userMeta } from "../engine/dataSource";
 import { addPostsBulk } from "../engine/socialMath";
-import { getPersona, PERSONAS, setPersona } from "../engine/persona";
+import { getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
 import { Reveal } from "../components/ui";
 
 interface PowerItem {
@@ -89,10 +89,17 @@ function PersonaStrip() {
         {p.quickStart.map((s) => <li key={s}>{s}</li>)}
       </ol>
       <div className="ps-switch">
-        {PERSONAS.map((x) => (
-          <button key={x.id} className={`chip-sm ${x.id === p.id ? "sel" : ""}`}
-            onClick={() => { setPersona(x.id); setP(x); }}>{x.icon} {x.label.split(" /")[0].split(" (")[0]}</button>
-        ))}
+        <label className="pw-csv-lbl" htmlFor="personaSel">line of work</label>
+        <select id="personaSel" className="ps-select" value={p.id}
+          onChange={(e) => { setPersona(e.target.value); setP(PERSONAS.find((x) => x.id === e.target.value)!); }}>
+          {PERSONA_GROUPS.map((g) => (
+            <optgroup key={g} label={g}>
+              {PERSONAS.filter((x) => x.group === g).map((x) => (
+                <option key={x.id} value={x.id}>{x.icon} {x.label}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
       </div>
     </article>
   );

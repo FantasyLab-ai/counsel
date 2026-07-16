@@ -4,6 +4,7 @@
 // new delivery. (The Toast steal: the nightly digest is the habit loop.)
 
 import { getBrief } from "../api/counsel";
+import { displayName } from "./persona";
 import { cashSentry, money, BASELINE } from "./insights";
 import { evaluateContracts } from "./insights";
 import { stats as decisionStats } from "./decisions";
@@ -23,7 +24,7 @@ export async function composeDigest(): Promise<string> {
 
   const lines: string[] = [];
   lines.push(`◆ COUNSEL — morning digest · ${brief.greeting.date}`);
-  lines.push(`${brief.greeting.business}${persona ? ` · ${persona.label}` : ""}`);
+  lines.push(`${displayName()}${persona ? ` · ${persona.label}` : ""}`);
   lines.push("");
   lines.push(`THE READ: ${strip(brief.state.headline)}`);
   lines.push(strip(brief.state.sub));

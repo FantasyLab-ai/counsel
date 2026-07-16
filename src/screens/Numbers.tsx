@@ -3,6 +3,7 @@
 // picks the right method per question. That variety IS the glass box.
 
 import { useEffect, useState } from "react";
+import { displayName } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getMetrics, type Metric, type Period } from "../api/counsel";
 import { ConfidencePill, CountUp, Html, Reveal } from "../components/ui";
@@ -30,7 +31,7 @@ export default function Numbers() {
     <div className="app">
       <div className="appbar">
         <div className="titleblock">
-          <div className="kicker">Kiln &amp; Co. · March</div>
+          <div className="kicker">{displayName()} · March</div>
           <h1>The numbers, read</h1>
         </div>
         <button className="export-btn" onClick={() => nav("/packet")}

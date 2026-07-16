@@ -744,3 +744,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   letter-spacing: .05em; text-transform: uppercase; color: var(--bone); background: var(--brass);
   border-radius: 100px; padding: 2px 8px; vertical-align: middle; }
 .hc-badge.grade { background: var(--forest); }
+
+/* ---- Persona expansion + polish ---- */
+.ob-name-input { width: 100%; font-family: "Fraunces", serif; font-size: 18px; color: var(--ink);
+  background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 13px 16px; margin-bottom: 4px; }
+.ob-name-input:focus { outline: none; border-color: var(--forest); }
+.ob-name-input::placeholder { color: var(--faint); font-style: italic; }
+.persona-scroll { max-height: 320px; overflow-y: auto; margin: 4px -4px 0; padding: 0 4px 6px;
+  border-bottom: 1px solid var(--line); -webkit-overflow-scrolling: touch; }
+.pg-label { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--brass); margin: 14px 0 8px; }
+.persona-scroll > div:first-child .pg-label { margin-top: 6px; }
+.ps-select { flex: 1; min-width: 0; font-family: "Inter", sans-serif; font-size: 13px; color: var(--ink);
+  background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.ps-select:focus { outline: none; border-color: var(--forest); }
+.ps-switch { align-items: center; gap: 10px; }
+.srow.tap { cursor: pointer; }
+.srow.tap:hover .rv { color: var(--forest); }

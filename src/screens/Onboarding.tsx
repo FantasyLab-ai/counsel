@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PERSONAS, setPersona } from "../engine/persona";
+import { PERSONA_GROUPS, PERSONAS, setBusinessName, setPersona } from "../engine/persona";
 
 const ARROW = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -23,6 +23,7 @@ export default function Onboarding() {
   const nav = useNavigate();
   const [step, setStep] = useState(1);
   const [who, setWho] = useState("maker");
+  const [bizName, setBizName] = useState("");
   const persona = PERSONAS.find((p) => p.id === who)!;
   const [done, setDone] = useState(0); // analyzing checklist progress
 
@@ -70,12 +71,27 @@ export default function Onboarding() {
             <div className="kick paper">About you · 1 of 3</div>
             <h1 className="big">First — what do you <em>run?</em></h1>
             <p className="lede">This tailors what I lead with, and which of your tools to read first.</p>
-            <div className="field-lbl">Your business</div>
-            <div className="chips">
-              {PERSONAS.map((p) => (
-                <button className={`chip ${who === p.id ? "sel" : ""}`} key={p.id} onClick={() => setWho(p.id)}>
-                  {p.icon} {p.label}
-                </button>
+            <div className="field-lbl">Business name</div>
+            <input
+              className="ob-name-input"
+              placeholder="e.g. Kiln & Co."
+              value={bizName}
+              maxLength={60}
+              onChange={(e) => setBizName(e.target.value)}
+            />
+            <div className="field-lbl">Your line of work</div>
+            <div className="persona-scroll">
+              {PERSONA_GROUPS.map((g) => (
+                <div key={g}>
+                  <div className="pg-label">{g}</div>
+                  <div className="chips">
+                    {PERSONAS.filter((p) => p.group === g).map((p) => (
+                      <button className={`chip ${who === p.id ? "sel" : ""}`} key={p.id} onClick={() => setWho(p.id)}>
+                        {p.icon} {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
             <div className="ob-persona-note">
@@ -83,7 +99,9 @@ export default function Onboarding() {
               {persona.leadInsight}.
             </div>
           </div>
-          <button className="btn" onClick={() => { setPersona(who); setStep(3); }}>Continue {ARROW}</button>
+          <button className="btn" onClick={() => { setPersona(who); if (bizName.trim()) setBusinessName(bizName); setStep(3); }}>
+            Continue {ARROW}
+          </button>
         </section>
       )}
 

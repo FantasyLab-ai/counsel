@@ -4,6 +4,7 @@
 // registered later they feed the SAME post store automatically.
 
 import { useEffect, useState } from "react";
+import { displayName } from "../engine/persona";
 import {
   addPost, buildUtmLink, channelAttribution, deletePost, listPosts, postLift,
   type ChannelRow, type LiftSummary,
@@ -36,7 +37,7 @@ export default function Marketing() {
     <div className="app">
       <div className="appbar">
         <div className="titleblock">
-          <div className="kicker">Kiln &amp; Co. · reach → revenue</div>
+          <div className="kicker">{displayName()} · reach → revenue</div>
           <h1>Marketing</h1>
         </div>
         <div className="avatar">B</div>

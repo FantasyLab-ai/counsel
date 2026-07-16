@@ -8,6 +8,7 @@
 // says which is which — that's the glass box.
 
 import { useEffect, useMemo, useState } from "react";
+import { displayName } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import {
   BASELINE, cashSentry, evaluateContracts, hireScenario, money,
@@ -36,7 +37,7 @@ export default function Plan() {
     <div className="app">
       <div className="appbar">
         <div className="titleblock">
-          <div className="kicker">Kiln &amp; Co.</div>
+          <div className="kicker">{displayName()}</div>
           <h1>Plan</h1>
         </div>
         <div className="avatar">B</div>

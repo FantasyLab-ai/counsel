@@ -3,6 +3,7 @@
 // restrained briefings, and the honest Privacy & data section.
 
 import { useEffect, useState } from "react";
+import { displayName, getPersona } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getConnections, type Source } from "../api/counsel";
 import { getOnDeviceOnly, setOnDeviceOnly } from "../engine/router";
@@ -89,7 +90,7 @@ export default function Settings() {
     <div className="app">
       <div className="appbar">
         <div className="titleblock">
-          <div className="kicker">Kiln &amp; Co.</div>
+          <div className="kicker">{displayName()}</div>
           <h1>Settings</h1>
         </div>
         <div className="avatar">B</div>
@@ -97,10 +98,10 @@ export default function Settings() {
 
       <Reveal i={0}>
         <div className="profile">
-          <div className="pav">K</div>
+          <div className="pav">{displayName()[0]}</div>
           <div>
-            <div className="pn">Kiln &amp; Co.</div>
-            <div className="pm">Brandon · handmade ceramics</div>
+            <div className="pn">{displayName()}</div>
+            <div className="pm">{getPersona()?.label ?? "your business"}</div>
           </div>
           <div className="plan">Pro</div>
         </div>

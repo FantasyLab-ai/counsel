@@ -3,6 +3,7 @@
 // the honest "watching" section, and connected sources.
 
 import { useEffect, useState } from "react";
+import { displayName } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
 import { hasUserData } from "../engine/dataSource";
@@ -70,11 +71,12 @@ export default function Today() {
         </button>
       </div>
       <div className="greet">
-        {brief.greeting.date} · <b>{brief.greeting.business}</b>
+        {brief.greeting.date} · <b>{displayName()}</b>
       </div>
 
       {digest && (
-        <div className="digest-modal" role="dialog" aria-label="Morning digest">
+        <div className="digest-modal" role="dialog" aria-label="Morning digest"
+             onClick={(e) => { if (e.target === e.currentTarget) setDigest(null); }}>
           <div className="digest-card">
             <div className="digest-head">
               <span className="il-kick">morning digest</span>

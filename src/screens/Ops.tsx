@@ -4,6 +4,7 @@
 // tracking plug in via Phase 2B. The "how to connect" lives in Power Up.
 
 import { useEffect, useState } from "react";
+import { displayName } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { OPS_ASSUMPTIONS, opsReport, type OpsOut } from "../engine/ops";
 import { staffingPlan, type StaffDay } from "../engine/money";
@@ -30,7 +31,7 @@ export default function Ops() {
     <div className="app">
       <div className="appbar">
         <div className="titleblock">
-          <div className="kicker">Kiln &amp; Co. · operations</div>
+          <div className="kicker">{displayName()} · operations</div>
           <h1>Stock &amp; shipments</h1>
         </div>
         <div className="avatar">B</div>

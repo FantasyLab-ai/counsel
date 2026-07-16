@@ -5,6 +5,7 @@
 // methodological receipts.
 
 import { useEffect, useState } from "react";
+import { displayName, getPersona } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getMetrics, type Metric } from "../api/counsel";
 import { BASELINE, cashSentry, money, seasonality, type CashSentry, type Seasonality } from "../engine/insights";
@@ -36,7 +37,7 @@ export default function Packet() {
       <header className="pk-head">
         <div className="pk-brand">◆ COUNSEL</div>
         <h1>Financial statement of record</h1>
-        <div className="pk-meta">Kiln &amp; Co. · handmade ceramics · prepared {today}</div>
+        <div className="pk-meta">{displayName()} · {getPersona()?.label.toLowerCase() ?? "small business"} · prepared {today}</div>
         <div className="pk-note">
           Every figure below cites the statistical method that produced it and the data it was
           computed from. Fabricated numbers: <b>0</b>. Where confidence is limited, it says so.

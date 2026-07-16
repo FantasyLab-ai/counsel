@@ -4,6 +4,7 @@
 // The "Was it worth it?" engine (Plan) is the measuring stick for grading.
 
 import { useState } from "react";
+import { displayName } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import {
   addDecision, board, deleteDecision, gradeDecision, isOverdue, setStatus, stats,
@@ -97,7 +98,7 @@ export default function Decisions() {
     <div className="app">
       <div className="appbar">
         <div className="titleblock">
-          <div className="kicker">Kiln &amp; Co. · the track record</div>
+          <div className="kicker">{displayName()} · the track record</div>
           <h1>Decisions</h1>
         </div>
         <div className="avatar">B</div>

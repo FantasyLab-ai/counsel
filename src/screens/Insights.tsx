@@ -3,6 +3,7 @@
 // connectors swap the fuel in Phase 2B. Every card: finding → method → limit.
 
 import { useEffect, useState } from "react";
+import { displayName } from "../engine/persona";
 import {
   benchmarks, counterfactual, creditReadiness, customerSurvival, expenses,
   feeAudit, money, monteCarloRunway, newsvendor, priceElasticity, seasonAdjust,
@@ -48,7 +49,7 @@ export default function Insights() {
     <div className="app">
       <div className="appbar">
         <div className="titleblock">
-          <div className="kicker">Kiln &amp; Co. · nine deep reads</div>
+          <div className="kicker">{displayName()} · nine deep reads</div>
           <h1>The Insights Lab</h1>
         </div>
         <div className="avatar">B</div>

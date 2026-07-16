@@ -4,6 +4,7 @@
 // "working" moment; answers are grounded, never vibes.
 
 import { useEffect, useRef, useState } from "react";
+import { displayName } from "../engine/persona";
 import { ask, getSeededAsk, type AskAnswer } from "../api/counsel";
 import { CitePill, ConfidencePill, Html } from "../components/ui";
 import { VizView } from "../components/charts";
@@ -164,7 +165,7 @@ export default function Ask() {
 
       <div className="thread">
         <div className="sysnote">
-          Ask anything about <b>Kiln &amp; Co.</b> I answer from your real numbers — and I'll tell you when I'm not sure.
+          Ask anything about <b>{displayName()}</b> I answer from your real numbers — and I'll tell you when I'm not sure.
         </div>
         {turns.map((t, i) =>
           t.kind === "q" ? (
