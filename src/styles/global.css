@@ -763,3 +763,75 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .srow.tap:hover .rv { color: var(--forest); }
 .profile.tap { cursor: pointer; }
 .profile.tap:hover { background: var(--card-2); }
+
+/* ============================================================
+   Elegance pass — the details you feel before you notice them
+   ============================================================ */
+
+/* 1. Kill the blue tap-flash. Nothing says "web page" like it. */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* 2. Keyboard focus deserves a ring — but only for keyboards. */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(28, 75, 58, .28);
+  border-radius: 10px;
+}
+.step.dark :focus-visible, .voice :focus-visible { box-shadow: 0 0 0 3px rgba(205, 174, 126, .4); }
+
+/* 3. Press feedback — every tappable surface answers the thumb. */
+.hub-card, .setup-banner, .packet-card, .row-card, .srow.tap, .addrow.tap,
+.profile.tap, .acton, .digest-btn, .chip, .chip-sm, .dbtn, .dt-btn, .pw-prov {
+  transition: transform var(--d-fast) var(--ease-out), background var(--d-fast) var(--ease-out),
+              border-color var(--d-fast) var(--ease-out), box-shadow var(--d-fast) var(--ease-out);
+}
+.hub-card:active, .setup-banner:active, .packet-card:active, .row-card:active,
+.profile.tap:active, .pw-prov:active { transform: scale(0.985); }
+.acton:active, .digest-btn:active, .chip:active, .chip-sm:active, .dbtn:active, .dt-btn:active { transform: scale(0.96); }
+.srow.tap:active, .addrow.tap:active { background: var(--card-2); }
+
+/* 4. Modals shouldn't drag the page behind them. */
+.digest-modal { overscroll-behavior: contain; animation: modalIn var(--d-norm) var(--ease-out); }
+.digest-card { animation: cardIn var(--d-slow) var(--spring); }
+@keyframes modalIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* 5. A select that belongs to this typeface, not to Chrome. */
+.ps-select {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7a70' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 11px center; background-size: 15px;
+  padding-right: 34px; cursor: pointer;
+}
+
+/* 6. A restrained scrollbar for the persona list. */
+.persona-scroll { scrollbar-width: thin; scrollbar-color: var(--line-strong, #ccd5ce) transparent; }
+.persona-scroll::-webkit-scrollbar { width: 5px; }
+.persona-scroll::-webkit-scrollbar-thumb { background: #ccd5ce; border-radius: 100px; }
+.persona-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- Power Up: providers you can actually open ---- */
+.pw-provs { display: flex; flex-direction: column; gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 11px; overflow: hidden; margin-bottom: 12px; }
+.pw-prov { display: flex; align-items: center; gap: 10px; background: var(--card);
+  padding: 11px 13px; text-decoration: none; cursor: pointer; }
+.pw-prov:hover { background: var(--forest-tint); }
+.pw-prov.static { cursor: default; background: var(--card-2); }
+.pw-prov-n { font-size: 12.5px; font-weight: 600; color: var(--forest); flex-shrink: 0; }
+.pw-prov.static .pw-prov-n { color: var(--muted); }
+.pw-prov-w { font-family: var(--mono); font-size: 10px; color: var(--faint); flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pw-prov-go { font-size: 12px; color: var(--brass); flex-shrink: 0; }
+
+/* ---- Power Up: the honest activation ladder ---- */
+.pw-ladder { display: flex; gap: 8px; margin: 14px 0 8px; }
+.pw-rung { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--bone-dim);
+  border: 1px solid rgba(233,232,226,.16); border-radius: 100px; padding: 5px 11px; }
+.pw-rung.on { color: #7fce9f; border-color: rgba(127,206,159,.4); background: rgba(127,206,159,.1); }
+
+/* ---- Settings footer ---- */
+.sfooter .pb { text-decoration: none; color: var(--faint); transition: color var(--d-fast) var(--ease-out); }
+.sfooter .pb:hover { color: var(--forest); }
+.lk-b { font: inherit; color: var(--faint); background: none; border: none; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; padding: 4px; }
+.lk-b:hover { color: var(--forest); }

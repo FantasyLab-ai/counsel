@@ -114,20 +114,24 @@ export default function Settings() {
           <div className="sec-h">Connected tools</div>
           <div className="group">
             {sources.map((s) => (
-              <div className="srow" key={s.id}>
+              <div className="srow tap" key={s.id} role="button" tabIndex={0}
+                   onClick={() => nav("/power")}
+                   onKeyDown={(e) => { if (e.key === "Enter") nav("/power"); }}>
                 <div className="ico">{SRC_ICONS[s.id]}</div>
                 <div className="rl">
                   <div className="rt">{s.name}</div>
                   <div className="rs">{s.role}</div>
                 </div>
-                <div className="rr"><span className="sdot ok" /><span className="sync">{s.syncedLabel}</span></div>
+                <div className="rr"><span className="sdot ok" /><span className="sync">{s.syncedLabel}</span>{CHEV}</div>
               </div>
             ))}
-            <div className="addrow">
+            <div className="addrow tap" role="button" tabIndex={0}
+                 onClick={() => nav("/power")}
+                 onKeyDown={(e) => { if (e.key === "Enter") nav("/power"); }}>
               <div className="plus">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
               </div>
-              <span>Connect QuickBooks, Square, Google…</span>
+              <span>Connect Stripe, Square, Shopify, QuickBooks…</span>
             </div>
           </div>
         </section>
@@ -203,7 +207,7 @@ export default function Settings() {
       </Reveal>
 
       <Reveal i={4}>
-        <section className="sec">
+        <section className="sec" id="privacy-sec">
           <div className="sec-h">Privacy &amp; data</div>
           <div className="privacy-note">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
@@ -276,38 +280,28 @@ export default function Settings() {
 
       <Reveal i={5}>
         <section className="sec">
-          <div className="sec-h">Plan</div>
+          <div className="sec-h">Your business</div>
           <div className="group">
+            <div className="srow tap" role="button" tabIndex={0} onClick={() => nav("/welcome")}
+                 onKeyDown={(e) => { if (e.key === "Enter") nav("/welcome"); }}>
+              <div className="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" /></svg>
+              </div>
+              <div className="rl">
+                <div className="rt">Name &amp; line of work</div>
+                <div className="rs">{displayName()} · {getPersona()?.label ?? "not set yet"}</div>
+              </div>
+              <div className="rr">{CHEV}</div>
+            </div>
             <div className="srow">
               <div className="ico">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.8 5.7 21l2.3-7-6-4.6h7.6z" /></svg>
               </div>
               <div className="rl">
-                <div className="rt">Counsel Pro</div>
-                <div className="rs">$49 / month · billed monthly</div>
+                <div className="rt">No account, no bill</div>
+                <div className="rs">Counsel runs on this device — nothing to sign into, nothing to cancel. Pricing arrives with the hosted service.</div>
               </div>
-              <div className="rr"><span className="rv">Manage</span>{CHEV}</div>
-            </div>
-          </div>
-        </section>
-      </Reveal>
-
-      <Reveal i={6}>
-        <section className="sec">
-          <div className="sec-h">Account</div>
-          <div className="group">
-            <div className="srow">
-              <div className="rl">
-                <div className="rt">Brandon G.</div>
-                <div className="rs">brandon@kilnandco.com</div>
-              </div>
-              <div className="rr">{CHEV}</div>
-            </div>
-            <div className="srow danger">
-              <div className="ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
-              </div>
-              <div className="rl"><div className="rt">Sign out</div></div>
+              <div className="rr"><span className="rv">free</span></div>
             </div>
           </div>
         </section>
@@ -315,8 +309,14 @@ export default function Settings() {
 
       <div className="sfooter">
         <div className="v">Counsel v0.1.0 · prototype</div>
-        <div className="pb">powered by Aurora</div>
-        <div className="lk"><span>Privacy</span> &nbsp;·&nbsp; <span>Terms</span> &nbsp;·&nbsp; <span>Support</span></div>
+        <a className="pb" href="https://github.com/FantasyLab-ai/aurora" target="_blank" rel="noopener noreferrer">
+          powered by Aurora ↗
+        </a>
+        <div className="lk">
+          <button className="lk-b" onClick={() => document.getElementById("privacy-sec")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+            Privacy &amp; data
+          </button>
+        </div>
       </div>
     </div>
   );
