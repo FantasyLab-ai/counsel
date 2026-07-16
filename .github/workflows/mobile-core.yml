@@ -1,0 +1,85 @@
+name: mobile-core
+
+# Builds the native aurora-core artifacts this Windows dev box can't:
+#   * iOS: static libs for device + simulator, packaged as AuroraCore.xcframework
+#     (macOS runner — the only place Apple tooling exists)
+#   * Android: release APK with the Rust core inside (redundant with the local
+#     build, but reproducible in CI)
+#
+# Both jobs run the golden parity suite FIRST — a port that drifts from the
+# Python reference must never ship.
+
+on:
+  push:
+    branches: [main]
+    paths: ["core/**", "android/**", ".github/workflows/mobile-core.yml"]
+  workflow_dispatch: {}
+
+jobs:
+  parity:
+    name: Golden parity (the gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: cargo test (golden suite)
+        working-directory: core
+        run: cargo test --release
+
+  ios:
+    name: iOS xcframework
+    needs: parity
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim
+      - name: Build static libs
+        working-directory: core
+        run: |
+          cargo build --release --features ffi --target aarch64-apple-ios
+          cargo build --release --features ffi --target aarch64-apple-ios-sim
+      - name: Package xcframework
+        working-directory: core
+        run: |
+          mkdir -p headers && cp bindings/aurora_coreFFI.h headers/
+          cp bindings/aurora_coreFFI.modulemap headers/module.modulemap
+          xcodebuild -create-xcframework \
+            -library target/aarch64-apple-ios/release/libaurora_core.a -headers headers \
+            -library target/aarch64-apple-ios-sim/release/libaurora_core.a -headers headers \
+            -output AuroraCore.xcframework
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AuroraCore.xcframework
+          path: |
+            core/AuroraCore.xcframework
+            core/bindings/aurora_core.swift
+
+  android:
+    name: Android APK
+    needs: parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+      - name: Build Rust core for Android ABIs
+        working-directory: core
+        run: cargo ndk -t arm64-v8a -t x86_64 -o ../android/app/src/main/jniLibs build --release --features ffi
+      - name: Gradle build
+        working-directory: android
+        run: |
+          gradle wrapper --gradle-version 8.9 --no-daemon
+          ./gradlew assembleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: counsel-engine-apk
+          path: android/app/build/outputs/apk/release/*.apk
