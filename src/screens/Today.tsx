@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
 import { hasUserData } from "../engine/dataSource";
+import { composeDigest } from "../engine/digest";
+import { overdueCount } from "../engine/decisions";
 import { CitePill, ConfidencePill, CountUp, Html, Reveal } from "../components/ui";
 import { BreakSpark } from "../components/charts";
 
@@ -19,12 +21,29 @@ export default function Today() {
   const nav = useNavigate();
   const [brief, setBrief] = useState<Brief | null>(null);
   const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [digest, setDigest] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const toGrade = overdueCount();
+
   useEffect(() => {
     let on = true;
     getBrief().then((b) => on && setBrief(b));
     getMetrics("month").then((m) => on && setMetrics(m));
     return () => { on = false; };
   }, []);
+
+  async function openDigest() {
+    setDigest("composing…");
+    setDigest(await composeDigest());
+  }
+  async function copyDigest() {
+    if (!digest) return;
+    try {
+      await navigator.clipboard.writeText(digest);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* clipboard unavailable */ }
+  }
 
   if (!brief) {
     return (
@@ -45,11 +64,30 @@ export default function Today() {
     <div className="app">
       <div className="appbar">
         <div className="wordmark"><b>Counsel</b><span>by Aurora</span></div>
-        <div className="avatar">B</div>
+        <button className="digest-btn" onClick={openDigest} title="Morning digest — copy it anywhere">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4zM4 9h16M9 20V9" /></svg>
+          digest
+        </button>
       </div>
       <div className="greet">
         {brief.greeting.date} · <b>{brief.greeting.business}</b>
       </div>
+
+      {digest && (
+        <div className="digest-modal" role="dialog" aria-label="Morning digest">
+          <div className="digest-card">
+            <div className="digest-head">
+              <span className="il-kick">morning digest</span>
+              <button className="dt-btn" onClick={() => setDigest(null)}>close</button>
+            </div>
+            <pre className="digest-pre">{digest}</pre>
+            <div className="dropin-row">
+              <button className="dbtn primary" onClick={copyDigest}>{copied ? "✓ copied" : "Copy digest"}</button>
+            </div>
+            <div className="il-cite">composed from the same engines as every screen · becomes the daily push/email when the hosted service lands</div>
+          </div>
+        </div>
+      )}
 
       <Reveal i={0}>
         <section className="voice">
@@ -161,7 +199,7 @@ export default function Today() {
           </button>
           <button className="hub-card" onClick={() => nav("/decisions")}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
-            <span className="hc-t">Decisions</span>
+            <span className="hc-t">Decisions{toGrade > 0 && <span className="hc-badge">{toGrade} to grade</span>}</span>
             <span className="hc-s">the track record</span>
           </button>
           <button className="hub-card" onClick={() => nav("/marketing")}>

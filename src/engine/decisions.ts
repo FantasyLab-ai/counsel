@@ -22,6 +22,8 @@ export interface Decision {
   status: DecisionStatus;
   note?: string;
   grade?: { verdict: Verdict; note: string };
+  expectedImpact?: number; // $/mo at stake (optional — powers "at stake" stat)
+  source?: string; // which insight suggested it ("A1 · price power", "manual")
 }
 
 const KEY = "counsel.decisions";
@@ -76,7 +78,13 @@ export function listDecisions(): Decision[] {
   return [...mine, ...SEED.filter((s) => !mineIds.has(s.id))];
 }
 
-export function addDecision(action: string, expected: string, gradeInDays = 30, status: DecisionStatus = "testing"): Decision {
+export function addDecision(
+  action: string,
+  expected: string,
+  gradeInDays = 30,
+  status: DecisionStatus = "testing",
+  extras?: { expectedImpact?: number; source?: string },
+): Decision {
   const now = new Date();
   const d: Decision = {
     id: `d-${now.getTime()}`,
@@ -85,9 +93,29 @@ export function addDecision(action: string, expected: string, gradeInDays = 30, 
     expected: (expected.trim() || "outcome to be judged against the numbers").slice(0, 200),
     gradeAt: new Date(now.getTime() + gradeInDays * 86400000).toISOString().slice(0, 10),
     status,
+    ...(extras?.expectedImpact != null && isFinite(extras.expectedImpact)
+      ? { expectedImpact: Math.round(extras.expectedImpact) }
+      : {}),
+    ...(extras?.source ? { source: extras.source.slice(0, 60) } : {}),
   };
   writeMine([d, ...readMine()]);
   return d;
+}
+
+/** The insight→decision bridge for Act-on buttons. Starts in "considering"
+ * (the owner hasn't done it yet — they're tracking the intent). */
+export function trackFromInsight(source: string, action: string, expected: string, expectedImpact?: number): Decision {
+  return addDecision(action, expected, 30, "considering", { expectedImpact, source });
+}
+
+/** Past the grade date but not graded — the "grade me" nudge. */
+export function isOverdue(d: Decision): boolean {
+  if (d.status === "graded" || !d.gradeAt) return false;
+  return d.gradeAt <= new Date().toISOString().slice(0, 10);
+}
+
+export function overdueCount(): number {
+  return listDecisions().filter((d) => d.note !== "__deleted__" && d.action && isOverdue(d)).length;
 }
 
 /** Back-compat for the Plan scenario cards. */
@@ -131,14 +159,20 @@ export function board(): Record<DecisionStatus, Decision[]> {
   return { considering: by("considering"), testing: by("testing"), grading: by("grading"), graded: by("graded") };
 }
 
-export function stats(): { open: number; graded: number; held: number; heldRate: number | null } {
+export function stats(): {
+  open: number; graded: number; held: number; heldRate: number | null;
+  atStake: number; overdue: number;
+} {
   const all = listDecisions().filter((d) => d.note !== "__deleted__" && d.action);
   const graded = all.filter((d) => d.status === "graded" && d.grade);
   const held = graded.filter((d) => d.grade!.verdict === "held").length;
+  const openOnes = all.filter((d) => d.status !== "graded");
   return {
-    open: all.length - graded.length,
+    open: openOnes.length,
     graded: graded.length,
     held,
     heldRate: graded.length ? held / graded.length : null,
+    atStake: openOnes.reduce((s, d) => s + (d.expectedImpact ?? 0), 0),
+    overdue: all.filter(isOverdue).length,
   };
 }

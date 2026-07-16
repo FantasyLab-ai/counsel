@@ -87,3 +87,23 @@ export function CountUp({ value, className = "num" }: { value: string; className
   }, [value]);
   return <span className={className}>{display}</span>;
 }
+
+// ActOn — the insight -> decision bridge. One tap turns a computed insight
+// into a tracked decision (status: considering) with the expected outcome
+// pre-filled. The tracker grades it later; that loop is the product.
+import { trackFromInsight } from "../engine/decisions";
+
+export function ActOn({ source, action, expected, impact }: {
+  source: string; action: string; expected: string; impact?: number;
+}) {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      className={`acton ${done ? "done" : ""}`}
+      disabled={done}
+      onClick={() => { trackFromInsight(source, action, expected, impact); setDone(true); }}
+    >
+      {done ? "✓ on the board — grade it when the window closes" : `→ Track it: ${action}`}
+    </button>
+  );
+}

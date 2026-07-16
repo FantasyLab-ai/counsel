@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { PERSONAS, setPersona } from "../engine/persona";
 
 const ARROW = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -11,7 +12,6 @@ const ARROW = (
 const CHECK = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
 );
-const CATEGORIES = ["Retail", "Handmade & crafts", "Food & drink", "Services", "Subscription", "Something else"];
 const ANALYZE_STEPS = [
   "Loaded 41 days of payments",
   "Scanning for structural changes",
@@ -22,7 +22,8 @@ const ANALYZE_STEPS = [
 export default function Onboarding() {
   const nav = useNavigate();
   const [step, setStep] = useState(1);
-  const [cat, setCat] = useState("Handmade & crafts");
+  const [who, setWho] = useState("maker");
+  const persona = PERSONAS.find((p) => p.id === who)!;
   const [done, setDone] = useState(0); // analyzing checklist progress
 
   const isPaper = step === 2 || step === 3;
@@ -55,7 +56,8 @@ export default function Onboarding() {
             <h1 className="big">The honest financial advisor for <em>your business.</em></h1>
             <p className="lede">
               Counsel reads your real numbers the way a seasoned CFO would — tells you what changed, what it means,
-              and when it isn't sure. Let's connect your business. Takes about a minute.
+              and when it isn't sure. <b>Receipts, not narratives:</b> every insight carries the method and the
+              confidence behind it. Takes about a minute.
             </p>
           </div>
           <button className="btn" onClick={() => setStep(2)}>Get started {ARROW}</button>
@@ -66,18 +68,22 @@ export default function Onboarding() {
         <section className="step paper active">
           <div className="content top">
             <div className="kick paper">About you · 1 of 3</div>
-            <h1 className="big">First — what do you <em>sell?</em></h1>
-            <p className="lede">This helps me judge your numbers against what's normal for your kind of business.</p>
-            <div className="field-lbl">Business name</div>
-            <div className="fauxfield">Kiln &amp; Co.<span className="cursor">|</span></div>
-            <div className="field-lbl">Category</div>
+            <h1 className="big">First — what do you <em>run?</em></h1>
+            <p className="lede">This tailors what I lead with, and which of your tools to read first.</p>
+            <div className="field-lbl">Your business</div>
             <div className="chips">
-              {CATEGORIES.map((c) => (
-                <button className={`chip ${cat === c ? "sel" : ""}`} key={c} onClick={() => setCat(c)}>{c}</button>
+              {PERSONAS.map((p) => (
+                <button className={`chip ${who === p.id ? "sel" : ""}`} key={p.id} onClick={() => setWho(p.id)}>
+                  {p.icon} {p.label}
+                </button>
               ))}
             </div>
+            <div className="ob-persona-note">
+              <b>{persona.label}:</b> you likely live in {persona.systems}. I'll start with{" "}
+              {persona.leadInsight}.
+            </div>
           </div>
-          <button className="btn" onClick={() => setStep(3)}>Continue {ARROW}</button>
+          <button className="btn" onClick={() => { setPersona(who); setStep(3); }}>Continue {ARROW}</button>
         </section>
       )}
 
@@ -164,10 +170,14 @@ export default function Onboarding() {
               </span>
             </div>
             <div className="insight-note">
-              This is the kind of thing I'll surface for you every morning — in plain English, with the math behind it.
+              This is the kind of thing I'll surface every morning — in plain English, with the math behind it.
+              For your {persona.label.toLowerCase()}: {persona.leadInsight}.
             </div>
           </div>
-          <button className="btn brass" onClick={() => nav("/")}>See my full dashboard {ARROW}</button>
+          <div className="ob-cta-row">
+            <button className="btn brass" onClick={() => nav("/power")}>Load MY data now (on-device) {ARROW}</button>
+            <button className="btn ghost" onClick={() => nav("/")}>Explore with demo data first</button>
+          </div>
         </section>
       )}
     </div>

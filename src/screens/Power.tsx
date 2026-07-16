@@ -7,6 +7,7 @@ import { useRef, useState } from "react";
 import { parseCharges, parseExpenses, parsePosts } from "../engine/csvParse";
 import { clearUserData, hasUserData, storeUserData, userMeta } from "../engine/dataSource";
 import { addPostsBulk } from "../engine/socialMath";
+import { getPersona, PERSONAS, setPersona } from "../engine/persona";
 import { Reveal } from "../components/ui";
 
 interface PowerItem {
@@ -75,6 +76,27 @@ const ITEMS: PowerItem[] = [
     status: "planned",
   },
 ];
+
+function PersonaStrip() {
+  const [p, setP] = useState(getPersona() ?? PERSONAS[PERSONAS.length - 1]);
+  return (
+    <article className="mcard open il-card">
+      <div className="il-head">
+        <span className="il-kick">{p.icon} {p.label}</span>
+        <span className="pill lite-mod"><span className="dot" />start with: {p.firstConnect}</span>
+      </div>
+      <ol className="ps-steps">
+        {p.quickStart.map((s) => <li key={s}>{s}</li>)}
+      </ol>
+      <div className="ps-switch">
+        {PERSONAS.map((x) => (
+          <button key={x.id} className={`chip-sm ${x.id === p.id ? "sel" : ""}`}
+            onClick={() => { setPersona(x.id); setP(x); }}>{x.icon} {x.label.split(" /")[0].split(" (")[0]}</button>
+        ))}
+      </div>
+    </article>
+  );
+}
 
 function DropIn() {
   const chargesRef = useRef<HTMLInputElement>(null);
@@ -176,8 +198,11 @@ export default function Power() {
         </section>
       </Reveal>
 
+      <div className="eyebrow">Your setup path</div>
+      <Reveal i={1}><PersonaStrip /></Reveal>
+
       <div className="eyebrow">Drop a file — computed on this device</div>
-      <Reveal i={1}><DropIn /></Reveal>
+      <Reveal i={2}><DropIn /></Reveal>
 
       <div className="eyebrow">Connect these — or drop the file</div>
       {ITEMS.map((it, i) => (

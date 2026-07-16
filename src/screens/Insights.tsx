@@ -10,7 +10,7 @@ import {
   type ElasticityOut, type MonteCarloOut, type NewsvendorOut, type SeasonAdjOut,
   type SurvivalOut,
 } from "../engine/tierMath";
-import { Reveal } from "../components/ui";
+import { ActOn, Reveal } from "../components/ui";
 
 interface AllOut {
   elasticity: ElasticityOut | null;
@@ -83,6 +83,11 @@ export default function Insights() {
                     <>A further +5% test projects <b>{money(out.elasticity.monthlyGain)}/mo</b> of margin.</>
                   )}
                 </div>
+                {out.elasticity.inelastic && out.elasticity.monthlyGain > 0 && (
+                  <ActOn source="A1 · price power" action="Run the +5% price test"
+                    expected={`margin gain ≈ ${money(out.elasticity.monthlyGain)}/mo; volume drop stays inside the CI`}
+                    impact={out.elasticity.monthlyGain} />
+                )}
                 <div className="il-cite">natural experiment around your own price change · 90% CI [{out.elasticity.ciLo.toFixed(2)}, {out.elasticity.ciHi.toFixed(2)}] · {out.elasticity.nPre}+{out.elasticity.nPost} selling days · measured only BEFORE the March break so the stockout can't masquerade as price sensitivity</div>
               </article>
             </Reveal>
@@ -99,6 +104,9 @@ export default function Insights() {
                 <b>{money(out.survival.recoverable)}</b> of recoverable revenue if a nudge brings even the
                 expected share back.
               </div>
+              <ActOn source="A2 · customers at risk" action={`Win-back nudge to ${out.survival.atRisk} at-risk regulars`}
+                expected={`recover a meaningful share of ${money(out.survival.recoverable)}`}
+                impact={out.survival.recoverable} />
               <div className="il-cite">survival analysis on {out.survival.repeaters} repeat customers · censored at today · P(return after 45d) = {(out.survival.pReturn45 * 100).toFixed(0)}%</div>
             </article>
           </Reveal>
@@ -114,6 +122,11 @@ export default function Insights() {
                     <div className="il-row-sub">covers {(n.fractile * 100).toFixed(0)}% of demand scenarios · frees ~{money(n.tiedUpSaved)} vs stocking for the best-ever day</div>
                   </div>
                 ))}
+                {out.news[0] && (
+                  <ActOn source="A3 · restock math" action={`Restock ${out.news[0].product} to ${out.news[0].stock30}`}
+                    expected={`~${(out.news[0].fractile * 100).toFixed(0)}% demand coverage · ${money(out.news[0].tiedUpSaved)} freed vs max-stocking`}
+                    impact={out.news[0].tiedUpSaved} />
+                )}
                 <div className="il-cite">critical-fractile inventory math on each product's real demand distribution · holding cost assumed 25% of unit cost</div>
               </article>
             </Reveal>
@@ -148,6 +161,11 @@ export default function Insights() {
                   <div className="il-row-sub">{a.detail}</div>
                 </div>
               ))}
+              {out.audit.length > 0 && (
+                <ActOn source="B5 · the audit" action={`Fix ${out.audit.length} audit findings`}
+                  expected={`recover ~${money(out.audit.reduce((s, a) => s + a.annual, 0))}/yr (refund, cancel creep, call processor)`}
+                  impact={out.audit.reduce((s, a) => s + a.annual, 0) / 12} />
+              )}
               <div className="il-cite">duplicate scan + monotone-creep test + fee-rate drift across {"{"}Dec…Mar{"}"} · every claim traceable to specific charges</div>
             </article>
           </Reveal>

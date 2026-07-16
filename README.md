@@ -9,6 +9,23 @@ confidence-scored**, and openly saying *"not enough data yet"* instead of
 guessing. Real statistical methods compute; a model only narrates cited
 results. The honesty is the product.
 
+## Receipts, not narratives
+
+The incumbents now ship AI that *summarizes* your books — fluent paragraphs
+with no error bars, no methods, no way to check the claim. Counsel is built
+the other way around:
+
+| Them (LLM narratives) | Counsel (receipts) |
+|---|---|
+| "Revenue looks a bit soft this month." | "Structural break Mar 6, −28%, p < 0.001 — Welch test, your ledger." |
+| A single forecast number | A range with a confidence band — ranges are the honest answer |
+| "Consider reviewing your pricing." | "Measured elasticity −0.7 from your own price change; a +5% test projects ≈ $310/mo. Track it; grade it in 30 days." |
+| Insights you read | Insights that become **tracked, graded decisions** |
+| Your books on their cloud | Analysis **on your device** — airplane mode works |
+
+Every card carries the method that produced it and the confidence it
+deserves. When the math can't support a claim, Counsel says so.
+
 ## Your pocket C-suite
 
 **The CFO desk** — money, measured

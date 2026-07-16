@@ -708,3 +708,39 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .mk-link .dbtn { flex: 0 0 auto; }
 /* odd hub-card count: let the last one breathe full-width */
 .hub-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+/* ---- Polish pass: persona, digest, act-on, badges ---- */
+.ob-persona-note { margin-top: 16px; font-size: 12.5px; color: var(--muted); line-height: 1.55;
+  background: var(--card-2); border-left: 3px solid var(--brass); border-radius: 8px; padding: 10px 14px; }
+.ob-cta-row { display: flex; flex-direction: column; gap: 10px; }
+.btn.ghost { background: transparent; border: 1px solid var(--line-ink); color: var(--bone-dim); box-shadow: none; }
+.btn.ghost:hover { color: var(--bone); border-color: var(--bone-dim); }
+
+.ps-steps { margin: 8px 0 12px; padding-left: 20px; font-size: 13px; line-height: 1.7; color: var(--ink); }
+.ps-switch { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
+.chip-sm { font-size: 11px; color: #3d4a42; background: var(--card-2); border: 1px solid var(--line);
+  border-radius: 100px; padding: 6px 11px; cursor: pointer; }
+.chip-sm.sel { background: var(--forest); color: var(--bone); border-color: var(--forest); }
+
+.digest-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line);
+  background: var(--card); color: var(--forest); font-family: "JetBrains Mono", monospace; font-size: 11px;
+  padding: 8px 13px; border-radius: 100px; cursor: pointer; }
+.digest-btn svg { width: 13px; height: 13px; }
+.digest-modal { position: fixed; inset: 0; z-index: 90; background: rgba(24,33,28,.45); backdrop-filter: blur(3px);
+  display: grid; place-items: center; padding: 18px; }
+.digest-card { width: min(480px, 100%); max-height: 82vh; overflow: auto; background: var(--card);
+  border-radius: 18px; padding: 18px; box-shadow: 0 30px 70px -20px rgba(20,30,24,.5); }
+.digest-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.digest-pre { font-family: "JetBrains Mono", monospace; font-size: 11px; line-height: 1.65; color: var(--ink);
+  white-space: pre-wrap; word-break: break-word; background: var(--card-2); border-radius: 10px; padding: 14px; margin: 0 0 12px; }
+
+.acton { display: block; width: 100%; margin-top: 12px; text-align: left; border: 1px dashed var(--forest);
+  background: var(--forest-tint); color: var(--forest); font-size: 12.5px; font-weight: 600;
+  border-radius: 10px; padding: 11px 14px; cursor: pointer; transition: background var(--dur-fast) var(--ease); }
+.acton:hover { background: #cfdfd5; }
+.acton.done { border-style: solid; background: var(--card-2); color: var(--muted); cursor: default; font-weight: 500; }
+
+.hc-badge { display: inline-block; margin-left: 8px; font-family: "JetBrains Mono", monospace; font-size: 8.5px;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--bone); background: var(--brass);
+  border-radius: 100px; padding: 2px 8px; vertical-align: middle; }
+.hc-badge.grade { background: var(--forest); }

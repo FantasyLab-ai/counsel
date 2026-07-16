@@ -8,7 +8,7 @@ import {
   type ArOut, type CalendarOut, type TaxOut,
 } from "../engine/money";
 import { money } from "../engine/tierMath";
-import { Reveal } from "../components/ui";
+import { ActOn, Reveal } from "../components/ui";
 
 export default function Money() {
   const [cal, setCal] = useState<CalendarOut | null>(null);
@@ -97,6 +97,11 @@ export default function Money() {
                   </div>
                 </div>
               ))}
+              {ar.chase[0] && (
+                <ActOn source="Money · AR aging" action={`Chase ${ar.chase[0].client} (${money(ar.chase[0].amount)}, ${ar.chase[0].daysLate}d late)`}
+                  expected={`payment or plan within 14 days; escalate if silent`}
+                  impact={ar.chase[0].amount} />
+              )}
               <div className="il-cite">chase order = days late × amount · your paid invoices settle in ~{ar.dso} days on average (DSO) · wholesale invoices from the demo ledger</div>
             </article>
           </Reveal>

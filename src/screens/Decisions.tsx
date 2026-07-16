@@ -6,9 +6,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  addDecision, board, deleteDecision, gradeDecision, setStatus, stats,
+  addDecision, board, deleteDecision, gradeDecision, isOverdue, setStatus, stats,
   type Decision, type DecisionStatus, type Verdict,
 } from "../engine/decisions";
+import { money } from "../engine/tierMath";
 import { Reveal } from "../components/ui";
 
 const COLUMNS: { id: DecisionStatus; title: string; hint: string }[] = [
@@ -26,6 +27,7 @@ function AddForm({ onAdded }: { onAdded: () => void }) {
   const [open, setOpen] = useState(false);
   const [action, setAction] = useState("");
   const [expected, setExpected] = useState("");
+  const [impact, setImpact] = useState("");
   const [days, setDays] = useState(30);
   if (!open) {
     return (
@@ -39,6 +41,8 @@ function AddForm({ onAdded }: { onAdded: () => void }) {
              value={action} maxLength={140} onChange={(e) => setAction(e.target.value)} />
       <input className="dt-input" placeholder="What do you expect? e.g. revenue holds, volume −5% max"
              value={expected} maxLength={200} onChange={(e) => setExpected(e.target.value)} />
+      <input className="dt-input" type="number" inputMode="decimal" placeholder="$ at stake per month (optional)"
+             value={impact} onChange={(e) => setImpact(e.target.value)} />
       <div className="dt-days">
         <span>Judge it in</span>
         {[14, 30, 60].map((d) => (
@@ -47,7 +51,11 @@ function AddForm({ onAdded }: { onAdded: () => void }) {
       </div>
       <div className="dropin-row">
         <button className="dbtn primary" disabled={!action.trim()}
-          onClick={() => { addDecision(action, expected, days, "considering"); setAction(""); setExpected(""); setOpen(false); onAdded(); }}>
+          onClick={() => {
+            addDecision(action, expected, days, "considering",
+              impact.trim() ? { expectedImpact: parseFloat(impact) } : undefined);
+            setAction(""); setExpected(""); setImpact(""); setOpen(false); onAdded();
+          }}>
           Add to board
         </button>
         <button className="dbtn" onClick={() => setOpen(false)}>Cancel</button>
@@ -105,8 +113,8 @@ export default function Decisions() {
           </div>
           <div className="micro">
             <div className="m"><div className="ml">open</div><div className="mv">{s.open}</div></div>
-            <div className="m"><div className="ml">graded</div><div className="mv">{s.graded}</div></div>
-            <div className="m"><div className="ml">held</div><div className="mv">{s.held}</div></div>
+            <div className="m"><div className="ml">at stake</div><div className="mv">{s.atStake > 0 ? money(s.atStake) : "—"}</div></div>
+            <div className="m"><div className="ml">held</div><div className="mv">{s.held}/{s.graded}</div></div>
           </div>
         </section>
       </Reveal>
@@ -122,9 +130,18 @@ export default function Decisions() {
                 {b[col.id].map((d) => (
                   <div className="dt-row" key={d.id}>
                     <div className="dt-main">
-                      <div className="dt-action">{d.action}</div>
-                      <div className="dl-expected">expected: {d.expected}</div>
-                      <div className="dt-meta">logged {d.loggedAt} · {d.status === "graded" ? "closed" : `judge by ${d.gradeAt}`}</div>
+                      <div className="dt-action">
+                        {d.action}
+                        {isOverdue(d) && <span className="hc-badge grade">grade me</span>}
+                      </div>
+                      <div className="dl-expected">
+                        expected: {d.expected}
+                        {d.expectedImpact != null && <> · <b>{money(d.expectedImpact)}</b> at stake</>}
+                      </div>
+                      <div className="dt-meta">
+                        logged {d.loggedAt} · {d.status === "graded" ? "closed" : `judge by ${d.gradeAt}`}
+                        {d.source && <> · from {d.source}</>}
+                      </div>
                       {d.grade && (
                         <div className="dl-note">
                           <span className={`pill lite-${d.grade.verdict === "held" ? "hi" : d.grade.verdict === "mixed" ? "mod" : "none"}`} style={{ marginRight: 8 }}>
