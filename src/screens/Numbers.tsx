@@ -95,6 +95,20 @@ export default function Numbers() {
           </article>
         </Reveal>
       ))}
+
+      {/* The Banker's Packet — prominent entry, not just the appbar button. */}
+      <Reveal i={metrics.length}>
+        <button className="packet-card" onClick={() => nav("/packet")}>
+          <div className="pc-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>
+          </div>
+          <div className="pc-body">
+            <div className="pc-title">The Banker's Packet</div>
+            <div className="pc-sub">A lender-ready financial statement of record — every figure cited with its method. Print or save as PDF.</div>
+          </div>
+          <span className="pc-go">→</span>
+        </button>
+      </Reveal>
     </div>
   );
 }

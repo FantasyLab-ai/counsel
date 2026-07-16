@@ -1,0 +1,14 @@
+[
+    {
+        "merged": "ai.fantasylab.counsel.app-release-5:/drawable_ic_fg.xml.flat",
+        "source": "ai.fantasylab.counsel.app-main-6:/drawable/ic_fg.xml"
+    },
+    {
+        "merged": "ai.fantasylab.counsel.app-release-5:/drawable_ic_bg.xml.flat",
+        "source": "ai.fantasylab.counsel.app-main-6:/drawable/ic_bg.xml"
+    },
+    {
+        "merged": "ai.fantasylab.counsel.app-release-5:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "ai.fantasylab.counsel.app-main-6:/mipmap-anydpi-v26/ic_launcher.xml"
+    }
+]

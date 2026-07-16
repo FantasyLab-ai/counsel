@@ -1,0 +1,5 @@
+ai.fantasylab.counsel
+drawable ic_bg
+drawable ic_fg
+mipmap ic_launcher
+string jna_library_appname

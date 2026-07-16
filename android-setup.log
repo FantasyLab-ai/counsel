@@ -7,3 +7,7 @@
 19:41:26 accepting licenses...
 19:41:29 licenses: Review licenses that have not been accepted (y/N)? 
 19:41:29 installing platform-tools, android-34, build-tools 34, NDK 27...
+20:08:46 sdkmanager: ---------------------------------------
+20:08:46 sdkmanager: Accept? (y/N): 
+20:08:46 NDK present: False
+20:08:46 === setup done ===

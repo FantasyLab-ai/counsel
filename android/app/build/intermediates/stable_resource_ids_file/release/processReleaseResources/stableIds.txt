@@ -1,0 +1,4 @@
+ai.fantasylab.counsel:mipmap/ic_launcher = 0x7f020000
+ai.fantasylab.counsel:drawable/ic_fg = 0x7f010001
+ai.fantasylab.counsel:string/jna_library_appname = 0x7f030000
+ai.fantasylab.counsel:drawable/ic_bg = 0x7f010000

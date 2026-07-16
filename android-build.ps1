@@ -1,18 +1,19 @@
-# Builds the Counsel Engine APK end-to-end:
+# Builds the Counsel Engine APK end-to-end (ASCII only - PS 5.1 reads
+# BOM-less files as ANSI, so no fancy dashes here):
 #   1. cargo-ndk compiles aurora-core for arm64-v8a + x86_64 -> jniLibs
 #   2. Gradle assembles the release APK
-# Prereqs: android-setup.ps1 finished (JDK+SDK+NDK) and tools\gradle-8.9 present.
 $ErrorActionPreference = "Stop"
 $counsel = "C:\Users\bgrut\Desktop\Counsel"
 $sdk = "$env:LOCALAPPDATA\Android\Sdk"
 $ndkDir = Get-ChildItem "$sdk\ndk" -Directory | Sort-Object Name -Descending | Select-Object -First 1
-if (-not $ndkDir) { throw "NDK not installed yet — run android-setup.ps1 first" }
+if (-not $ndkDir) { throw "NDK not installed yet - run android-setup.ps1 first" }
 $jdk = Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory | Where-Object Name -like "jdk-17*" | Select-Object -First 1
 
 $env:ANDROID_HOME = $sdk
 $env:ANDROID_NDK_HOME = $ndkDir.FullName
 $env:JAVA_HOME = $jdk.FullName
-$env:PATH = "$($jdk.FullName)\bin;$env:USERPROFILE\.cargo\bin;$env:PATH"
+$cargoBin = "$env:USERPROFILE\.cargo\bin"
+$env:PATH = "$($jdk.FullName)\bin;$cargoBin;$env:PATH"
 
 Write-Host "== 1/2 cargo-ndk: aurora-core -> jniLibs (NDK $($ndkDir.Name)) =="
 Set-Location "$counsel\core"
@@ -25,4 +26,5 @@ Set-Location "$counsel\android"
 if ($LASTEXITCODE -ne 0) { throw "gradle build failed" }
 
 $apk = Get-ChildItem "$counsel\android\app\build\outputs\apk\release\*.apk" | Select-Object -First 1
-Write-Host "APK: $($apk.FullName)  ($([math]::Round($apk.Length/1mb,1)) MB)"
+$mb = [math]::Round($apk.Length / 1mb, 1)
+Write-Host "APK: $($apk.FullName)  ($mb MB)"

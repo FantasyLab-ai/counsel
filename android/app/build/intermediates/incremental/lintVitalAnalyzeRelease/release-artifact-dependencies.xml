@@ -1,0 +1,26 @@
+<dependencies>
+  <compile
+      roots="org.jetbrains.kotlin:kotlin-stdlib:1.9.24@jar,net.java.dev.jna:jna:5.14.0@aar,org.jetbrains:annotations:13.0@jar">
+    <dependency
+        name="org.jetbrains.kotlin:kotlin-stdlib:1.9.24@jar"
+        simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
+    <dependency
+        name="net.java.dev.jna:jna:5.14.0@aar"
+        simpleName="net.java.dev.jna:jna"/>
+    <dependency
+        name="org.jetbrains:annotations:13.0@jar"
+        simpleName="org.jetbrains:annotations"/>
+  </compile>
+  <package
+      roots="org.jetbrains.kotlin:kotlin-stdlib:1.9.24@jar,net.java.dev.jna:jna:5.14.0@aar,org.jetbrains:annotations:13.0@jar">
+    <dependency
+        name="org.jetbrains.kotlin:kotlin-stdlib:1.9.24@jar"
+        simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
+    <dependency
+        name="net.java.dev.jna:jna:5.14.0@aar"
+        simpleName="net.java.dev.jna:jna"/>
+    <dependency
+        name="org.jetbrains:annotations:13.0@jar"
+        simpleName="org.jetbrains:annotations"/>
+  </package>
+</dependencies>
