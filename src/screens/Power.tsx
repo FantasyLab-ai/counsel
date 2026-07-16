@@ -50,10 +50,17 @@ const ITEMS: PowerItem[] = [
     status: "planned",
   },
   {
-    title: "Invoices (services)",
+    title: "Invoices (wholesale & services)",
     connectors: "Stripe Invoicing · QuickBooks · FreshBooks",
-    unlocks: "AR aging — who owes you, how late, chase order (the service-business killer feature)",
+    unlocks: "AR aging on the Money screen — who owes you, how late, the chase order, your DSO",
     csv: "invoices.csv — issued, due, amount, client, paid_date",
+    status: "demo",
+  },
+  {
+    title: "Reviews & reputation",
+    connectors: "Google Business · Etsy reviews · Yelp",
+    unlocks: "Rating trend with change-points (did something slip?), review-volume vs sales correlation",
+    csv: "reviews.csv — date, rating, source, text_optional",
     status: "planned",
   },
 ];

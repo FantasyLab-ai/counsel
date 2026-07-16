@@ -115,8 +115,22 @@ export default function Plan() {
       <div className="eyebrow">The decisions log — I grade my own advice</div>
       <Reveal i={6}><DecisionsCard /></Reveal>
 
-      {/* ---- ops entry ---- */}
+      {/* ---- money entry ---- */}
       <Reveal i={7}>
+        <button className="packet-card" onClick={() => nav2("/money")}>
+          <div className="pc-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+          </div>
+          <div className="pc-body">
+            <div className="pc-title">Money — the cash calendar</div>
+            <div className="pc-sub">Every bill on its day vs your expected inflows, who owes you (chase order), and the tax pot.</div>
+          </div>
+          <span className="pc-go">→</span>
+        </button>
+      </Reveal>
+
+      {/* ---- ops entry ---- */}
+      <Reveal i={8}>
         <button className="packet-card" onClick={() => nav2("/ops")}>
           <div className="pc-ico">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5m0 0l9-5m-9 5v8" /></svg>
@@ -130,7 +144,7 @@ export default function Plan() {
       </Reveal>
 
       {/* ---- insights lab entry ---- */}
-      <Reveal i={8}>
+      <Reveal i={9}>
         <button className="packet-card" onClick={() => nav2("/insights")}>
           <div className="pc-ico">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 3v6L4 20a1.5 1.5 0 0 0 1.4 2h13.2a1.5 1.5 0 0 0 1.4-2L15 9V3M7 3h10" /></svg>

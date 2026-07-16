@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { OPS_ASSUMPTIONS, opsReport, type OpsOut } from "../engine/ops";
+import { staffingPlan, type StaffDay } from "../engine/money";
 import { money } from "../engine/tierMath";
 import { Reveal } from "../components/ui";
 
@@ -16,10 +17,12 @@ const STATUS_LABEL: Record<string, string> = {
 export default function Ops() {
   const nav = useNavigate();
   const [out, setOut] = useState<OpsOut | null>(null);
+  const [staff, setStaff] = useState<StaffDay[]>([]);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     let on = true;
     opsReport().then((o) => on && setOut(o)).catch((e) => on && setErr(String(e)));
+    staffingPlan().then((s) => on && setStaff(s)).catch(() => undefined);
     return () => { on = false; };
   }, []);
 
@@ -111,7 +114,33 @@ export default function Ops() {
             </article>
           </Reveal>
 
-          <Reveal i={3}>
+          {staff.length > 0 && (
+            <>
+              <div className="eyebrow">Staffing — match people to your rhythm</div>
+              <Reveal i={3}>
+                <article className="mcard open il-card">
+                  <div className="mmean">
+                    {staff.some((s) => s.people > 1)
+                      ? <>Your week has a shape — staff it that way instead of evenly.</>
+                      : <>Your week runs <b>fairly flat</b> — one person covers it; use the quietest day for batch production.</>}
+                  </div>
+                  <div className="staff-grid">
+                    {staff.map((s) => (
+                      <div className={`staff-day ${s.people > 1 ? "busy" : ""}`} key={s.day}>
+                        <span className="sd-name">{s.day}</span>
+                        <span className="sd-bar"><span style={{ height: `${Math.min(100, s.factor * 62)}%` }} /></span>
+                        <span className="sd-people">{"●".repeat(s.people)}</span>
+                        {s.note && <span className="sd-note">{s.note}</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="il-cite">weekday factors from your full ledger (same decomposition the false-alarm killer uses) · 2 people where a day runs ≥1.10× average — and if no day qualifies, it says so instead of inventing a rush</div>
+                </article>
+              </Reveal>
+            </>
+          )}
+
+          <Reveal i={4}>
             <button className="packet-card" onClick={() => nav("/power")}>
               <div className="pc-ico">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M13 2L3 14h7l-1 8 10-12h-7z" /></svg>

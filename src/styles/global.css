@@ -609,3 +609,31 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .pw-csv { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; background: var(--card-2); border-radius: 8px; padding: 8px 11px; }
 .pw-csv-lbl { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); flex: 0 0 auto; }
 .pw-csv code { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--ink); line-height: 1.5; }
+
+/* ---- Money: cash calendar + AR aging ---- */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-h { font-family: "JetBrains Mono", monospace; font-size: 9px; color: var(--faint); text-align: center; padding-bottom: 2px; }
+.cal-d { position: relative; aspect-ratio: 1/1.15; border-radius: 8px; background: var(--card-2); padding: 4px 5px; overflow: hidden; }
+.cal-d.blank { background: transparent; }
+.cal-d.out { background: var(--forest-tint); }
+.cal-d.tight { outline: 2px solid var(--brass); background: rgba(156,122,70,.12); }
+.cal-n { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--muted); }
+.cal-o { position: absolute; bottom: 4px; left: 5px; font-family: "JetBrains Mono", monospace; font-size: 8.5px; color: var(--forest); font-weight: 600; }
+.cal-star { position: absolute; bottom: 4px; right: 4px; font-family: "JetBrains Mono", monospace; font-size: 7.5px; color: var(--brass); }
+.ar-row { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; border-top: 1px solid var(--line); }
+.ar-row:first-of-type { border-top: none; }
+.ar-row .pill { flex: 0 0 auto; margin-top: 2px; }
+.ar-row.current { opacity: .75; }
+.ar-body { flex: 1; min-width: 0; }
+.ar-main { font-size: 13.5px; color: var(--ink); }
+.ar-sub { font-family: "JetBrains Mono", monospace; font-size: 9.5px; color: var(--muted); margin-top: 3px; }
+
+/* ---- staffing-to-demand ---- */
+.staff-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 12px; }
+.staff-day { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.sd-name { font-family: "JetBrains Mono", monospace; font-size: 9px; color: var(--muted); }
+.sd-bar { width: 100%; height: 52px; border-radius: 6px; background: var(--card-2); display: flex; align-items: flex-end; overflow: hidden; }
+.sd-bar span { display: block; width: 100%; background: var(--forest-tint); }
+.staff-day.busy .sd-bar span { background: var(--forest); }
+.sd-people { font-size: 8px; color: var(--forest); letter-spacing: 2px; }
+.sd-note { font-family: "JetBrains Mono", monospace; font-size: 7.5px; color: var(--brass); text-align: center; line-height: 1.3; }
