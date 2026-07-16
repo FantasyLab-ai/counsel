@@ -3,11 +3,14 @@
 // real on-device CSV drop-in: the file is parsed in this page, stored on this
 // device, never uploaded, and every engine recomputes on it.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { parseCharges, parseExpenses, parsePosts } from "../engine/csvParse";
 import { clearUserData, hasUserData, storeUserData, userCharges, userExpenses, userMeta } from "../engine/dataSource";
 import { addPostsBulk } from "../engine/socialMath";
 import { getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
+import {
+  connectProvider, disconnectProvider, listCloudConnections, syncNow, type CloudProvider,
+} from "../engine/cloudSync";
 import { Reveal } from "../components/ui";
 
 // A provider you can actually open right now. `url` is the stable sign-in /
@@ -142,6 +145,131 @@ function PersonaStrip() {
   );
 }
 
+// LiveConnect — paste a key you mint in YOUR dashboard (read-only), sync,
+// and the engines run on live API data. No OAuth app approvals needed:
+// Stripe restricted keys, Square access tokens, and Shopify custom-app
+// tokens are all self-serve for the merchant.
+const LIVE_HELP: Record<CloudProvider, { hint: string; mint: string; url: string }> = {
+  stripe: {
+    hint: "rk_live_… restricted key (or sk_test_… in test mode)",
+    mint: "Dashboard → Developers → API keys → Create restricted key → read on Charges (+ Balance for fees)",
+    url: "https://dashboard.stripe.com/apikeys",
+  },
+  square: {
+    hint: "access token from your own Square app",
+    mint: "developer.squareup.com → your app → Production → Access token (read-only scopes)",
+    url: "https://developer.squareup.com/apps",
+  },
+  shopify: {
+    hint: "custom-app Admin token (shpat_…) + your shop name",
+    mint: "Admin → Settings → Apps → Develop apps → Create app → scope read_orders → install → reveal token",
+    url: "https://admin.shopify.com",
+  },
+};
+
+function LiveConnect() {
+  const [provider, setProvider] = useState<CloudProvider>("stripe");
+  const [key, setKey] = useState("");
+  const [shop, setShop] = useState("");
+  const [connected, setConnected] = useState<CloudProvider[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const help = LIVE_HELP[provider];
+
+  useEffect(() => {
+    listCloudConnections().then(setConnected).catch(() => undefined);
+  }, []);
+
+  async function doConnect() {
+    setBusy("validating with the provider…");
+    setStatus(null);
+    try {
+      const creds = provider === "stripe" ? { key: key.trim() }
+        : provider === "square" ? { token: key.trim() }
+        : { shop: shop.trim(), token: key.trim() };
+      await connectProvider(provider, creds);
+      setConnected(await listCloudConnections());
+      setKey("");
+      setStatus({ ok: true, msg: `${provider} connected — key verified read-only and encrypted. Now tap Sync.` });
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function doSync() {
+    setBusy("pulling & normalizing…");
+    setStatus(null);
+    try {
+      const r = await syncNow();
+      if (r.rows === 0) {
+        setStatus({ ok: false, msg: `connected, but 0 transactions came back${r.errors ? ` (${Object.values(r.errors)[0]})` : " — is there activity in the last year?"}` });
+      } else {
+        setStatus({ ok: true, msg: `${r.rows} transactions synced (${Object.entries(r.pulled).map(([k, v]) => `${k}: ${v}`).join(", ")}) — opening Insights…` });
+        setTimeout(() => window.location.assign("/insights"), 1200);
+      }
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <article className="mcard open il-card dropin">
+      <div className="il-head">
+        <span className="il-kick">Go live — sync from the API</span>
+        <span className={`pill ${connected.length ? "lite-hi" : "lite-fc"}`}><span className="dot" />
+          {connected.length ? `connected: ${connected.join(" · ")}` : "beta · no OAuth needed"}
+        </span>
+      </div>
+      <div className="mmean">
+        Mint a <b>read-only key in your own dashboard</b>, paste it once, and Counsel syncs your real
+        transactions on demand. The key is encrypted server-side; your business data is a pass-through —
+        it's stored <b>only on this device</b>.
+      </div>
+      <div className="lc-form">
+        <select className="ps-select" value={provider} aria-label="Provider"
+          onChange={(e) => { setProvider(e.target.value as CloudProvider); setStatus(null); }}>
+          <option value="stripe">Stripe</option>
+          <option value="square">Square</option>
+          <option value="shopify">Shopify</option>
+        </select>
+        {provider === "shopify" && (
+          <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
+            value={shop} onChange={(e) => setShop(e.target.value)} autoComplete="off" />
+        )}
+        <input className="dt-input" type="password" placeholder={help.hint}
+          value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" />
+        <div className="lc-mint">
+          <b>Where to mint it:</b> {help.mint}{" "}
+          <a href={help.url} target="_blank" rel="noopener noreferrer">open ↗</a>
+        </div>
+      </div>
+      <div className="dropin-row">
+        <button className="dbtn primary" disabled={!!busy || !key.trim() || (provider === "shopify" && !shop.trim())}
+          onClick={doConnect}>
+          {connected.includes(provider) ? "Reconnect" : "Connect"} {provider}
+        </button>
+        <button className="dbtn" disabled={!!busy || !connected.length} onClick={doSync}>Sync now</button>
+        {connected.includes(provider) && (
+          <button className="dbtn" disabled={!!busy}
+            onClick={async () => { await disconnectProvider(provider).catch(() => undefined); setConnected(await listCloudConnections().catch(() => [])); setStatus({ ok: true, msg: `${provider} disconnected — its token was deleted server-side.` }); }}>
+            Disconnect
+          </button>
+        )}
+      </div>
+      {busy && <div className="dropin-status ok">{busy}</div>}
+      {status && <div className={`dropin-status ${status.ok ? "ok" : "err"}`}>{status.msg}</div>}
+      <div className="il-cite">
+        read-only keys only — Counsel can never move money · disconnect deletes the token server-side ·
+        one-tap OAuth arrives with the registered apps (see PLATFORMS.md)
+      </div>
+    </article>
+  );
+}
+
 function DropIn() {
   const chargesRef = useRef<HTMLInputElement>(null);
   const expensesRef = useRef<HTMLInputElement>(null);
@@ -270,8 +398,11 @@ export default function Power() {
       <div className="eyebrow">Your setup path</div>
       <Reveal i={1}><PersonaStrip /></Reveal>
 
-      <div className="eyebrow">Drop a file — computed on this device</div>
-      <Reveal i={2}><DropIn /></Reveal>
+      <div className="eyebrow">Go live — paste one read-only key</div>
+      <Reveal i={2}><LiveConnect /></Reveal>
+
+      <div className="eyebrow">Or drop a file — computed on this device</div>
+      <Reveal i={3}><DropIn /></Reveal>
 
       <div className="eyebrow">Open your tool — export — drop it in</div>
       {ITEMS.map((it, i) => (

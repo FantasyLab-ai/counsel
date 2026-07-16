@@ -1,0 +1,13 @@
+{
+  // counsel-cloud — hosted sync backend (tokens encrypted, data pass-through).
+  // Deploy: npx wrangler deploy
+  // Secrets: npx wrangler secret put ENC_KEY   (64 hex chars = 32-byte AES key)
+  //   Rotating ENC_KEY invalidates every stored provider token (users just
+  //   reconnect) — accounts themselves survive.
+  "name": "counsel-cloud",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-07-01",
+  "kv_namespaces": [
+    { "binding": "ACCOUNTS", "id": "5e7637bd075b4553ab5efe4881d3120b" }
+  ]
+}
