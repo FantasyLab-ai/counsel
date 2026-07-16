@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Confidence } from "../api/counsel";
 
 /** Render trusted mock copy that carries <b>/<em> emphasis. All strings come
@@ -124,4 +124,37 @@ export function Awaiting({ title, needs, unlocks }: { title: string; needs: stri
       </button>
     </article>
   );
+}
+
+// Written — the advisor's voice appears as if being written in real time:
+// each letter arrives with a soft ink-fade (opacity + blur + a breath of
+// rise). Tag-aware for the <em>/<b> the voice uses; words never break
+// mid-flow because letters wrap in word-level nowrap spans. Honors
+// prefers-reduced-motion (CSS renders everything instantly).
+export function Written({ text, mode = "letters", startDelay = 0 }: {
+  text: string; mode?: "letters" | "words"; startDelay?: number;
+}) {
+  const html = useMemo(() => {
+    const step = mode === "letters" ? 26 : 60; // ms between arrivals
+    let t = startDelay;
+    const render = (s: string): string =>
+      s.split(/(<[^>]+>)/g).map((tok) => {
+        if (!tok) return "";
+        if (tok.startsWith("<")) return tok; // pass tags through untouched
+        return tok.split(/(\s+)/).map((word) => {
+          if (!word.trim()) return word;
+          if (mode === "words") {
+            const d = t; t += step;
+            return `<span class="wr" style="animation-delay:${d}ms">${word}</span>`;
+          }
+          const letters = [...word].map((ch) => {
+            const d = t; t += step;
+            return `<span class="wr" style="animation-delay:${d}ms">${ch}</span>`;
+          }).join("");
+          return `<span class="wr-word">${letters}</span>`;
+        }).join("");
+      }).join("");
+    return render(text);
+  }, [text, mode, startDelay]);
+  return <span className="written" dangerouslySetInnerHTML={{ __html: html }} />;
 }

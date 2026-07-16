@@ -9,7 +9,7 @@ import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
 import { demoView, hasUserData } from "../engine/dataSource";
 import { composeDigest } from "../engine/digest";
 import { overdueCount } from "../engine/decisions";
-import { CitePill, ConfidencePill, CountUp, Html, Reveal } from "../components/ui";
+import { CitePill, ConfidencePill, CountUp, Html, Reveal, Written } from "../components/ui";
 import { BreakSpark } from "../components/charts";
 
 const SHIELD = (
@@ -94,8 +94,8 @@ export default function Today() {
       <Reveal i={0}>
         <section className="voice">
           <div className="eyebrow on-dark">{brief.state.eyebrow}</div>
-          <div className="said"><Html text={brief.state.headline} /></div>
-          <div className="sub">{brief.state.sub}</div>
+          <div className="said"><Written text={brief.state.headline} mode="letters" startDelay={200} /></div>
+          <div className="sub"><Written text={brief.state.sub} mode="words" startDelay={900} /></div>
           <div className="micro">
             {brief.state.micro.map((m) => (
               <div className="m" key={m.label}>

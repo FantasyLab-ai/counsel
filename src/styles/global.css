@@ -851,3 +851,23 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* ---- awaiting cards (live mode, missing source) ---- */
 .awaiting { border-style: dashed; background: var(--card-2); }
 .awaiting .mmean { color: var(--muted); }
+
+/* ---- Written: the living-ink reveal ---- */
+.written .wr {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(3px);
+  transform: translateY(4px);
+  animation: inkIn 340ms var(--ease-out) forwards;
+}
+.written .wr-word { display: inline-block; white-space: nowrap; }
+@keyframes inkIn {
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .written .wr { animation: none; opacity: 1; filter: none; transform: none; }
+}
+
+/* ---- Counsel proposes (decision contracts) ---- */
+.rec-card { border-left: 3px solid var(--brass); }
+.rec-action { font-family: var(--serif); font-size: 18px; color: var(--ink); margin: 6px 0 4px; line-height: 1.3; }

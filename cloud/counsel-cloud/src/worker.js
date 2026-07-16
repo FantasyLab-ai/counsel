@@ -153,7 +153,7 @@ const stripeAdapter = {
           product: String(c.metadata?.product || c.description || "sale").slice(0, 60),
           qty: 1,
           price: (c.amount - (c.amount_refunded || 0)) / 100,
-          customer: String(c.customer || c.receipt_email || "guest").slice(0, 60),
+          customer: String(c.metadata?.customer || c.customer || c.receipt_email || "guest").slice(0, 60),
           fee: c.balance_transaction?.fee != null ? c.balance_transaction.fee / 100 : 0,
           channel: String(c.metadata?.channel || "stripe").slice(0, 30),
         });
@@ -270,6 +270,16 @@ const PULSE_PRODUCTS = ["latte", "taco plate", "market special", "signature bund
 const PULSE_CHANNELS = ["instagram", "walk-in", "market", "referral"];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+// A weighted cast: a handful of regulars who buy often, a long tail of
+// one-timers — so repeat-rate, at-risk and attribution engines get real
+// texture instead of one flat "guest".
+const PULSE_REGULARS = ["cust_maria", "cust_deshawn", "cust_kim", "cust_tony", "cust_priya"];
+function pulseCustomer() {
+  const r = Math.random();
+  if (r < 0.45) return pick(PULSE_REGULARS);                       // 45%: a regular returns
+  return `cust_${Math.floor(Math.random() * 60).toString().padStart(2, "0")}`; // the long tail
+}
+
 async function pulseStripe(cred, n) {
   if (!/^(sk|rk)_test_/.test(cred.key)) return 0; // live key -> absolute no
   let made = 0;
@@ -284,6 +294,7 @@ async function pulseStripe(cred, n) {
       description: product,
       "metadata[product]": product,
       "metadata[channel]": pick(PULSE_CHANNELS),
+      "metadata[customer]": pulseCustomer(),
     });
     const r = await fetch("https://api.stripe.com/v1/payment_intents", {
       method: "POST",

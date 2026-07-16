@@ -10,8 +10,61 @@ import {
   addDecision, board, deleteDecision, gradeDecision, isOverdue, setStatus, stats,
   type Decision, type DecisionStatus, type Verdict,
 } from "../engine/decisions";
+import { trackFromInsight } from "../engine/decisions";
+import { dismissRecommendation, recommendations, type Recommendation } from "../engine/recommend";
 import { money } from "../engine/tierMath";
 import { Reveal } from "../components/ui";
+import { useEffect } from "react";
+
+// Counsel proposes — the system's own recommendations, computed by the same
+// engines as the Insights cards, offered here as decision contracts:
+// action + expected outcome + $ at stake + judgment window. Accept -> it
+// enters the board with Counsel as the source; the grader closes the loop.
+function Proposals({ onChange }: { onChange: () => void }) {
+  const [recs, setRecs] = useState<Recommendation[] | null>(null);
+  useEffect(() => {
+    let on = true;
+    recommendations().then((r) => on && setRecs(r)).catch(() => on && setRecs([]));
+    return () => { on = false; };
+  }, []);
+
+  if (recs === null) return <article className="mcard open il-card"><div className="il-loading">▶ consulting the engines…</div></article>;
+  if (!recs.length) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="mmean">
+          No open proposals — either you've acted on them all, or the engines haven't earned one yet.
+          <b> A recommendation here is computed, never invented.</b>
+        </div>
+      </article>
+    );
+  }
+  return (
+    <>
+      {recs.map((r) => (
+        <article className="mcard open il-card rec-card" key={r.id}>
+          <div className="il-head">
+            <span className="il-kick">{r.source}</span>
+            {r.impact != null && <span className="pill lite-hi"><span className="dot" />{money(r.impact)}/mo at stake</span>}
+          </div>
+          <div className="rec-action">{r.action}</div>
+          <div className="dl-expected">expected: {r.expected} · judge in {r.gradeInDays} days</div>
+          <div className="dropin-row">
+            <button className="dbtn primary"
+              onClick={() => { trackFromInsight(r.source, r.action, r.expected, r.impact); setRecs(recs.filter((x) => x.id !== r.id)); onChange(); }}>
+              ✓ Accept the contract
+            </button>
+            <button className="dbtn"
+              onClick={() => { dismissRecommendation(r.id); setRecs(recs.filter((x) => x.id !== r.id)); onChange(); }}>
+              Not now
+            </button>
+          </div>
+          <div className="il-cite">{r.cite}</div>
+        </article>
+      ))}
+    </>
+  );
+}
 
 const COLUMNS: { id: DecisionStatus; title: string; hint: string }[] = [
   { id: "considering", title: "Considering", hint: "rehearse it in Plan first" },
@@ -120,7 +173,10 @@ export default function Decisions() {
         </section>
       </Reveal>
 
-      <Reveal i={1}><AddForm onAdded={refresh} /></Reveal>
+      <div className="eyebrow">Counsel proposes — accept, or say not now</div>
+      <Reveal i={1}><Proposals onChange={refresh} /></Reveal>
+
+      <Reveal i={2}><AddForm onAdded={refresh} /></Reveal>
 
       {COLUMNS.map((col, ci) => (
         b[col.id].length > 0 && (

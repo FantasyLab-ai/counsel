@@ -1,0 +1,159 @@
+// recommend.ts — Counsel PROPOSES. The same engines that power the Insights
+// cards surface here as decision contracts: a recommended action, the
+// expected outcome, the $ at stake, and a judgment window. Track one and it
+// enters the board as a contract with Counsel as the source; the grader
+// closes the loop. Dismissals stick (per recommendation id).
+//
+// Honesty rules apply: every proposal is computed, engines that lack fuel
+// propose nothing, and an empty list says "not enough history" — never filler.
+
+import {
+  customerSurvival, feeAudit, money, newsvendor, priceElasticity,
+} from "./tierMath";
+import { cashSentry } from "./insights";
+import { arAging } from "./money";
+import { dataMode, userExpenses } from "./dataSource";
+import { listDecisions } from "./decisions";
+
+export interface Recommendation {
+  id: string;        // stable — used for dismissals + already-tracked matching
+  source: string;    // "A1 · price power"
+  action: string;
+  expected: string;
+  impact?: number;   // $/mo at stake
+  gradeInDays: number;
+  cite: string;      // the method receipt
+}
+
+const DISMISS_KEY = "counsel.recs.dismissed";
+
+function dismissed(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(DISMISS_KEY) ?? "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+export function dismissRecommendation(id: string): void {
+  try {
+    const d = dismissed();
+    d.add(id);
+    localStorage.setItem(DISMISS_KEY, JSON.stringify([...d]));
+  } catch { /* dismissal just won't stick */ }
+}
+
+export async function recommendations(): Promise<Recommendation[]> {
+  const live = dataMode() === "live";
+  const hasExp = !!userExpenses();
+  const out: Recommendation[] = [];
+
+  // A1 — price power (needs a detected price change + clean windows)
+  try {
+    const e = await priceElasticity();
+    if (e && e.inelastic && e.monthlyGain > 0) {
+      out.push({
+        id: "rec-a1-price",
+        source: "A1 · price power",
+        action: "Run the +5% price test",
+        expected: `margin gain ≈ ${money(e.monthlyGain)}/mo; volume drop stays inside the CI`,
+        impact: e.monthlyGain,
+        gradeInDays: 30,
+        cite: `measured elasticity ${e.elasticity.toFixed(2)} from your own price change · 90% CI [${e.ciLo.toFixed(2)}, ${e.ciHi.toFixed(2)}]`,
+      });
+    }
+  } catch { /* not enough history — propose nothing */ }
+
+  // A2 — customers at risk
+  try {
+    const s = await customerSurvival();
+    if (s && s.atRisk >= 3 && s.recoverable > 50) {
+      out.push({
+        id: "rec-a2-winback",
+        source: "A2 · customers at risk",
+        action: `Win-back nudge to ${s.atRisk} at-risk regulars`,
+        expected: `recover a meaningful share of ${money(s.recoverable)}`,
+        impact: s.recoverable,
+        gradeInDays: 21,
+        cite: `Kaplan–Meier on ${s.repeaters} repeat customers · median return ${s.medianReturnDays}d`,
+      });
+    }
+  } catch { /* needs repeat customers */ }
+
+  // A3 — restock math
+  try {
+    const n = await newsvendor();
+    if (n.length && n[0].tiedUpSaved > 25) {
+      out.push({
+        id: `rec-a3-${n[0].product}`,
+        source: "A3 · restock math",
+        action: `Restock ${n[0].product} to ${n[0].stock30} units`,
+        expected: `~${(n[0].fractile * 100).toFixed(0)}% demand coverage · ${money(n[0].tiedUpSaved)} freed vs max-stocking`,
+        impact: n[0].tiedUpSaved,
+        gradeInDays: 30,
+        cite: "critical-fractile inventory math on the product's real demand distribution",
+      });
+    }
+  } catch { /* needs product variety */ }
+
+  // B5 — the audit (real expenses only; never propose from demo spending)
+  if (!live || hasExp) {
+    try {
+      const a = await feeAudit();
+      if (a.length) {
+        const annual = a.reduce((s, f) => s + f.annual, 0);
+        out.push({
+          id: "rec-b5-audit",
+          source: "B5 · the audit",
+          action: `Fix ${a.length} audit finding${a.length === 1 ? "" : "s"}`,
+          expected: `recover ~${money(annual)}/yr (refund duplicates, cancel creep, call the processor)`,
+          impact: annual / 12,
+          gradeInDays: 14,
+          cite: "duplicate scan + monotone-creep + fee-drift, every claim traceable to charges",
+        });
+      }
+    } catch { /* no expenses yet */ }
+  }
+
+  // Cash sentry — only when the low band runs short
+  try {
+    const c = await cashSentry();
+    if (c && !c.clears) {
+      out.push({
+        id: "rec-cash-buffer",
+        source: "Cash sentry",
+        action: "Move a cash buffer ahead of the tight week",
+        expected: `cover the ${money(-c.marginOfSafety)} low-band shortfall vs monthly outgoings`,
+        impact: -c.marginOfSafety,
+        gradeInDays: 30,
+        cite: "AR(1) banded forecast · low band vs fixed outgoings",
+      });
+    }
+  } catch { /* sentry needs more days */ }
+
+  // AR chase — demo/showroom only until real invoices exist
+  if (!live) {
+    try {
+      const ar = await arAging();
+      if (ar.chase[0]) {
+        out.push({
+          id: `rec-ar-${ar.chase[0].id}`,
+          source: "Money · AR aging",
+          action: `Chase ${ar.chase[0].client} (${money(ar.chase[0].amount)}, ${ar.chase[0].daysLate}d late)`,
+          expected: "payment or a plan within 14 days; escalate if silent",
+          impact: ar.chase[0].amount,
+          gradeInDays: 14,
+          cite: "chase order = days late × amount",
+        });
+      }
+    } catch { /* fixture unavailable */ }
+  }
+
+  // Filter: dismissed, or already on the board (matched by action prefix)
+  const d = dismissed();
+  const tracked = listDecisions().filter((x) => x.note !== "__deleted__" && x.action);
+  return out.filter((r) =>
+    !d.has(r.id) &&
+    !tracked.some((t) => t.action.startsWith(r.action.slice(0, 24))),
+  );
+}
