@@ -1,22 +1,73 @@
-# Counsel — your honest AI CFO
+# Counsel — the whole C-suite in your pocket
 
-**Powered by [Aurora](https://github.com/FantasyLab-ai/aurora).** Counsel reads
-a small business's real financial data and delivers plain-English, **cited,
-confidence-scored** insights — and openly says *"not enough data yet"* instead
-of guessing. Real statistical methods compute; an LLM only narrates cited
+> **Runs the numbers like a CFO. Watches operations like a COO. Calls the plays like a CEO. Honest like none of them.**
+
+**Powered by [Aurora](https://github.com/FantasyLab-ai/aurora), the glass-box
+engine.** Counsel reads a small business's real data and advises across the
+whole company — money, operations, decisions — in plain English, **cited,
+confidence-scored**, and openly saying *"not enough data yet"* instead of
+guessing. Real statistical methods compute; a model only narrates cited
 results. The honesty is the product.
 
-**Phase 1** (this repo): a mobile-first clickable prototype — five screens,
-full design identity, typed mock-API seam. See [HANDOFF.md](HANDOFF.md) for the
-backend contract and phase plan.
+## Your pocket C-suite
 
-## Screens
+**The CFO desk** — money, measured
+- **Today** — the morning brief: what changed, what it means, what's watched
+- **Numbers** — every metric *shows its math* (a different shape per method)
+- **Money** — the cash calendar (every bill on its day vs your inflow rhythm), AR aging with a chase order + DSO, the tax pot
+- **The Banker's Packet** — a lender-ready statement of record, every figure cited
 
-- **/welcome** — 5-step onboarding ending in a first cited finding
-- **/** Today — the morning brief: advisor voice, triaged attention, numbers read
-- **/numbers** — every metric can *show its math* (a different shape per method)
-- **/ask** — conversational CFO: checked sources, verdicts, honest forecasts
-- **/settings** — connections, glass-box controls, privacy & data
+**The COO desk** — operations, watched
+- **Stock & Shipments** — days-of-cover vs your real demand rate, reorder-by dates, overstock cash, stalled-shipment triage
+- **Staffing-to-demand** — match people to your week's actual shape (and it says so when your week is flat)
+- **The Watchlist** — Sentinel contracts: quiet by design, speaks only on structural change
+
+**The CEO desk** — decisions, rehearsed and graded
+- **Plan** — rehearse hires, price changes, purchases with honest bands, stress-tested against your worst month
+- **"Was it worth it?"** — before/after significance on your own decisions
+- **The Decisions Log** — Counsel grades its own advice against what happened
+- **Ask** — a conversational partner with a privacy router: on-device for known analyses, and it *shows you exactly what would be sent* before any cloud call
+
+**The Insights Lab** — nine deep engines: price elasticity from your own history,
+customer survival analysis, newsvendor restock math, counterfactual months, the
+fee & waste audit, benchmarks, credit readiness, Monte Carlo runway, season
+adjustment. All computed on-device.
+
+## The engine underneath
+
+`core/` is **aurora-core** — Aurora's statistical methods ported to Rust with a
+**golden parity suite** against the Python reference (`cargo test`). It ships
+three ways from one codebase: WebAssembly (65 KB, live in the PWA today),
+Android via uniffi/Kotlin (APK builds locally + in CI), iOS via uniffi/Swift
+(xcframework builds in CI; needs a Mac only for device signing).
+
+## Connect your data (or drop a file)
+
+`server/connect.py` — one CLI, five faucets, all normalizing into the same
+canonical schema the engines consume:
+
+```bash
+python connect.py stripe  --key sk_test_xxx --sync          # test mode works — no revenue needed
+python connect.py square  --token EAAAxxx --sync            # sandbox seller
+python connect.py shopify --shop my-store --token shpat_xxx --sync
+python connect.py plaid   --client-id x --secret y --access-token z --sync
+python connect.py csv     --file charges.csv --kind charges --sync   # zero accounts
+```
+
+Every mapper is pinned by offline fixture tests against the providers'
+documented payload shapes: `python server/tests_connectors.py` (27 checks).
+The in-app **Power Up** screen shows users the same map: what to connect,
+what each source unlocks, and the exact CSV to drop in instead.
+
+## Run it
+
+```bash
+npm install && npm run dev            # the app (mock/demo brain)
+# real brain: set AURORA_REPO, run server/server.py, set VITE_COUNSEL_API
+```
+
+Live demo: **counsel-demo.pages.dev** · Android APK: `/CounselEngine.apk` on the
+demo site · details: [HANDOFF.md](HANDOFF.md), [ROADMAP.md](ROADMAP.md), [core/MOBILE.md](core/MOBILE.md)
 
 ## Identity
 
@@ -25,9 +76,3 @@ when it *shows* (paper cards), JetBrains Mono for figures and citations. The
 brass **break line** marks statistically real change — the hero device.
 Confidence pills are calm, never alarm-red. All motion respects
 `prefers-reduced-motion`.
-
-## Develop
-
-```bash
-npm install && npm run dev
-```
