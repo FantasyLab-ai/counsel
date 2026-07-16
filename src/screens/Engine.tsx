@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ar1Forecast, detectChangepoints, loadCore, welch } from "../engine/auroraCore";
+import { getDaily } from "../engine/dataSource";
 import { narrate, type Narration } from "../engine/narrator";
 import type { BreaklineViz, FanViz } from "../api/counsel";
 import { VizView } from "../components/charts";
@@ -126,7 +127,7 @@ export default function Engine() {
 
   useEffect(() => {
     let on = true;
-    Promise.all([loadCore(), fetch("/kiln_daily.json").then((r) => r.json())])
+    Promise.all([loadCore(), getDaily()])
       .then(([, l]) => { if (on) { setLed(l); setReady(true); } })
       .catch((e) => on && setErr(String(e)));
     return () => { on = false; };

@@ -3,6 +3,7 @@
 // schedule the Monte Carlo runway uses (single source of truth).
 
 import { BASELINE } from "./insights";
+import { getDaily } from "./dataSource";
 
 // The one outgoing schedule — shared story with C8's simulation.
 export const OUTGOINGS: { day: number; label: string; amount: number }[] = [
@@ -24,7 +25,7 @@ export interface CalendarOut {
 }
 
 export async function cashCalendar(): Promise<CalendarOut> {
-  const dailyRaw = await (await fetch("/kiln_daily.json")).json();
+  const dailyRaw = await getDaily();
   const rev: number[] = dailyRaw.revenue, dates: string[] = dailyRaw.dates;
   const byWd: number[][] = [[], [], [], [], [], [], []];
   dates.forEach((d, i) => byWd[new Date(d + "T00:00:00").getDay()].push(rev[i]));
@@ -121,7 +122,7 @@ export async function arAging(): Promise<ArOut> {
 // ---- staffing-to-demand (weekday factors -> coverage suggestion) ------------
 export interface StaffDay { day: string; factor: number; people: number; note?: string }
 export async function staffingPlan(): Promise<StaffDay[]> {
-  const dailyRaw = await (await fetch("/kiln_daily.json")).json();
+  const dailyRaw = await getDaily();
   const rev: number[] = dailyRaw.revenue, dates: string[] = dailyRaw.dates;
   const byWd: number[][] = [[], [], [], [], [], [], []];
   dates.forEach((d, i) => byWd[new Date(d + "T00:00:00").getDay()].push(rev[i]));

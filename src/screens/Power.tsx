@@ -1,8 +1,11 @@
 // Power Up — the activation checklist. What to connect, what each source
-// unlocks, and the exact dataset shape you can drop in instead. This is the
-// map from "empty app" to "full Counsel," honest about what's demo fuel
-// today vs what arrives with connectors.
+// unlocks, and the exact dataset shape you can drop in instead — INCLUDING a
+// real on-device CSV drop-in: the file is parsed in this page, stored on this
+// device, never uploaded, and every engine recomputes on it.
 
+import { useRef, useState } from "react";
+import { parseCharges, parseExpenses } from "../engine/csvParse";
+import { clearUserData, hasUserData, storeUserData, userMeta } from "../engine/dataSource";
 import { Reveal } from "../components/ui";
 
 interface PowerItem {
@@ -65,6 +68,69 @@ const ITEMS: PowerItem[] = [
   },
 ];
 
+function DropIn() {
+  const chargesRef = useRef<HTMLInputElement>(null);
+  const expensesRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [active, setActive] = useState(hasUserData());
+  const meta = userMeta();
+
+  async function onFile(kind: "charges" | "expenses", file: File | undefined) {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const res = kind === "charges" ? parseCharges(text) : parseExpenses(text);
+      if (res.error) { setStatus({ ok: false, msg: res.error }); return; }
+      if (!res.rows.length) { setStatus({ ok: false, msg: "no usable rows found" }); return; }
+      if (kind === "charges") storeUserData(res.rows as never, null, file.name);
+      else storeUserData(null, res.rows as never, file.name);
+      setActive(true);
+      setStatus({
+        ok: true,
+        msg: `${res.rows.length} rows from ${file.name}${res.skipped ? ` (${res.skipped} skipped)` : ""} — reloading on your data…`,
+      });
+      setTimeout(() => window.location.assign("/insights"), 900);
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
+    }
+  }
+
+  return (
+    <article className="mcard open il-card dropin">
+      <div className="il-head">
+        <span className="il-kick">Use YOUR data — right now</span>
+        <span className={`pill ${active ? "lite-hi" : "lite-fc"}`}><span className="dot" />
+          {active ? `your data active${meta ? ` · ${meta.name}` : ""}` : "on-device · never uploaded"}
+        </span>
+      </div>
+      <div className="mmean">
+        Drop a CSV and every engine recomputes on your business — parsed <b>on this
+        device</b>, stored <b>on this device</b>, never uploaded. Sales/charges
+        need just <code>date</code> + <code>amount</code> (product, qty,
+        unit_price, customer_id, fee unlock more engines).
+      </div>
+      <div className="dropin-row">
+        <button className="dbtn primary" onClick={() => chargesRef.current?.click()}>Load sales CSV</button>
+        <button className="dbtn" onClick={() => expensesRef.current?.click()}>Load expenses CSV</button>
+        {active && (
+          <button className="dbtn" onClick={() => { clearUserData(); setActive(false); setStatus({ ok: true, msg: "back to the demo ledger — reload any screen" }); }}>
+            Reset to demo
+          </button>
+        )}
+      </div>
+      <input ref={chargesRef} type="file" accept=".csv,text/csv" hidden
+             onChange={(e) => onFile("charges", e.target.files?.[0])} />
+      <input ref={expensesRef} type="file" accept=".csv,text/csv" hidden
+             onChange={(e) => onFile("expenses", e.target.files?.[0])} />
+      {status && <div className={`dropin-status ${status.ok ? "ok" : "err"}`}>{status.msg}</div>}
+      <div className="il-cite">
+        works with bank exports, Etsy/Shopify order exports, or any spreadsheet saved as CSV ·
+        money baselines (margin, cash on hand) stay demo until expenses/bank data is loaded — cards say which is which
+      </div>
+    </article>
+  );
+}
+
 export default function Power() {
   const fueled = ITEMS.filter((i) => i.status === "demo").length;
   return (
@@ -89,6 +155,9 @@ export default function Power() {
           <div className="pw-progress"><span style={{ width: `${(fueled / ITEMS.length) * 100}%` }} /></div>
         </section>
       </Reveal>
+
+      <div className="eyebrow">Drop a file — computed on this device</div>
+      <Reveal i={1}><DropIn /></Reveal>
 
       <div className="eyebrow">Connect these — or drop the file</div>
       {ITEMS.map((it, i) => (

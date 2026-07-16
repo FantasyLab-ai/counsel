@@ -13,13 +13,14 @@ export interface Ledger {
   revenue: number[];
 }
 
+import { getDaily } from "./dataSource";
+
 let _ledger: Ledger | null = null;
 
 export async function ledger(): Promise<Ledger> {
   if (_ledger) return _ledger;
   await loadCore();
-  const r = await fetch("/kiln_daily.json");
-  _ledger = (await r.json()) as Ledger;
+  _ledger = (await getDaily()) as Ledger;
   return _ledger;
 }
 

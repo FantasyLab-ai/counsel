@@ -10,6 +10,7 @@
 
 import { ar1Forecast, detectChangepoints, loadCore } from "./auroraCore";
 import { BASELINE } from "./insights";
+import { getDaily, getEnriched, getExpenses } from "./dataSource";
 
 export interface Charge {
   date: string; product: string; qty: number; price: number;
@@ -25,11 +26,9 @@ export interface Expense { d: string; vendor: string; amount: number; cat: strin
 let _led: EnrichedLedger | null = null;
 let _exp: Expense[] | null = null;
 
-export async function enriched(): Promise<EnrichedLedger> {
-  if (_led) return _led;
-  await loadCore();
+async function demoEnriched(): Promise<EnrichedLedger> {
   const raw = await (await fetch("/kiln_ledger.json")).json();
-  _led = {
+  return {
     products: raw.products,
     priceChange: raw.priceChange,
     charges: (raw.rows as unknown[][]).map((r) => ({
@@ -38,11 +37,17 @@ export async function enriched(): Promise<EnrichedLedger> {
       channel: r[6] as string,
     })),
   };
+}
+
+export async function enriched(): Promise<EnrichedLedger> {
+  if (_led) return _led;
+  await loadCore();
+  _led = await getEnriched(demoEnriched);
   return _led;
 }
 export async function expenses(): Promise<Expense[]> {
   if (_exp) return _exp;
-  _exp = (await (await fetch("/kiln_expenses.json")).json()).expenses;
+  _exp = await getExpenses(async () => (await (await fetch("/kiln_expenses.json")).json()).expenses);
   return _exp!;
 }
 
@@ -69,7 +74,7 @@ export async function priceElasticity(): Promise<ElasticityOut | null> {
   // price change (the March stockout). Days from the break onward would blend
   // that shock into the price effect, so we measure ONLY inside
   // [price change, break) — the clean natural-experiment window.
-  const dailyRaw = await (await fetch("/kiln_daily.json")).json();
+  const dailyRaw = await getDaily();
   const cps = detectChangepoints(dailyRaw.revenue, "rbf", 10);
   const brkDate: string | null =
     cps.length && dailyRaw.dates[cps[cps.length - 1]] > pc.date
@@ -199,7 +204,7 @@ export interface CounterfactualOut {
 }
 export async function counterfactual(): Promise<CounterfactualOut | null> {
   await loadCore();
-  const dailyRaw = await (await fetch("/kiln_daily.json")).json();
+  const dailyRaw = await getDaily();
   const rev: number[] = dailyRaw.revenue, dates: string[] = dailyRaw.dates;
   const cps = detectChangepoints(rev, "rbf", 10);
   if (!cps.length) return null;
@@ -314,7 +319,7 @@ export interface CreditOut {
   components: { name: string; value: string; points: number; max: number }[];
 }
 export async function creditReadiness(): Promise<CreditOut> {
-  const dailyRaw = await (await fetch("/kiln_daily.json")).json();
+  const dailyRaw = await getDaily();
   const rev: number[] = dailyRaw.revenue;
   // monthly aggregates
   const byMonth = new Map<string, number>();
@@ -346,7 +351,7 @@ export interface MonteCarloOut {
   sims: number; gapProb: number; minCash: number; minCashDate: string; gapDate: string | null;
 }
 export async function monteCarloRunway(): Promise<MonteCarloOut> {
-  const dailyRaw = await (await fetch("/kiln_daily.json")).json();
+  const dailyRaw = await getDaily();
   const rev: number[] = dailyRaw.revenue, dates: string[] = dailyRaw.dates;
   const byWd: number[][] = [[], [], [], [], [], [], []];
   dates.forEach((d, i) => byWd[new Date(d + "T00:00:00").getDay()].push(rev[i]));
@@ -384,7 +389,7 @@ export interface SeasonAdjOut {
   rawPct: number; adjPct: number; factors: { day: string; f: number }[];
 }
 export async function seasonAdjust(): Promise<SeasonAdjOut> {
-  const dailyRaw = await (await fetch("/kiln_daily.json")).json();
+  const dailyRaw = await getDaily();
   const rev: number[] = dailyRaw.revenue, dates: string[] = dailyRaw.dates;
   const wd = (i: number) => new Date(dates[i] + "T00:00:00").getDay();
   const byWd: number[][] = [[], [], [], [], [], [], []];
