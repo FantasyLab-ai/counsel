@@ -3,6 +3,7 @@
 // the honest "watching" section, and connected sources.
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
 import { CitePill, ConfidencePill, CountUp, Html, Reveal } from "../components/ui";
 import { BreakSpark } from "../components/charts";
@@ -14,6 +15,7 @@ const SHIELD = (
 );
 
 export default function Today() {
+  const nav = useNavigate();
   const [brief, setBrief] = useState<Brief | null>(null);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   useEffect(() => {
@@ -116,6 +118,19 @@ export default function Today() {
             </div>
           ))}
         </div>
+      </Reveal>
+
+      <Reveal i={9}>
+        <button className="packet-card" onClick={() => nav("/insights")}>
+          <div className="pc-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 3v6L4 20a1.5 1.5 0 0 0 1.4 2h13.2a1.5 1.5 0 0 0 1.4-2L15 9V3M7 3h10" /></svg>
+          </div>
+          <div className="pc-body">
+            <div className="pc-title">The Insights Lab</div>
+            <div className="pc-sub">Nine deep reads on your business — price power, at-risk customers, the audit, stress-tested runway…</div>
+          </div>
+          <span className="pc-go">→</span>
+        </button>
       </Reveal>
 
       <div className="sources">
