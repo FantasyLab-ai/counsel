@@ -1,4 +1,0 @@
-int drawable ic_bg 0x7f010000
-int drawable ic_fg 0x7f010001
-int mipmap ic_launcher 0x7f020000
-int string jna_library_appname 0x7f030000

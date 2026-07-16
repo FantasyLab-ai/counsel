@@ -1,8 +1,0 @@
-ai.fantasylab.counsel.app-jna-5.14.0-0 C:\Users\bgrut\.gradle\caches\8.9\transforms\bd1f6ad875cd9e8a680ed95454f87dcd\transformed\jna-5.14.0\res
-ai.fantasylab.counsel.app-pngs-1 C:\Users\bgrut\Desktop\Counsel\android\app\build\generated\res\pngs\release
-ai.fantasylab.counsel.app-resValues-2 C:\Users\bgrut\Desktop\Counsel\android\app\build\generated\res\resValues\release
-ai.fantasylab.counsel.app-packageReleaseResources-3 C:\Users\bgrut\Desktop\Counsel\android\app\build\intermediates\incremental\release\packageReleaseResources\merged.dir
-ai.fantasylab.counsel.app-packageReleaseResources-4 C:\Users\bgrut\Desktop\Counsel\android\app\build\intermediates\incremental\release\packageReleaseResources\stripped.dir
-ai.fantasylab.counsel.app-release-5 C:\Users\bgrut\Desktop\Counsel\android\app\build\intermediates\merged_res\release\mergeReleaseResources
-ai.fantasylab.counsel.app-main-6 C:\Users\bgrut\Desktop\Counsel\android\app\src\main\res
-ai.fantasylab.counsel.app-release-7 C:\Users\bgrut\Desktop\Counsel\android\app\src\release\res
