@@ -3,6 +3,7 @@
 // picks the right method per question. That variety IS the glass box.
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getMetrics, type Metric, type Period } from "../api/counsel";
 import { ConfidencePill, CountUp, Html, Reveal } from "../components/ui";
 import { MathView } from "../components/charts";
@@ -14,6 +15,7 @@ const PERIODS: { id: Period; label: string }[] = [
 ];
 
 export default function Numbers() {
+  const nav = useNavigate();
   const [period, setPeriod] = useState<Period>("month");
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [open, setOpen] = useState<Record<string, boolean>>({ revenue: true });
@@ -31,7 +33,11 @@ export default function Numbers() {
           <div className="kicker">Kiln &amp; Co. · March</div>
           <h1>The numbers, read</h1>
         </div>
-        <div className="avatar">B</div>
+        <button className="export-btn" onClick={() => nav("/packet")}
+          title="Banker's Packet — lender-ready, every figure cited">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
+          Packet
+        </button>
       </div>
 
       <div className="period" role="tablist" aria-label="Period">

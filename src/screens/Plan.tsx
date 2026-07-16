@@ -1,0 +1,289 @@
+// Plan — the decision room. Tier 1 of the roadmap, live:
+//   * Cash sentry — on-device band forecast vs your outgoings
+//   * What-If planner — hire / price / purchase, rehearsed with honest bands
+//   * "Was it worth it?" — before/after significance around YOUR decision date
+//   * The Watchlist — Sentinel contracts, quiet by design
+//   * The Decisions Log — Counsel grades its own advice
+// Math: aurora-core (WASM) on the real ledger + the P&L baseline. Every card
+// says which is which — that's the glass box.
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  BASELINE, cashSentry, evaluateContracts, hireScenario, money,
+  priceScenario, purchaseScenario, seasonality, wasItWorthIt,
+  type CashSentry, type ContractStatus, type Seasonality, type WorthIt,
+} from "../engine/insights";
+import { listDecisions, logDecision, type Decision } from "../engine/decisions";
+import { Reveal } from "../components/ui";
+
+export default function Plan() {
+  const [sentry, setSentry] = useState<CashSentry | null>(null);
+  const [contracts, setContracts] = useState<ContractStatus[]>([]);
+  const [season, setSeason] = useState<Seasonality | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let on = true;
+    Promise.all([cashSentry(), evaluateContracts(), seasonality()])
+      .then(([s, c, se]) => { if (on) { setSentry(s); setContracts(c); setSeason(se); } })
+      .catch((e) => on && setErr(String(e)));
+    return () => { on = false; };
+  }, []);
+
+  return (
+    <div className="app">
+      <div className="appbar">
+        <div className="titleblock">
+          <div className="kicker">Kiln &amp; Co.</div>
+          <h1>Plan</h1>
+        </div>
+        <div className="avatar">B</div>
+      </div>
+
+      {err && <div className="reassure">Engine unavailable: {err}</div>}
+
+      {/* ---- cash sentry ---- */}
+      <Reveal i={0}>
+        <section className="voice">
+          <div className="eyebrow on-dark">Cash sentry · computed on this device</div>
+          {sentry ? (
+            <>
+              <div className="said">
+                {sentry.clears
+                  ? <>Even my <em>low estimate</em> clears your bills.</>
+                  : <>My low estimate runs <em>thin against your bills.</em></>}
+              </div>
+              <div className="sub">
+                Next 30 days of revenue, honestly banded: {money(sentry.lo30)}–{money(sentry.hi30)}.
+                At your {(BASELINE.margin * 100).toFixed(0)}% margin, the <b style={{ color: "#d8c19a" }}>low</b> end
+                yields {money(sentry.lo30 * BASELINE.margin)} against {money(BASELINE.fixedOutgoings)} of
+                outgoings — {sentry.clears
+                  ? `a ${money(sentry.marginOfSafety)} cushion even in the cautious case.`
+                  : `${money(-sentry.marginOfSafety)} short in the cautious case — worth watching.`}
+              </div>
+              <div className="micro">
+                <div className="m"><div className="ml">low band</div><div className="mv">{money(sentry.lo30)}</div></div>
+                <div className="m"><div className="ml">high band</div><div className="mv">{money(sentry.hi30)}</div></div>
+                <div className="m"><div className="ml">computed in</div><div className="mv">{sentry.ms.toFixed(1)} ms</div></div>
+              </div>
+            </>
+          ) : (
+            <div className="sub">running the band forecast…</div>
+          )}
+        </section>
+      </Reveal>
+
+      {/* ---- what-if planner ---- */}
+      <div className="eyebrow">Rehearse a decision — before you make it</div>
+      <Reveal i={1}><HireCard /></Reveal>
+      <Reveal i={2}><PriceCard /></Reveal>
+      <Reveal i={3}><PurchaseCard /></Reveal>
+
+      {/* ---- was it worth it ---- */}
+      <div className="eyebrow">Was it worth it?</div>
+      <Reveal i={4}><WorthItCard /></Reveal>
+
+      {/* ---- watchlist ---- */}
+      <div className="eyebrow">The watchlist — quiet by design</div>
+      <Reveal i={5}>
+        <article className="mcard open">
+          <div className="mmean" style={{ marginBottom: 10 }}>
+            I watch these <b>so you don't have to</b>. No pings unless something structurally changes.
+          </div>
+          {contracts.map((c) => (
+            <div className="wl-row" key={c.id}>
+              <span className={`wl-dot ${c.fired ? "fired" : ""}`} />
+              <div className="wl-body">
+                <div className="wl-title">{c.title}</div>
+                <div className="wl-rule">{c.rule}</div>
+              </div>
+              <div className={`wl-status ${c.fired ? "fired" : ""}`}>{c.statusLine}</div>
+            </div>
+          ))}
+          {season && (
+            <div className="cite" style={{ marginTop: 12 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
+              <span>Rhythm note: {season.strongest} run {season.ratio.toFixed(1)}× {season.weakest} — plan restocks accordingly.</span>
+            </div>
+          )}
+        </article>
+      </Reveal>
+
+      {/* ---- decisions log ---- */}
+      <div className="eyebrow">The decisions log — I grade my own advice</div>
+      <Reveal i={6}><DecisionsCard /></Reveal>
+    </div>
+  );
+}
+
+/* ------------------------------- scenario cards --------------------------- */
+
+function HireCard() {
+  const [cost, setCost] = useState(1400);
+  const r = useMemo(() => hireScenario(cost), [cost]);
+  const [logged, setLogged] = useState(false);
+  return (
+    <article className="mcard open plan-card">
+      <div className="mhead"><div>
+        <div className="mlabel">Hire — monthly cost</div>
+        <div className="mval"><span className="num">{money(cost)}</span><span className="dlt">/mo</span></div>
+      </div>
+        <span className={`pill lite-${r.verdict === "comfortable" ? "hi" : r.verdict === "workable" ? "mod" : "none"}`}>
+          <span className="dot" />{r.verdict}
+        </span>
+      </div>
+      <input className="plan-slider" type="range" min={500} max={3000} step={50} value={cost}
+        onChange={(e) => setCost(+e.target.value)} aria-label="Monthly hire cost" />
+      <div className="calc" style={{ marginTop: 10 }}>
+        {money(BASELINE.avgProfit)} <span className="op">avg monthly profit</span><br />
+        <span className="op">−</span> {money(cost)} <span className="op">hire</span><br />
+        <span className="res">= {money(r.cushionAvg)} cushion</span>
+        <hr />
+        <span className="op">worst month (Feb):</span><br />
+        {money(BASELINE.worstProfit)} <span className="op">−</span> {money(cost)}{" "}
+        <span className={r.cushionWorst < 500 ? "warn" : "res"}>= {money(r.cushionWorst)} cushion</span>
+      </div>
+      <button className="dbtn log-btn" disabled={logged}
+        onClick={() => { logDecision(`Hire at ${money(cost)}/mo`, `cushion ≥ ${money(r.cushionAvg)} on average`); setLogged(true); }}>
+        {logged ? "✓ logged — grades in 30 days" : "Log this decision"}
+      </button>
+    </article>
+  );
+}
+
+function PriceCard() {
+  const [pct, setPct] = useState(5);
+  const r = useMemo(() => priceScenario(pct), [pct]);
+  const [logged, setLogged] = useState(false);
+  return (
+    <article className="mcard open plan-card">
+      <div className="mhead"><div>
+        <div className="mlabel">Price change</div>
+        <div className="mval"><span className="num">{pct > 0 ? "+" : ""}{pct}%</span></div>
+      </div>
+        <span className="pill lite-fc"><span className="dot" />honest range</span>
+      </div>
+      <input className="plan-slider" type="range" min={-10} max={15} step={1} value={pct}
+        onChange={(e) => setPct(+e.target.value)} aria-label="Price change percent" />
+      <div className="mmean" style={{ marginTop: 10 }}>
+        Monthly profit impact: <b>{money(Math.min(r.bestProfitDelta, r.worstProfitDelta))} to {money(Math.max(r.bestProfitDelta, r.worstProfitDelta))}</b>.
+        The range is wide because I <b>don't know your true price sensitivity</b> — I won't pretend to.
+        It spans cautious to strong customer reaction.
+      </div>
+      <div className="honest-note">Run it for 3 weeks and I'll measure the real effect in “Was it worth it?”.</div>
+      <button className="dbtn log-btn" disabled={logged}
+        onClick={() => { logDecision(`Price change ${pct > 0 ? "+" : ""}${pct}%`, "profit impact inside the projected range"); setLogged(true); }}>
+        {logged ? "✓ logged — grades in 30 days" : "Log this decision"}
+      </button>
+    </article>
+  );
+}
+
+function PurchaseCard() {
+  const [cost, setCost] = useState(8000);
+  const r = useMemo(() => purchaseScenario(cost, 400), [cost]);
+  const [logged, setLogged] = useState(false);
+  return (
+    <article className="mcard open plan-card">
+      <div className="mhead"><div>
+        <div className="mlabel">Equipment purchase</div>
+        <div className="mval"><span className="num">{money(cost)}</span></div>
+      </div>
+        <span className={`pill lite-${r.runwayAfter >= 4 ? "hi" : "mod"}`}><span className="dot" />{r.runwayAfter.toFixed(1)} mo runway after</span>
+      </div>
+      <input className="plan-slider" type="range" min={1000} max={15000} step={500} value={cost}
+        onChange={(e) => setCost(+e.target.value)} aria-label="Purchase cost" />
+      <div className="calc" style={{ marginTop: 10 }}>
+        {money(BASELINE.cash)} <span className="op">cash</span> <span className="op">−</span> {money(cost)}<br />
+        <span className="op">÷ {money(BASELINE.burn)} burn</span><br />
+        <span className={r.runwayAfter < 4 ? "warn" : "res"}>= {r.runwayAfter.toFixed(1)} months runway</span>
+        {r.monthsToRecoup && (<><hr /><span className="op">recoup at $400/mo uplift:</span><br /><span className="res">{r.monthsToRecoup.toFixed(0)} months</span></>)}
+      </div>
+      <button className="dbtn log-btn" disabled={logged}
+        onClick={() => { logDecision(`Equipment purchase ${money(cost)}`, `runway stays ≥ ${r.runwayAfter.toFixed(1)} months`); setLogged(true); }}>
+        {logged ? "✓ logged — grades in 30 days" : "Log this decision"}
+      </button>
+    </article>
+  );
+}
+
+/* ------------------------------- worth it? -------------------------------- */
+
+const CANDIDATES = [
+  { label: "Feb 1 · price increase", date: "2026-02-01" },
+  { label: "Mar 4 · promo ended", date: "2026-03-04" },
+  { label: "Jan 15 · new supplier", date: "2026-01-15" },
+];
+
+function WorthItCard() {
+  const [sel, setSel] = useState<string | null>(null);
+  const [res, setRes] = useState<WorthIt | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function run(date: string) {
+    setSel(date); setBusy(true); setRes(null);
+    const r = await wasItWorthIt(date);
+    setRes(r); setBusy(false);
+  }
+
+  return (
+    <article className="mcard open plan-card">
+      <div className="mmean">
+        Pick a decision you made — I'll test whether the numbers <b>actually moved</b> after it.
+      </div>
+      <div className="period" style={{ marginTop: 10, marginBottom: 0 }}>
+        {CANDIDATES.map((c) => (
+          <button key={c.date} className={`seg ${sel === c.date ? "on" : ""}`} onClick={() => run(c.date)}>{c.label}</button>
+        ))}
+      </div>
+      {busy && <div className="mmean" style={{ marginTop: 12, color: "var(--muted)" }}>▶ testing before vs after on this device…</div>}
+      {res && (
+        <>
+          <div className="mmean" style={{ marginTop: 12 }}>
+            {res.found ? (
+              <><b>The numbers moved.</b> Revenue averaged {money(res.beforeMean)}/day before and {money(res.afterMean)}/day after
+                ({res.pctChange > 0 ? "+" : ""}{res.pctChange.toFixed(0)}%) — {res.pPlain} (p {res.p < 0.001 ? "< 0.001" : `= ${res.p.toFixed(3)}`}).</>
+            ) : (
+              <><b>No detectable effect.</b> Before {money(res.beforeMean)}/day, after {money(res.afterMean)}/day — {res.pPlain}. If it cost you something, that's worth knowing too.</>
+            )}
+          </div>
+          <div className="honest-note">
+            Honest scope: this is before/after significance around your date — not full causal adjustment.
+            Season or promos could share credit. Full do-calculus lands with the server brain.
+          </div>
+        </>
+      )}
+    </article>
+  );
+}
+
+/* ------------------------------- decisions log ---------------------------- */
+
+function DecisionsCard() {
+  const [items, setItems] = useState<Decision[]>([]);
+  useEffect(() => { setItems(listDecisions()); }, []);
+  // Re-read when a scenario logs a new one (simple poll on visibility).
+  useEffect(() => {
+    const t = setInterval(() => setItems(listDecisions()), 2500);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <article className="mcard open plan-card">
+      {items.map((d) => (
+        <div className="dl-row" key={d.id}>
+          <div className="dl-head">
+            <span className="dl-action">{d.action}</span>
+            {d.grade
+              ? <span className={`pill lite-${d.grade.verdict === "held" ? "hi" : d.grade.verdict === "mixed" ? "mod" : "none"}`}><span className="dot" />{d.grade.verdict}</span>
+              : <span className="pill lite-fc"><span className="dot" />grades {d.gradeAt}</span>}
+          </div>
+          <div className="dl-expected">expected: {d.expected}</div>
+          {d.grade && <div className="dl-note">{d.grade.note}</div>}
+        </div>
+      ))}
+      <div className="honest-note" style={{ marginTop: 8 }}>
+        Every recommendation gets graded against what actually happened. My batting average is yours to see.
+      </div>
+    </article>
+  );
+}

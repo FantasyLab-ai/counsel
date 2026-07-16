@@ -5,6 +5,8 @@ import Ask from "./screens/Ask";
 import Settings from "./screens/Settings";
 import Onboarding from "./screens/Onboarding";
 import Engine from "./screens/Engine";
+import Plan from "./screens/Plan";
+import Packet from "./screens/Packet";
 
 const TABS = [
   {
@@ -31,6 +33,16 @@ const TABS = [
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+  {
+    to: "/plan",
+    label: "Plan",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M15.5 8.5l-2 5-5 2 2-5z" />
       </svg>
     ),
   },
@@ -80,10 +92,12 @@ export default function App() {
           <Route path="/ask" element={<Ask />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/engine" element={<Engine />} />
+          <Route path="/plan" element={<Plan />} />
+          <Route path="/packet" element={<Packet />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-      {!inOnboarding && <TabBar />}
+      {!inOnboarding && pathname !== "/packet" && <TabBar />}
     </div>
   );
 }
