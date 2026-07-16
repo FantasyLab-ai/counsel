@@ -7,8 +7,50 @@ import { useEffect, useRef, useState } from "react";
 import { ask, getSeededAsk, type AskAnswer } from "../api/counsel";
 import { CitePill, ConfidencePill, Html } from "../components/ui";
 import { VizView } from "../components/charts";
+import { route, type DerivedSummary, type RouteDecision } from "../engine/router";
 
-type Turn = { kind: "q"; text: string } | { kind: "a"; a: AskAnswer } | { kind: "thinking" };
+type Turn =
+  | { kind: "q"; text: string }
+  | { kind: "a"; a: AskAnswer; decision?: RouteDecision }
+  | { kind: "thinking" }
+  | { kind: "disclosure"; d: DerivedSummary; decision: RouteDecision };
+
+/** The privacy boundary made visible: exactly what a cloud call would carry. */
+function Disclosure({ d, onSend, onLocal }: { d: DerivedSummary; onSend: () => void; onLocal: () => void }) {
+  return (
+    <div className="a disclosure">
+      <div className="checked"><span className="cl">Before I go online</span></div>
+      <div className="verdict">This one's better answered by the <em>cloud model.</em></div>
+      <div className="abody">
+        To do that, I'd send <b>these five figures and your question — nothing else.</b> No
+        transactions, no customers, no account names. You decide.
+      </div>
+      <div className="disclose-box">
+        {d.figures.map((f) => (
+          <div className="dline" key={f.label}>
+            <span className="dl">{f.label}</span>
+            <span className="dv">{f.value}</span>
+          </div>
+        ))}
+        <div className="dline dq"><span className="dl">your question</span><span className="dv">“{d.question}”</span></div>
+      </div>
+      <div className="disclose-actions">
+        <button className="dbtn primary" onClick={onSend}>Send those five figures</button>
+        <button className="dbtn" onClick={onLocal}>Keep it on this device</button>
+      </div>
+    </div>
+  );
+}
+
+function RouteBadge({ decision }: { decision?: RouteDecision }) {
+  if (!decision) return null;
+  const onDevice = decision.runWhere !== "cloud";
+  return (
+    <div className={`route-badge ${onDevice ? "device" : "cloud"}`} title={decision.reason}>
+      {onDevice ? "● answered on this device" : "◌ answered via cloud · 5 figures shared"}
+    </div>
+  );
+}
 
 const SEED_QUESTIONS = [
   "Can I afford to hire a part-time helper at $1,400/mo?",
@@ -16,10 +58,11 @@ const SEED_QUESTIONS = [
 ];
 const PROMPTS = ["Which product should I restock first?", "Is my pricing too low?", "What's my slowest day?"];
 
-function Answer({ a }: { a: AskAnswer }) {
+function Answer({ a, decision }: { a: AskAnswer; decision?: RouteDecision }) {
   const [open, setOpen] = useState(false);
   return (
     <div className={`a ${open ? "open" : ""}`}>
+      <RouteBadge decision={decision} />
       <div className="checked">
         <span className="cl">Checked</span>
         {a.checked.map((c) => <span className="schip" key={c}>{c}</span>)}
@@ -75,13 +118,37 @@ export default function Ask() {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [turns]);
 
+  async function runLocal(question: string, decision: RouteDecision) {
+    setTurns((t) => [...t.filter((x) => x.kind !== "disclosure"), { kind: "thinking" }]);
+    const a = await ask(question);
+    setTurns((t) => [...t.filter((x) => x.kind !== "thinking"), { kind: "a", a, decision }]);
+  }
+
+  async function runCloud(question: string, decision: RouteDecision) {
+    setTurns((t) => [...t.filter((x) => x.kind !== "disclosure"), { kind: "thinking" }]);
+    // PHASE 2: POST the DerivedSummary (and ONLY that) to the cloud Ask
+    // endpoint. Until that exists, we answer locally and say so honestly.
+    const a = await ask(question);
+    const honest: AskAnswer = {
+      ...a,
+      honestNote:
+        "Cloud path stub: in production this goes to the cloud model with only the five figures you approved. For now the on-device answer stands in.",
+    };
+    setTurns((t) => [...t.filter((x) => x.kind !== "thinking"), { kind: "a", a: honest, decision }]);
+  }
+
   async function submit(q: string) {
     const question = q.trim();
     if (!question) return;
     setInput("");
-    setTurns((t) => [...t, { kind: "q", text: question }, { kind: "thinking" }]);
-    const a = await ask(question);
-    setTurns((t) => [...t.filter((x) => x.kind !== "thinking"), { kind: "a", a }]);
+    const decision = route(question);
+    setTurns((t) => [...t, { kind: "q", text: question }]);
+    if (decision.runWhere === "cloud" && decision.disclosure) {
+      // The transparency step: show what would be sent, let the user choose.
+      setTurns((t) => [...t, { kind: "disclosure", d: decision.disclosure!, decision }]);
+      return;
+    }
+    await runLocal(question, decision);
   }
 
   return (
@@ -106,8 +173,17 @@ export default function Ask() {
             <div className="a thinking" key={i} aria-label="Counsel is checking your numbers">
               <i /><i /><i />
             </div>
+          ) : t.kind === "disclosure" ? (
+            <Disclosure
+              key={i}
+              d={t.d}
+              onSend={() => runCloud(t.d.question, t.decision)}
+              onLocal={() =>
+                runLocal(t.d.question, { ...t.decision, runWhere: "device-limited", reason: "user chose to keep it on-device" })
+              }
+            />
           ) : (
-            <Answer a={t.a} key={i} />
+            <Answer a={t.a} decision={t.decision} key={i} />
           )
         )}
         <div ref={endRef} />

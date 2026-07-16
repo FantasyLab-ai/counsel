@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getConnections, type Source } from "../api/counsel";
+import { getOnDeviceOnly, setOnDeviceOnly } from "../engine/router";
 import { Reveal } from "../components/ui";
 
 const CHEV = (
@@ -13,8 +14,9 @@ const CHEV = (
   </span>
 );
 
-function Toggle({ initial, locked }: { initial?: boolean; locked?: boolean }) {
+function Toggle({ initial, locked, onChange }: { initial?: boolean; locked?: boolean; onChange?: (v: boolean) => void }) {
   const [on, setOn] = useState(!!initial);
+  const flip = () => { const v = !on; setOn(v); onChange?.(v); };
   if (locked) return <div className="sw locked" aria-label="Always on" role="switch" aria-checked="true" />;
   return (
     <div
@@ -22,8 +24,8 @@ function Toggle({ initial, locked }: { initial?: boolean; locked?: boolean }) {
       role="switch"
       aria-checked={on}
       tabIndex={0}
-      onClick={() => setOn(!on)}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOn(!on); } }}
+      onClick={flip}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } }}
     />
   );
 }
@@ -172,7 +174,7 @@ export default function Settings() {
                 <div className="rt">Keep analysis on this device</div>
                 <div className="rs">Beta — your numbers never leave your phone. Slower, fully private.</div>
               </div>
-              <div className="rr"><Toggle /></div>
+              <div className="rr"><Toggle initial={getOnDeviceOnly()} onChange={setOnDeviceOnly} /></div>
             </div>
             <div className="srow" role="link" tabIndex={0} style={{ cursor: "pointer" }}
                  onClick={() => nav("/engine")}

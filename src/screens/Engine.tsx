@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ar1Forecast, detectChangepoints, loadCore, welch } from "../engine/auroraCore";
+import { narrate, type Narration } from "../engine/narrator";
 import type { BreaklineViz, FanViz } from "../api/counsel";
 import { VizView } from "../components/charts";
 import { Reveal } from "../components/ui";
@@ -134,6 +135,23 @@ export default function Engine() {
   const c = useMemo(() => (ready && led ? compute(led, penalty) : null), [ready, led, penalty]);
   const totalMs = c ? (c.msPelt + c.msWelch + c.msAr1) : 0;
 
+  // Part B live: narrate the computed break — always on-device. Uses the
+  // browser's built-in model when one exists, bounded templates otherwise.
+  const [narr, setNarr] = useState<Narration | null>(null);
+  useEffect(() => {
+    if (!c || c.breakIdx === null || c.p === null) { setNarr(null); return; }
+    let on = true;
+    narrate({
+      kind: "break",
+      dateLabel: c.breakDate ?? "recently",
+      beforePerDay: money(c.beforeMean),
+      afterPerDay: money(c.afterMean),
+      pctText: `${(c.pct * 100).toFixed(0)}%`,
+      pPlain: pPlain(c.p),
+    }).then((n) => on && setNarr(n));
+    return () => { on = false; };
+  }, [c]);
+
   return (
     <div className="app">
       <div className="appbar">
@@ -193,6 +211,14 @@ export default function Engine() {
                 )}
               </div>
               {c.breakViz && <div style={{ marginTop: 12 }}><VizView viz={c.breakViz} /></div>}
+              {narr && (
+                <div className="narr-box">
+                  <div className="narr-text">“{narr.text}”</div>
+                  <div className="narr-badge">
+                    narrated on-device · {narr.narrator === "gemini-nano" ? "browser model (Gemini Nano)" : "bounded template"} — the model never computes, only phrases
+                  </div>
+                </div>
+              )}
               <div className="cite" style={{ marginTop: 10 }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
                 <span>Method: PELT (rbf) + Welch's t-test · aurora-core, golden-parity vs the Python engine</span>

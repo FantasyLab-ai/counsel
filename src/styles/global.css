@@ -428,3 +428,32 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   .reveal, .pop { opacity: 1; transform: none; }
   .draw { stroke-dasharray: none; stroke-dashoffset: 0; }
 }
+
+/* ---- Router: disclosure sheet, route badges, narrator box (Phase 3 M3) ---- */
+.disclosure { border-left: 3px solid var(--brass); }
+.disclose-box {
+  background: var(--card-2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; margin-top: 12px;
+}
+.dline { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+.dline:last-child { border-bottom: none; }
+.dline .dl { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--muted); letter-spacing: .02em; }
+.dline .dv { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--ink); text-align: right; }
+.dline.dq .dv { font-family: "Fraunces", serif; font-style: italic; font-size: 13px; }
+.disclose-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.dbtn {
+  flex: 1 1 auto; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  font-family: "Inter", sans-serif; font-size: 13px; font-weight: 600;
+  padding: 11px 14px; border-radius: 100px; cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.dbtn:hover { transform: translateY(-1px); }
+.dbtn.primary { background: var(--forest); border-color: var(--forest); color: var(--bone); }
+.route-badge {
+  font-family: "JetBrains Mono", monospace; font-size: 9.5px; letter-spacing: .05em;
+  margin-bottom: 10px; color: var(--hi);
+}
+.route-badge.cloud { color: var(--brass); }
+.narr-box { margin-top: 12px; background: var(--card-2); border-left: 3px solid var(--forest); border-radius: 10px; padding: 12px 14px; }
+.narr-text { font-family: "Fraunces", serif; font-style: italic; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+.narr-badge { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: .05em; color: var(--muted); margin-top: 8px; }
