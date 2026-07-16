@@ -207,12 +207,14 @@ function LiveConnect() {
       const seeded = await setPulse(!pulse);
       setPulseState(!pulse);
       const detail = Object.entries(seeded).map(([k, v]) => `${k}: ${v}`).join(", ");
+      const seededAny = Object.values(seeded).some((n) => n > 0);
       setStatus({
         ok: true,
         msg: !pulse
-          ? `pulse on — seeded ${detail || "0 (connect a test/sandbox key first)"} now; 1–3 more land every 30 min. Tap Sync to pull them.`
+          ? `pulse on — seeded ${detail || "0 (connect a test/sandbox key first)"} now; 1–3 more land every 30 min.${seededAny ? " Auto-syncing…" : ""}`
           : "pulse off — no more fake sales.",
       });
+      if (!pulse && seededAny) setTimeout(doSync, 1500); // pull the burst without a second tap
     } catch (e) {
       setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
     } finally {

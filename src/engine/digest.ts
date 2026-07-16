@@ -4,6 +4,7 @@
 // new delivery. (The Toast steal: the nightly digest is the habit loop.)
 
 import { getBrief } from "../api/counsel";
+import { dataMode } from "./dataSource";
 import { displayName } from "./persona";
 import { cashSentry, money, BASELINE } from "./insights";
 import { evaluateContracts } from "./insights";
@@ -50,6 +51,10 @@ export async function composeDigest(): Promise<string> {
     lines.push(`DECISIONS: ${d.open} in flight${d.heldRate !== null ? ` · track record ${Math.round(d.heldRate * 100)}% held` : ""}.`);
   }
   lines.push("");
-  lines.push(`— every number cited & banded · runway baseline ${(BASELINE.cash / BASELINE.burn).toFixed(1)} mo · counsel-demo.pages.dev`);
+  lines.push(
+    dataMode() === "live"
+      ? `— every number cited & banded · computed on-device from your data · counsel-demo.pages.dev`
+      : `— every number cited & banded · runway baseline ${(BASELINE.cash / BASELINE.burn).toFixed(1)} mo · counsel-demo.pages.dev`,
+  );
   return lines.join("\n");
 }

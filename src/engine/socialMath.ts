@@ -14,6 +14,7 @@
 // ---------------------------------------------------------------------------
 
 import { getDaily } from "./dataSource";
+import { dataMode } from "./dataSource";
 import { enriched } from "./tierMath";
 
 // ============================ channel attribution ===========================
@@ -89,6 +90,10 @@ function writeMine(mine: PostEvent[]): void {
 
 export function listPosts(): PostEvent[] {
   const mine = readMine();
+  // Live mode: only the user's own logged posts — demo seeds stay in the showroom.
+  if (dataMode() === "live") {
+    return mine.filter((p) => !p.id.startsWith("del-")).sort((a, b) => (a.date < b.date ? 1 : -1));
+  }
   const ids = new Set(mine.map((p) => p.id));
   return [...mine, ...SEED.filter((s) => !ids.has(s.id) && !mine.some((m) => m.id === `del-${s.id}`))]
     .filter((p) => !p.id.startsWith("del-"))

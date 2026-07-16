@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { displayName } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
-import { hasUserData } from "../engine/dataSource";
+import { demoView, hasUserData } from "../engine/dataSource";
 import { composeDigest } from "../engine/digest";
 import { overdueCount } from "../engine/decisions";
 import { CitePill, ConfidencePill, CountUp, Html, Reveal } from "../components/ui";
@@ -115,7 +115,10 @@ export default function Today() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M13 2L3 14h7l-1 8 10-12h-7z" /></svg>
           </div>
           <div className="sb-body">
-            {hasUserData() ? (
+            {hasUserData() && demoView() ? (
+              <><div className="sb-title">Demo showroom view</div>
+                <div className="sb-sub">Your live data is safe and untouched — flip back in Settings → Privacy &amp; data →</div></>
+            ) : hasUserData() ? (
               <><div className="sb-title">Your data is active</div>
                 <div className="sb-sub">Manage sources, drop in more files, see what else unlocks →</div></>
             ) : (

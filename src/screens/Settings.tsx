@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { getConnections, type Source } from "../api/counsel";
 import { getOnDeviceOnly, setOnDeviceOnly } from "../engine/router";
 import { cycleSetting, getSettings, setSetting } from "../engine/settings";
-import { clearUserData, hasUserData, userCharges, userExpenses, userMeta } from "../engine/dataSource";
+import { clearUserData, demoView, hasUserData, setDemoView, userCharges, userExpenses, userMeta } from "../engine/dataSource";
 import { listDecisions } from "../engine/decisions";
 import { Reveal } from "../components/ui";
 
@@ -117,7 +117,7 @@ export default function Settings() {
               <div className="srow tap" key={s.id} role="button" tabIndex={0}
                    onClick={() => nav("/power")}
                    onKeyDown={(e) => { if (e.key === "Enter") nav("/power"); }}>
-                <div className="ico">{SRC_ICONS[s.id]}</div>
+                <div className="ico">{SRC_ICONS[s.id] ?? SRC_ICONS.stripe}</div>
                 <div className="rl">
                   <div className="rt">{s.name}</div>
                   <div className="rs">{s.role}</div>
@@ -252,6 +252,15 @@ export default function Settings() {
               </div>
               <div className="rr"><span className="rv">{hasUserData() ? "this device" : "demo"}</span></div>
             </div>
+            {hasUserData() && (
+              <div className="srow">
+                <div className="rl">
+                  <div className="rt">Demo showroom</div>
+                  <div className="rs">View the app on the demo ledger (for testing &amp; show-and-tell). Your real data stays untouched — flip back anytime.</div>
+                </div>
+                <div className="rr"><Toggle initial={demoView()} onChange={(v) => { setDemoView(v); window.location.reload(); }} /></div>
+              </div>
+            )}
             <div className="srow tap" role="button" tabIndex={0} onClick={exportEverything}
                  onKeyDown={(e) => { if (e.key === "Enter") exportEverything(); }}>
               <div className="ico">

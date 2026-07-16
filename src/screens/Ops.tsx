@@ -9,7 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { OPS_ASSUMPTIONS, opsReport, type OpsOut } from "../engine/ops";
 import { staffingPlan, type StaffDay } from "../engine/money";
 import { money } from "../engine/tierMath";
-import { Reveal } from "../components/ui";
+import { dataMode } from "../engine/dataSource";
+import { Awaiting, Reveal } from "../components/ui";
 
 const STATUS_LABEL: Record<string, string> = {
   delivered: "delivered", in_transit: "in transit", label_created: "label created",
@@ -20,12 +21,75 @@ export default function Ops() {
   const [out, setOut] = useState<OpsOut | null>(null);
   const [staff, setStaff] = useState<StaffDay[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const liveMode = dataMode() === "live";
   useEffect(() => {
     let on = true;
-    opsReport().then((o) => on && setOut(o)).catch((e) => on && setErr(String(e)));
+    if (!liveMode) opsReport().then((o) => on && setOut(o)).catch((e) => on && setErr(String(e)));
     staffingPlan().then((s) => on && setStaff(s)).catch(() => undefined);
     return () => { on = false; };
-  }, []);
+  }, [liveMode]);
+
+  if (liveMode) {
+    // Live business: inventory & shipments read stores you haven't connected.
+    // Staffing DOES compute — it reads your real weekday rhythm.
+    return (
+      <div className="app">
+        <div className="appbar">
+          <div className="titleblock">
+            <div className="kicker">{displayName()} · operations</div>
+            <h1>Stock &amp; shipments</h1>
+          </div>
+          <div className="avatar">B</div>
+        </div>
+        <div className="eyebrow">Runs on data you haven't connected yet</div>
+        <Reveal i={0}>
+          <Awaiting title="Inventory — days of cover" needs="stock levels (inventory.csv or Shopify/Square stock)"
+            unlocks="Days-of-cover against your real demand rate, reorder-by dates, and the cash trapped in overstock." />
+        </Reveal>
+        <Reveal i={1}>
+          <Awaiting title="Shipments — stall triage" needs="tracking IDs (shipments.csv or your commerce platform)"
+            unlocks="Stalled-shipment detection before the customer emails you." />
+        </Reveal>
+        {staff.length > 0 && (
+          <>
+            <div className="eyebrow">Staffing — computed from YOUR rhythm</div>
+            <Reveal i={2}>
+              <article className="mcard open il-card">
+                <div className="mmean">
+                  {staff.some((s) => s.people > 1)
+                    ? <>Your week has a shape — staff it that way instead of evenly.</>
+                    : <>Your week runs <b>fairly flat</b> so far — one person covers it. This sharpens as history builds.</>}
+                </div>
+                <div className="staff-grid">
+                  {staff.map((s) => (
+                    <div className={`staff-day ${s.people > 1 ? "busy" : ""}`} key={s.day}>
+                      <span className="sd-name">{s.day}</span>
+                      <span className="sd-bar"><span style={{ height: `${Math.min(100, s.factor * 62)}%` }} /></span>
+                      <span className="sd-people">{"●".repeat(s.people)}</span>
+                      {s.note && <span className="sd-note">{s.note}</span>}
+                    </div>
+                  ))}
+                </div>
+                <div className="il-cite">weekday factors from your connected data — live, not demo</div>
+              </article>
+            </Reveal>
+          </>
+        )}
+        <Reveal i={3}>
+          <button className="packet-card" onClick={() => nav("/power")}>
+            <div className="pc-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M13 2L3 14h7l-1 8 10-12h-7z" /></svg>
+            </div>
+            <div className="pc-body">
+              <div className="pc-title">Power up this screen</div>
+              <div className="pc-sub">Drop in inventory.csv / shipments.csv — the exact shapes are listed there.</div>
+            </div>
+            <span className="pc-go">→</span>
+          </button>
+        </Reveal>
+      </div>
+    );
+  }
 
   return (
     <div className="app">

@@ -3,6 +3,7 @@
 // connectors swap the fuel in Phase 2B. Every card: finding → method → limit.
 
 import { useEffect, useState } from "react";
+import { dataMode, userExpenses } from "../engine/dataSource";
 import { displayName } from "../engine/persona";
 import {
   benchmarks, counterfactual, creditReadiness, customerSurvival, expenses,
@@ -11,7 +12,7 @@ import {
   type ElasticityOut, type MonteCarloOut, type NewsvendorOut, type SeasonAdjOut,
   type SurvivalOut,
 } from "../engine/tierMath";
-import { ActOn, Reveal } from "../components/ui";
+import { ActOn, Awaiting, Reveal } from "../components/ui";
 
 interface AllOut {
   elasticity: ElasticityOut | null;
@@ -28,6 +29,9 @@ interface AllOut {
 
 export default function Insights() {
   const [out, setOut] = useState<AllOut | null>(null);
+  // Live business without expenses: baseline-fed cards say so instead of
+  // borrowing the demo's cash/burn/margin numbers.
+  const needsExp = dataMode() === "live" && !userExpenses();
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -153,6 +157,10 @@ export default function Insights() {
           <div className="eyebrow">Tier B — money found &amp; trust built</div>
 
           <Reveal i={4}>
+            {needsExp ? (
+              <Awaiting title="B5 · the audit" needs="your expenses (bank or accounting export)"
+                unlocks="Duplicate charges, subscription creep and fee drift get hunted in YOUR spending — often worth hundreds a year." />
+            ) : (
             <article className="mcard open il-card">
               <div className="il-head"><span className="il-kick">B5 · the audit</span>
                 <span className="pill lite-mod"><span className="dot" />{out.audit.length} findings</span></div>
@@ -169,9 +177,14 @@ export default function Insights() {
               )}
               <div className="il-cite">duplicate scan + monotone-creep test + fee-rate drift across {"{"}Dec…Mar{"}"} · every claim traceable to specific charges</div>
             </article>
+            )}
           </Reveal>
 
           <Reveal i={5}>
+            {needsExp ? (
+              <Awaiting title="B6 · where you stand" needs="your expenses (for a real margin)"
+                unlocks="Percentile benchmarks against reference ranges — computed from your true margin, not a borrowed one." />
+            ) : (
             <article className="mcard open il-card">
               <div className="il-head"><span className="il-kick">B6 · where you stand</span>
                 <span className="pill lite-none"><span className="dot" />reference ranges</span></div>
@@ -187,9 +200,14 @@ export default function Insights() {
               ))}
               <div className="il-cite">honest label: compiled public reference ranges for handmade/craft retail — a live, anonymized peer cohort arrives with the network</div>
             </article>
+            )}
           </Reveal>
 
           <Reveal i={6}>
+            {needsExp ? (
+              <Awaiting title="B7 · lender-ready?" needs="your expenses (coverage needs true costs)"
+                unlocks="The transparent credit-readiness score lenders recognize — real stability and coverage measures from your books." />
+            ) : (
             <article className="mcard open il-card">
               <div className="il-head"><span className="il-kick">B7 · lender-ready?</span>
                 <span className={`pill ${out.credit.band === "strong" ? "lite-hi" : "lite-mod"}`}><span className="dot" />{out.credit.band}</span></div>
@@ -203,12 +221,17 @@ export default function Insights() {
               ))}
               <div className="il-cite">transparent formula — the same stability &amp; coverage measures lenders compute · no debt on file, so DSCR is n/a · pairs with the Banker's Packet</div>
             </article>
+            )}
           </Reveal>
 
           {/* ============ TIER C ============ */}
           <div className="eyebrow">Tier C — the daily habit</div>
 
           <Reveal i={7}>
+            {needsExp ? (
+              <Awaiting title="C8 · stress-tested runway" needs="your expenses/bank (true cash & burn)"
+                unlocks="1,000 simulated futures over YOUR outgoings — the honest probability of a cash gap, not a demo's." />
+            ) : (
             <article className="mcard open il-card">
               <div className="il-head"><span className="il-kick">C8 · stress-tested runway</span>
                 <span className="pill lite-hi"><span className="dot" />{out.mc.sims} simulations</span></div>
@@ -220,6 +243,7 @@ export default function Insights() {
               </div>
               <div className="il-cite">Monte Carlo bootstrap by weekday over your ledger + scheduled outgoings · assumptions visible in Plan</div>
             </article>
+            )}
           </Reveal>
 
           <Reveal i={8}>

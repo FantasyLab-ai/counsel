@@ -107,3 +107,21 @@ export function ActOn({ source, action, expected, impact }: {
     </button>
   );
 }
+
+// Awaiting — the live-mode replacement for a demo fixture. In a live
+// business's app, a section that needs data they haven't connected says so
+// honestly instead of borrowing the showroom's numbers.
+export function Awaiting({ title, needs, unlocks }: { title: string; needs: string; unlocks: string }) {
+  return (
+    <article className="mcard open il-card awaiting">
+      <div className="il-head">
+        <span className="il-kick">{title}</span>
+        <span className="pill lite-fc"><span className="dot" />awaiting your data</span>
+      </div>
+      <div className="mmean">This reads <b>{needs}</b> — not connected yet. {unlocks}</div>
+      <button className="acton" onClick={() => window.location.assign("/power")}>
+        → Connect it in Power Up
+      </button>
+    </article>
+  );
+}

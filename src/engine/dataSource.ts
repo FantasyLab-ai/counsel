@@ -13,6 +13,7 @@ import type { Charge, EnrichedLedger, Expense } from "./tierMath";
 const K_CHARGES = "counsel.user.charges";   // Charge[] (canonical, normalized)
 const K_EXPENSES = "counsel.user.expenses"; // Expense[]
 const K_META = "counsel.user.meta";         // { name, importedAt, rows }
+const K_DEMO_VIEW = "counsel.demoView";     // "1" = showroom: engines see demo
 
 export interface UserMeta { name: string; importedAt: string; rows: number }
 
@@ -25,17 +26,44 @@ function read<T>(key: string): T | null {
   }
 }
 
+/** Demo showroom — a non-destructive VIEW switch. When on, every engine sees
+ * the demo ledger (userCharges/userExpenses return null) while the user's
+ * real data sits untouched in storage. Kept for testing & marketing. */
+export function demoView(): boolean {
+  try {
+    return localStorage.getItem(K_DEMO_VIEW) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setDemoView(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(K_DEMO_VIEW, "1");
+    else localStorage.removeItem(K_DEMO_VIEW);
+  } catch { /* view just won't stick */ }
+}
+
+/** The app-wide mode. "live" = real data present AND not in showroom view.
+ * Screens use this to keep demo fixtures out of a live business's app. */
+export function dataMode(): "demo" | "live" {
+  return !demoView() && read<Charge[]>(K_CHARGES) !== null ? "live" : "demo";
+}
+
 export function userCharges(): Charge[] | null {
+  if (demoView()) return null;
   return read<Charge[]>(K_CHARGES);
 }
 export function userExpenses(): Expense[] | null {
+  if (demoView()) return null;
   return read<Expense[]>(K_EXPENSES);
 }
 export function userMeta(): UserMeta | null {
   return read<UserMeta>(K_META);
 }
+/** Raw: does stored user data exist (regardless of the showroom view)? */
 export function hasUserData(): boolean {
-  return userCharges() !== null;
+  return read<Charge[]>(K_CHARGES) !== null;
 }
 
 export function storeUserData(charges: Charge[] | null, expenses: Expense[] | null, name: string): void {

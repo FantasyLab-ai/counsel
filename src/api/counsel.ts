@@ -156,23 +156,35 @@ export type Period = "month" | "lastMonth" | "quarter";
 // ---------------------------------------------------------------------------
 import * as mock from "./mockData";
 import * as real from "./real";
+import * as live from "../engine/liveBrief";
+import { dataMode } from "../engine/dataSource";
+
+// Routing order: live (user's own data, computed on-device) beats everything;
+// then the hosted backend if configured; then the demo replay. The demo is
+// never mixed into a live business's screens — it survives only as the
+// showroom view (Settings) and the zero-data default.
 
 export function getBrief(): Promise<Brief> {
+  if (dataMode() === "live") return live.brief();
   return real.enabled ? real.brief() : mock.brief();
 }
 
 export function getMetrics(period: Period): Promise<Metric[]> {
+  if (dataMode() === "live") return live.metrics();
   return real.enabled ? real.metrics(period) : mock.metrics(period);
 }
 
 export function ask(question: string): Promise<AskAnswer> {
+  if (dataMode() === "live") return live.ask(question);
   return real.enabled ? real.ask(question) : mock.ask(question);
 }
 
 export function getSeededAsk(): Promise<AskAnswer[]> {
+  if (dataMode() === "live") return live.seededAsk();
   return real.enabled ? real.seededAsk() : mock.seededAsk();
 }
 
 export function getConnections(): Promise<Source[]> {
+  if (dataMode() === "live") return live.connections();
   return real.enabled ? real.connections() : mock.connections();
 }

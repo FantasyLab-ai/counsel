@@ -9,21 +9,53 @@ import {
   type ArOut, type CalendarOut, type TaxOut,
 } from "../engine/money";
 import { money } from "../engine/tierMath";
-import { ActOn, Reveal } from "../components/ui";
+import { dataMode } from "../engine/dataSource";
+import { ActOn, Awaiting, Reveal } from "../components/ui";
 
 export default function Money() {
   const [cal, setCal] = useState<CalendarOut | null>(null);
   const [ar, setAr] = useState<ArOut | null>(null);
   const [tax] = useState<TaxOut>(taxSetAside());
   const [err, setErr] = useState<string | null>(null);
+  const liveMode = dataMode() === "live";
 
   useEffect(() => {
+    if (liveMode) return; // fixtures stay in the showroom
     let on = true;
     Promise.all([cashCalendar(), arAging()])
       .then(([c, a]) => { if (on) { setCal(c); setAr(a); } })
       .catch((e) => on && setErr(String(e)));
     return () => { on = false; };
-  }, []);
+  }, [liveMode]);
+
+  if (liveMode) {
+    // Live business: this screen runs on bills + invoices + expenses — none
+    // of which have arrived yet. Say so; never show the demo's money.
+    return (
+      <div className="app">
+        <div className="appbar">
+          <div className="titleblock">
+            <div className="kicker">{displayName()} · the money map</div>
+            <h1>Money</h1>
+          </div>
+          <div className="avatar">B</div>
+        </div>
+        <div className="eyebrow">Runs on data you haven't connected yet</div>
+        <Reveal i={0}>
+          <Awaiting title="The cash calendar" needs="your expenses/bank (bills on their days)"
+            unlocks="Every bill lands on its day against your real inflow rhythm — the tightest day, called in advance." />
+        </Reveal>
+        <Reveal i={1}>
+          <Awaiting title="Owed to you — AR aging" needs="your invoices (invoices.csv or Stripe Invoicing)"
+            unlocks="Who owes you, how late, the chase order, and your true DSO." />
+        </Reveal>
+        <Reveal i={2}>
+          <Awaiting title="The tax pot" needs="your expenses (true profit)"
+            unlocks="A monthly set-aside computed from real profit — no surprises in April." />
+        </Reveal>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
