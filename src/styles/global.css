@@ -691,3 +691,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* settings rows that act like buttons */
 .srow.tap { cursor: pointer; }
 .srow.tap:hover .rv { color: var(--forest); }
+
+/* ---- Marketing (reach -> revenue) ---- */
+.mk-trend { font-family: "JetBrains Mono", monospace; font-size: 9px; }
+.mk-trend.up { color: var(--hi); }
+.mk-trend.down { color: var(--brass); }
+.il-comp-fill.unk { background: var(--faint); }
+.mk-date { font-family: "JetBrains Mono", monospace; font-size: 9.5px; color: var(--muted); margin-left: 6px; }
+.mk-pos { color: var(--hi); }
+.mk-neg { color: var(--brass); }
+.mk-na { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--faint); }
+.mk-add { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.mk-add .dbtn { grid-column: 1 / -1; }
+.mk-link { display: flex; align-items: center; gap: 10px; margin-top: 12px; background: var(--card-2); border-radius: 8px; padding: 10px 12px; }
+.mk-link code { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--ink); word-break: break-all; flex: 1; line-height: 1.5; }
+.mk-link .dbtn { flex: 0 0 auto; }
+/* odd hub-card count: let the last one breathe full-width */
+.hub-card:last-child:nth-child(odd) { grid-column: 1 / -1; }

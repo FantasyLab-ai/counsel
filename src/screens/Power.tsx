@@ -4,8 +4,9 @@
 // device, never uploaded, and every engine recomputes on it.
 
 import { useRef, useState } from "react";
-import { parseCharges, parseExpenses } from "../engine/csvParse";
+import { parseCharges, parseExpenses, parsePosts } from "../engine/csvParse";
 import { clearUserData, hasUserData, storeUserData, userMeta } from "../engine/dataSource";
+import { addPostsBulk } from "../engine/socialMath";
 import { Reveal } from "../components/ui";
 
 interface PowerItem {
@@ -60,6 +61,13 @@ const ITEMS: PowerItem[] = [
     status: "demo",
   },
   {
+    title: "Social & marketing",
+    connectors: "No API needed — UTM links + the post log (official APIs later, optional)",
+    unlocks: "Channel attribution, post-lift event studies, tracked links (Marketing screen)",
+    csv: "posts.csv — date, platform, label (or any analytics export with a date column)",
+    status: "demo",
+  },
+  {
     title: "Reviews & reputation",
     connectors: "Google Business · Etsy reviews · Yelp",
     unlocks: "Rating trend with change-points (did something slip?), review-volume vs sales correlation",
@@ -71,14 +79,23 @@ const ITEMS: PowerItem[] = [
 function DropIn() {
   const chargesRef = useRef<HTMLInputElement>(null);
   const expensesRef = useRef<HTMLInputElement>(null);
+  const postsRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
   const [active, setActive] = useState(hasUserData());
   const meta = userMeta();
 
-  async function onFile(kind: "charges" | "expenses", file: File | undefined) {
+  async function onFile(kind: "charges" | "expenses" | "posts", file: File | undefined) {
     if (!file) return;
     try {
       const text = await file.text();
+      if (kind === "posts") {
+        const res = parsePosts(text);
+        if (res.error) { setStatus({ ok: false, msg: res.error }); return; }
+        const n = addPostsBulk(res.rows);
+        setStatus({ ok: true, msg: `${n} posts imported from ${file.name} — opening Marketing…` });
+        setTimeout(() => window.location.assign("/marketing"), 900);
+        return;
+      }
       const res = kind === "charges" ? parseCharges(text) : parseExpenses(text);
       if (res.error) { setStatus({ ok: false, msg: res.error }); return; }
       if (!res.rows.length) { setStatus({ ok: false, msg: "no usable rows found" }); return; }
@@ -112,6 +129,7 @@ function DropIn() {
       <div className="dropin-row">
         <button className="dbtn primary" onClick={() => chargesRef.current?.click()}>Load sales CSV</button>
         <button className="dbtn" onClick={() => expensesRef.current?.click()}>Load expenses CSV</button>
+        <button className="dbtn" onClick={() => postsRef.current?.click()}>Load posts CSV</button>
         {active && (
           <button className="dbtn" onClick={() => { clearUserData(); setActive(false); setStatus({ ok: true, msg: "back to the demo ledger — reload any screen" }); }}>
             Reset to demo
@@ -122,6 +140,8 @@ function DropIn() {
              onChange={(e) => onFile("charges", e.target.files?.[0])} />
       <input ref={expensesRef} type="file" accept=".csv,text/csv" hidden
              onChange={(e) => onFile("expenses", e.target.files?.[0])} />
+      <input ref={postsRef} type="file" accept=".csv,text/csv" hidden
+             onChange={(e) => onFile("posts", e.target.files?.[0])} />
       {status && <div className={`dropin-status ${status.ok ? "ok" : "err"}`}>{status.msg}</div>}
       <div className="il-cite">
         works with bank exports, Etsy/Shopify order exports, or any spreadsheet saved as CSV ·

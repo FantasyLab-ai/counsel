@@ -164,6 +164,11 @@ export default function Today() {
             <span className="hc-t">Decisions</span>
             <span className="hc-s">the track record</span>
           </button>
+          <button className="hub-card" onClick={() => nav("/marketing")}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 11l18-8-8 18-2.5-7.5z" /></svg>
+            <span className="hc-t">Marketing</span>
+            <span className="hc-s">channels · post lift</span>
+          </button>
         </div>
       </Reveal>
 

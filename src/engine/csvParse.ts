@@ -109,3 +109,34 @@ export function parseExpenses(text: string): ParseResult<Expense> {
   rows.sort((a, b) => (a.d < b.d ? -1 : 1));
   return { rows, skipped };
 }
+
+// ---- posts.csv (social analytics exports / manual logs) ---------------------
+// Accepts the shapes the platforms export: needs a date column + optionally
+// platform / source / network and a label-ish column (title, caption, name).
+export interface ParsedPosts {
+  rows: { date: string; platform: string; label?: string }[];
+  skipped: number;
+  error?: string;
+}
+export function parsePosts(text: string): ParsedPosts {
+  const recs = parseCsv(text);
+  if (!recs.length) return { rows: [], skipped: 0, error: "empty file" };
+  const first = recs[0];
+  const dateKey = ["date", "publish_time", "published", "created", "post_date", "day"]
+    .find((k) => k in first);
+  if (!dateKey) return { rows: [], skipped: 0, error: "no date column found (looked for: date, publish_time, published, created, post_date)" };
+  const platKey = ["platform", "source", "network", "channel"].find((k) => k in first);
+  const labelKey = ["label", "title", "caption", "name", "description", "post"].find((k) => k in first);
+  const rows: { date: string; platform: string; label?: string }[] = [];
+  let skipped = 0;
+  for (const r of recs) {
+    const d = normDate(r[dateKey]);
+    if (!d) { skipped++; continue; }
+    rows.push({
+      date: d,
+      platform: (platKey ? r[platKey] : "").toLowerCase() || "social",
+      label: labelKey ? r[labelKey].slice(0, 80) : undefined,
+    });
+  }
+  return { rows, skipped };
+}
