@@ -70,3 +70,39 @@ accounts, read-only, revocable; Counsel piggybacks nothing.
 
 Everyone else summarizes what happened. Counsel proves what *caused* it,
 rehearses what happens *next*, and keeps a public score of its own advice.
+
+---
+
+## LOCKED · 2026-07-15 — the math/data expansion (build after connectors)
+
+Agreed order: **A1 → B5 → A2**, then the rest. All build on aurora-core /
+Aurora methods; each output stays cited + confidence-scored + honest.
+
+### Tier A — Aurora-native (hard to copy)
+- **A1. Price elasticity from own history** — every past price change as a
+  natural experiment (RD-style around change dates) → "raise X by 8%,
+  worth ~$740/mo." Revenue-printing sentence.
+- **A2. Customer survival analysis** (Kaplan-Meier/hazard) → "41 customers in
+  the at-risk window ≈ $3.8k recoverable."
+- **A3. Newsvendor inventory** — reorder points from demand distribution +
+  margin asymmetry ("stock 92, not 120").
+- **A4. Counterfactual month** (synthetic-control-lite) → "the stockout cost
+  you ~$9k."
+
+### Tier B — trust compounders
+- **B5. Fee & waste auditor** — anomaly detection on expenses: duplicate
+  charges, subscription creep, processor-fee drift. Pays for the app visibly.
+- **B6. Peer benchmarks with honest CIs** — KB + user cohorts; network moat.
+- **B7. Credit-readiness score** — DSCR, stability index; Banker's Packet
+  grown up.
+
+### Tier C — the daily habit
+- **C8. Monte Carlo cash runway** — payroll dates + seasonality + receivable
+  timing → "3% chance of a gap, clusters April 3."
+- **C9. STL season-adjustment everywhere** — "down 12% raw, +2% adjusted" —
+  kills false alarms.
+
+Store path (locked): validate on PWA → Phase 2B connectors (Stripe+Plaid) →
+native shells (SwiftUI/Compose + aurora-core, Apple FM narration) → Play
+first, then App Store via TestFlight. Submit when ~20 real businesses are
+connected and retained 2+ weeks on the PWA.
