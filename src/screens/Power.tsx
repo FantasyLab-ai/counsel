@@ -9,7 +9,7 @@ import { clearUserData, hasUserData, storeUserData, userCharges, userExpenses, u
 import { addPostsBulk } from "../engine/socialMath";
 import { getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
 import {
-  connectProvider, disconnectProvider, listCloudConnections, syncNow, type CloudProvider,
+  cloudStatus, connectProvider, disconnectProvider, setPulse, syncNow, type CloudProvider,
 } from "../engine/cloudSync";
 import { Reveal } from "../components/ui";
 
@@ -171,13 +171,15 @@ function LiveConnect() {
   const [provider, setProvider] = useState<CloudProvider>("stripe");
   const [key, setKey] = useState("");
   const [shop, setShop] = useState("");
+  const [sqEnv, setSqEnv] = useState<"production" | "sandbox">("production");
   const [connected, setConnected] = useState<CloudProvider[]>([]);
+  const [pulse, setPulseState] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
   const help = LIVE_HELP[provider];
 
   useEffect(() => {
-    listCloudConnections().then(setConnected).catch(() => undefined);
+    cloudStatus().then((s) => { setConnected(s.providers); setPulseState(s.pulse); }).catch(() => undefined);
   }, []);
 
   async function doConnect() {
@@ -185,12 +187,32 @@ function LiveConnect() {
     setStatus(null);
     try {
       const creds = provider === "stripe" ? { key: key.trim() }
-        : provider === "square" ? { token: key.trim() }
+        : provider === "square" ? { token: key.trim(), env: sqEnv }
         : { shop: shop.trim(), token: key.trim() };
       await connectProvider(provider, creds);
-      setConnected(await listCloudConnections());
+      setConnected((await cloudStatus()).providers);
       setKey("");
       setStatus({ ok: true, msg: `${provider} connected — key verified read-only and encrypted. Now tap Sync.` });
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function togglePulse() {
+    setBusy(pulse ? "stopping the pulse…" : "starting the pulse (seeding a burst)…");
+    setStatus(null);
+    try {
+      const seeded = await setPulse(!pulse);
+      setPulseState(!pulse);
+      const detail = Object.entries(seeded).map(([k, v]) => `${k}: ${v}`).join(", ");
+      setStatus({
+        ok: true,
+        msg: !pulse
+          ? `pulse on — seeded ${detail || "0 (connect a test/sandbox key first)"} now; 1–3 more land every 30 min. Tap Sync to pull them.`
+          : "pulse off — no more fake sales.",
+      });
     } catch (e) {
       setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
     } finally {
@@ -240,6 +262,13 @@ function LiveConnect() {
           <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
             value={shop} onChange={(e) => setShop(e.target.value)} autoComplete="off" />
         )}
+        {provider === "square" && (
+          <select className="ps-select" value={sqEnv} aria-label="Square environment"
+            onChange={(e) => setSqEnv(e.target.value as "production" | "sandbox")}>
+            <option value="production">Production (real business)</option>
+            <option value="sandbox">Sandbox (developer testing)</option>
+          </select>
+        )}
         <input className="dt-input" type="password" placeholder={help.hint}
           value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" />
         <div className="lc-mint">
@@ -255,11 +284,22 @@ function LiveConnect() {
         <button className="dbtn" disabled={!!busy || !connected.length} onClick={doSync}>Sync now</button>
         {connected.includes(provider) && (
           <button className="dbtn" disabled={!!busy}
-            onClick={async () => { await disconnectProvider(provider).catch(() => undefined); setConnected(await listCloudConnections().catch(() => [])); setStatus({ ok: true, msg: `${provider} disconnected — its token was deleted server-side.` }); }}>
+            onClick={async () => { await disconnectProvider(provider).catch(() => undefined); setConnected((await cloudStatus().catch(() => ({ providers: [] as CloudProvider[], pulse: false }))).providers); setStatus({ ok: true, msg: `${provider} disconnected — its token was deleted server-side.` }); }}>
             Disconnect
           </button>
         )}
       </div>
+      {connected.length > 0 && (
+        <div className="pulse-row">
+          <div className="pulse-txt">
+            <b>Demo pulse</b> — fake sales land every 30 min so you can watch the system change.
+            Test/sandbox keys only; live accounts are never written to.
+          </div>
+          <button className={`dbtn ${pulse ? "primary" : ""}`} disabled={!!busy} onClick={togglePulse}>
+            {pulse ? "◉ on" : "○ off"}
+          </button>
+        </div>
+      )}
       {busy && <div className="dropin-status ok">{busy}</div>}
       {status && <div className={`dropin-status ${status.ok ? "ok" : "err"}`}>{status.msg}</div>}
       <div className="il-cite">

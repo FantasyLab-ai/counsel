@@ -59,6 +59,25 @@ export async function listCloudConnections(): Promise<CloudProvider[]> {
   return (res.providers as CloudProvider[]) ?? [];
 }
 
+export interface CloudStatus { providers: CloudProvider[]; pulse: boolean }
+
+export async function cloudStatus(): Promise<CloudStatus> {
+  if (!hasCloudAccount()) return { providers: [], pulse: false };
+  const res = await api("/v1/connections");
+  return {
+    providers: (res.providers as CloudProvider[]) ?? [],
+    pulse: !!res.pulse,
+  };
+}
+
+/** Demo pulse: the Worker seeds 1–3 fake sales every 30 min into connected
+ * TEST/SANDBOX accounts (live keys are never written to). Enabling also
+ * fires an instant burst so the very next sync shows life. */
+export async function setPulse(on: boolean): Promise<Record<string, number>> {
+  const res = await api("/v1/pulse", { method: "POST", body: JSON.stringify({ on }) });
+  return (res.seeded as Record<string, number>) ?? {};
+}
+
 export async function connectProvider(
   provider: CloudProvider,
   creds: { key?: string; token?: string; shop?: string; env?: string },

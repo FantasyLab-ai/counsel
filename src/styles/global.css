@@ -841,3 +841,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .lc-mint { font-size: 11.5px; color: var(--muted); line-height: 1.55; background: var(--card-2);
   border-radius: 9px; padding: 9px 12px; }
 .lc-mint a { color: var(--forest); font-weight: 600; text-decoration: none; }
+
+/* ---- demo pulse row ---- */
+.pulse-row { display: flex; align-items: center; gap: 12px; margin-top: 12px;
+  background: var(--card-2); border-radius: 10px; padding: 11px 13px; }
+.pulse-txt { flex: 1; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.pulse-txt b { color: var(--ink); }

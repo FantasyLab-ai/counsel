@@ -260,6 +260,90 @@ const shopifyAdapter = {
 
 const ADAPTERS = { stripe: stripeAdapter, square: squareAdapter, shopify: shopifyAdapter };
 
+/* ------------------------------ demo pulse -------------------------------
+   Creates FAKE sales in test/sandbox environments so a demo account visibly
+   evolves between syncs. Hard-gated: refuses to touch anything that is not
+   provably a test credential (sk_test_/rk_test_ for Stripe, env=sandbox for
+   Square). Live keys are never written to, period. */
+
+const PULSE_PRODUCTS = ["latte", "taco plate", "market special", "signature bundle", "custom order", "service call"];
+const PULSE_CHANNELS = ["instagram", "walk-in", "market", "referral"];
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+async function pulseStripe(cred, n) {
+  if (!/^(sk|rk)_test_/.test(cred.key)) return 0; // live key -> absolute no
+  let made = 0;
+  for (let i = 0; i < n; i++) {
+    const product = pick(PULSE_PRODUCTS);
+    const body = new URLSearchParams({
+      amount: String(800 + Math.floor(Math.random() * 13700)), // $8–$145
+      currency: "usd",
+      confirm: "true",
+      payment_method: "pm_card_visa",
+      "payment_method_types[]": "card",
+      description: product,
+      "metadata[product]": product,
+      "metadata[channel]": pick(PULSE_CHANNELS),
+    });
+    const r = await fetch("https://api.stripe.com/v1/payment_intents", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cred.key}`, "content-type": "application/x-www-form-urlencoded" },
+      body,
+    });
+    if (r.ok) made++;
+  }
+  return made;
+}
+
+async function pulseSquare(cred, n) {
+  if (cred.env !== "sandbox") return 0; // production -> absolute no
+  let made = 0;
+  for (let i = 0; i < n; i++) {
+    const r = await fetch("https://connect.squareupsandbox.com/v2/payments", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cred.token}`,
+        "Square-Version": "2024-01-18",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        source_id: "cnon:card-nonce-ok", // sandbox test nonce
+        idempotency_key: crypto.randomUUID(),
+        amount_money: { amount: 800 + Math.floor(Math.random() * 13700), currency: "USD" },
+        note: pick(PULSE_PRODUCTS),
+      }),
+    });
+    if (r.ok) made++;
+  }
+  return made;
+}
+
+async function seedAccount(env, acct, n) {
+  const seeded = {};
+  for (const provider of Object.keys(acct.providers)) {
+    try {
+      const cred = JSON.parse(await openToken(env, acct.providers[provider].t));
+      if (provider === "stripe") seeded.stripe = await pulseStripe(cred, n);
+      if (provider === "square") seeded.square = await pulseSquare(cred, n);
+      // shopify: no pulse — creating orders needs write scope we never ask for
+    } catch {
+      /* pulse is best-effort; sync surfaces real errors */
+    }
+  }
+  return seeded;
+}
+
+async function runPulse(env) {
+  const list = await env.ACCOUNTS.list({ prefix: "acct:", limit: 100 });
+  for (const k of list.keys) {
+    const raw = await env.ACCOUNTS.get(k.name);
+    if (!raw) continue;
+    const acct = JSON.parse(raw);
+    if (!acct.pulse) continue;
+    await seedAccount(env, acct, 1 + Math.floor(Math.random() * 3)); // 1–3 sales per tick
+  }
+}
+
 /* --------------------------------- routes -------------------------------- */
 
 export default {
@@ -303,7 +387,18 @@ export default {
         return json(req, 200, {
           providers: Object.keys(acct.providers),
           created: acct.created,
+          pulse: !!acct.pulse,
         });
+      }
+
+      // -- demo pulse: fake sales on a cron, TEST/SANDBOX credentials only --
+      if (path === "/v1/pulse" && req.method === "POST") {
+        const body = (await readBody(req)) ?? {};
+        acct.pulse = !!body.on;
+        await saveAcct(env, id, acct);
+        let seeded = {};
+        if (acct.pulse) seeded = await seedAccount(env, acct, 6); // instant burst so the next sync shows life
+        return json(req, 200, { ok: true, pulse: acct.pulse, seeded });
       }
 
       const connect = /^\/v1\/connect\/([a-z]+)$/.exec(path);
@@ -373,5 +468,9 @@ export default {
     } catch (e) {
       return json(req, 500, { error: "internal", detail: String(e?.message || e).slice(0, 200) });
     }
+  },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runPulse(env));
   },
 };
