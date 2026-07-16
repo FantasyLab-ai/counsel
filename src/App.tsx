@@ -84,9 +84,21 @@ function TabBar() {
   );
 }
 
+// First-run: no persona chosen AND never explicitly skipped -> onboarding.
+function isFirstRun(): boolean {
+  try {
+    return !localStorage.getItem("counsel.persona") && !localStorage.getItem("counsel.visited");
+  } catch {
+    return false;
+  }
+}
+
 export default function App() {
   const { pathname } = useLocation();
   const inOnboarding = pathname.startsWith("/welcome");
+  if (pathname === "/" && isFirstRun()) {
+    return <Navigate to="/welcome" replace />;
+  }
   return (
     <div className="wrap">
       {/* key on pathname re-triggers the entrance transition per screen */}

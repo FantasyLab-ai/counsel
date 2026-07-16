@@ -97,11 +97,13 @@ export default function Settings() {
       </div>
 
       <Reveal i={0}>
-        <div className="profile">
+        <div className="profile tap" role="button" tabIndex={0} title="Edit name & line of work"
+             onClick={() => nav("/welcome")}
+             onKeyDown={(e) => { if (e.key === "Enter") nav("/welcome"); }}>
           <div className="pav">{displayName()[0]}</div>
           <div>
             <div className="pn">{displayName()}</div>
-            <div className="pm">{getPersona()?.label ?? "your business"}</div>
+            <div className="pm">{getPersona()?.label ?? "your business"} · tap to edit</div>
           </div>
           <div className="plan">Pro</div>
         </div>

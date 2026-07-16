@@ -12,6 +12,12 @@ const ARROW = (
 const CHECK = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" /></svg>
 );
+
+function markVisited(): void {
+  try {
+    localStorage.setItem("counsel.visited", "1");
+  } catch { /* fine */ }
+}
 const ANALYZE_STEPS = [
   "Loaded 41 days of payments",
   "Scanning for structural changes",
@@ -193,8 +199,8 @@ export default function Onboarding() {
             </div>
           </div>
           <div className="ob-cta-row">
-            <button className="btn brass" onClick={() => nav("/power")}>Load MY data now (on-device) {ARROW}</button>
-            <button className="btn ghost" onClick={() => nav("/")}>Explore with demo data first</button>
+            <button className="btn brass" onClick={() => { markVisited(); nav("/power"); }}>Load MY data now (on-device) {ARROW}</button>
+            <button className="btn ghost" onClick={() => { markVisited(); nav("/"); }}>Explore with demo data first</button>
           </div>
         </section>
       )}

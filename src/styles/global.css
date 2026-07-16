@@ -761,3 +761,5 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .ps-switch { align-items: center; gap: 10px; }
 .srow.tap { cursor: pointer; }
 .srow.tap:hover .rv { color: var(--forest); }
+.profile.tap { cursor: pointer; }
+.profile.tap:hover { background: var(--card-2); }
