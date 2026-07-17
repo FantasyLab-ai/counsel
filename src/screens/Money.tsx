@@ -5,13 +5,42 @@
 import { useEffect, useState } from "react";
 import { displayName } from "../engine/persona";
 import {
-  arAging, cashCalendar, taxSetAside,
+  arAging, cashCalendar, getCashOnHand, setCashOnHand, taxSetAside,
   type ArOut, type CalendarOut, type TaxOut,
 } from "../engine/money";
 import { money } from "../engine/tierMath";
-import { dataMode } from "../engine/dataSource";
+import { dataMode, userExpenses } from "../engine/dataSource";
 import { cashView, type CashViewOut, type CashViewThin } from "../engine/cashview";
 import { ActOn, Awaiting, Receipt, Reveal } from "../components/ui";
+
+// Cash on hand — the one number no connector knows yet. The owner states
+// it once; the calendar, the 13-week view and runway anchor on it.
+function CashAnchorRow() {
+  const [editing, setEditing] = useState(getCashOnHand() === null);
+  const [draft, setDraft] = useState("");
+  const [, force] = useState(0);
+  const v = getCashOnHand();
+  return (
+    <div className="pulse-row">
+      <div className="pulse-txt">
+        <b>Cash on hand</b> — anchors the calendar and the 13-week view.
+        {v === null ? " Not set: views show net flow from $0." : ""}
+      </div>
+      {editing ? (
+        <span className="de-cost">
+          <input type="number" inputMode="decimal" autoFocus value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && draft.trim()) { setCashOnHand(parseFloat(draft)); setEditing(false); window.location.reload(); } }} />
+          <button className="dt-btn" onClick={() => { if (draft.trim()) { setCashOnHand(parseFloat(draft)); window.location.reload(); } setEditing(false); force((x) => x + 1); }}>save</button>
+        </span>
+      ) : (
+        <button className="dbtn" onClick={() => { setDraft(v !== null ? String(v) : ""); setEditing(true); }}>
+          {v !== null ? money(v) : "set it"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 // The 13-week cash view — THE fractional-CFO deliverable. Weekly banded
 // cash-in vs scheduled bills, cumulated into a runway ribbon; tight weeks
@@ -83,22 +112,24 @@ function CashViewCard() {
 export default function Money() {
   const [cal, setCal] = useState<CalendarOut | null>(null);
   const [ar, setAr] = useState<ArOut | null>(null);
-  const [tax] = useState<TaxOut>(taxSetAside());
+  const [tax, setTax] = useState<TaxOut | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const liveMode = dataMode() === "live";
 
+  const hasExp = !liveMode || !!userExpenses()?.length;
   useEffect(() => {
-    if (liveMode) return; // fixtures stay in the showroom
     let on = true;
-    Promise.all([cashCalendar(), arAging()])
+    taxSetAside().then((t) => on && setTax(t)).catch(() => undefined);
+    if (liveMode && !hasExp) return () => { on = false; }; // nothing to compute yet
+    Promise.all([cashCalendar(), liveMode ? Promise.resolve(null) : arAging()])
       .then(([c, a]) => { if (on) { setCal(c); setAr(a); } })
       .catch((e) => on && setErr(String(e)));
     return () => { on = false; };
-  }, [liveMode]);
+  }, [liveMode, hasExp]);
 
-  if (liveMode) {
-    // Live business: this screen runs on bills + invoices + expenses — none
-    // of which have arrived yet. Say so; never show the demo's money.
+  if (liveMode && !hasExp) {
+    // Live business with NO expense data yet: the money map has no fuel.
+    // Say so; never show the demo's money.
     return (
       <div className="app">
         <div className="appbar">
@@ -142,8 +173,9 @@ export default function Money() {
       {err && <div className="reassure">Money engine unavailable: {err}</div>}
       {!cal && !err && <div className="il-loading">▶ building your cash calendar…</div>}
 
-      {cal && ar && (
+      {cal && (ar || liveMode) && (
         <>
+          {liveMode && <Reveal i={0}><CashAnchorRow /></Reveal>}
           <Reveal i={0}>
             <section className="voice">
               <div className="eyebrow on-dark">{cal.monthLabel} · planned</div>
@@ -151,9 +183,8 @@ export default function Money() {
                 Tightest day: <em>{new Date(cal.tightestIso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</em> — and you stay {cal.tightestCash > 0 ? "above water" : "underwater"}.
               </div>
               <div className="sub">
-                Expected in: <b style={{ color: "#d8c19a" }}>{money(cal.totalIn)}</b> (your weekday
-                profile × margin) · scheduled out: <b style={{ color: "#d8c19a" }}>{money(cal.totalOut)}</b> ·
-                low point {money(cal.tightestCash)}. {ar.overdue > 0 && <>Plus <b style={{ color: "#d8c19a" }}>{money(ar.overdue)}</b> sitting in overdue invoices below.</>}
+                Expected in: <b style={{ color: "#d8c19a" }}>{money(cal.totalIn)}</b> ({cal.mode === "live" ? "your weekday revenue profile" : "your weekday profile × margin"}) · scheduled out: <b style={{ color: "#d8c19a" }}>{money(cal.totalOut)}</b> ({cal.mode === "live" ? "your recorded bills + variable spend" : "the bill schedule"}) ·
+                low point {money(cal.tightestCash)}{cal.mode === "live" && !cal.anchored ? " (net flow from $0 — set cash on hand above)" : ""}. {ar && ar.overdue > 0 && <>Plus <b style={{ color: "#d8c19a" }}>{money(ar.overdue)}</b> sitting in overdue invoices below.</>}
               </div>
             </section>
           </Reveal>
@@ -184,6 +215,12 @@ export default function Money() {
           </Reveal>
 
           <div className="eyebrow">Owed to you — chase in this order</div>
+          {liveMode ? (
+            <Reveal i={3}>
+              <Awaiting title="AR aging" needs="your invoices (invoices.csv or Stripe Invoicing)"
+                unlocks="Who owes you, how late, the chase order weighted by size, and your true DSO." />
+            </Reveal>
+          ) : ar && (
           <Reveal i={2}>
             <article className="mcard open il-card">
               <div className="mval"><span className="num">{money(ar.overdue)}</span><span className="dlt">overdue of {money(ar.totalOpen)} open</span></div>
@@ -213,7 +250,9 @@ export default function Money() {
               <div className="il-cite">chase order = days late × amount · your paid invoices settle in ~{ar.dso} days on average (DSO) · wholesale invoices from the demo ledger</div>
             </article>
           </Reveal>
+          )}
 
+          {tax && (<>
           <div className="eyebrow">The tax pot</div>
           <Reveal i={3}>
             <article className="mcard open il-card">
@@ -228,9 +267,10 @@ export default function Money() {
                 <span className="op">× {(tax.rate * 100).toFixed(0)}% effective rate</span><br />
                 <span className="res">= {money(tax.setAside)} / month</span>
               </div>
-              <div className="il-cite">assumption-labeled: SE tax 15.3% on 92.35% of net + ~12% federal bracket ≈ 26% effective · sole-prop simplification, not tax advice — your CPA sets the real number</div>
+              <div className="il-cite">assumption-labeled: SE tax 15.3% on 92.35% of net + ~12% federal bracket ≈ 26% effective · sole-prop simplification, not tax advice — your CPA sets the real number{tax.setAside === 0 ? " · no positive profit this window — nothing to set aside; the posture takes priority" : ""}</div>
             </article>
           </Reveal>
+          </>)}
         </>
       )}
     </div>

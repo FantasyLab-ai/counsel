@@ -5,9 +5,9 @@
 // months ahead. Small businesses die of cash surprises; this kills the
 // surprise. Every weight visible; anchored to the data's last date.
 
-import { getDaily } from "./dataSource";
+import { dataMode, getDaily, userExpenses } from "./dataSource";
 import { BASELINE } from "./insights";
-import { arAging, OUTGOINGS } from "./money";
+import { arAging, getCashOnHand, liveBills, OUTGOINGS } from "./money";
 import { money } from "./tierMath";
 
 export interface CashWeek {
@@ -25,6 +25,8 @@ export interface CashViewOut {
   ok: true;
   weeks: CashWeek[];
   startCash: number;
+  anchored: boolean;   // false = net-flow mode from $0 (cash on hand unset)
+  mode: "demo" | "live";
   tightWeeks: number;
   firstTight: CashWeek | null;
   headline: string;
@@ -64,13 +66,24 @@ export async function cashView(): Promise<CashViewOut | CashViewThin> {
   if (recent.length < 4) return { ok: false, reason: "needs 4+ complete weeks" };
   const wLo = pct(recent, 15), wMid = pct(recent, 50), wHi = pct(recent, 85);
 
-  // ---- AR expected receipts, probability-weighted into landing weeks ----
+  // Live mode: recorded bills + variable spend out, GROSS revenue in (no
+  // margin double-count), demo AR NEVER consulted, anchored at the owner's
+  // stated cash on hand (or $0 net-flow with the label saying so).
+  const live = dataMode() === "live";
+  const lb = live ? liveBills() : null;
+
+  // ---- AR expected receipts (demo invoice book only — live waits for real invoices) ----
   let ar: Awaited<ReturnType<typeof arAging>> | null = null;
-  try { ar = await arAging(); } catch { /* no invoices — revenue-only view */ }
+  if (!live) {
+    try { ar = await arAging(); } catch { /* no invoices — revenue-only view */ }
+  }
 
   // ---- build 13 weeks ----
   const weeks: CashWeek[] = [];
-  let cumLo = BASELINE.cash, cumMid = BASELINE.cash;
+  const cashAnchor = getCashOnHand();
+  const startCash = live ? (cashAnchor ?? 0) : BASELINE.cash;
+  const anchored = live ? cashAnchor !== null : true;
+  let cumLo = startCash, cumMid = startCash;
   const margin = BASELINE.margin;
   for (let w = 0; w < 13; w++) {
     const start = new Date(anchor);
@@ -78,11 +91,18 @@ export async function cashView(): Promise<CashViewOut | CashViewThin> {
     const end = new Date(start); end.setDate(end.getDate() + 6);
     const startIso = start.toISOString().slice(0, 10);
 
-    // bills: monthly schedule days falling inside this week
+    // bills: recorded schedule (live) or the demo schedule, day by day
     let out = 0; const billLabels: string[] = [];
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const hit = OUTGOINGS.find((o) => o.day === d.getDate());
-      if (hit) { out += hit.amount; billLabels.push(hit.label); }
+      if (live && lb) {
+        const hits = lb.monthly.filter((o) => o.day === d.getDate());
+        const wk2 = lb.weekly.filter((o) => o.weekday === d.getDay());
+        out += hits.reduce((s2, o) => s2 + o.amount, 0) + wk2.reduce((s2, o) => s2 + o.amount, 0) + lb.variableDaily;
+        billLabels.push(...hits.map((o) => o.label));
+      } else {
+        const hit = OUTGOINGS.find((o) => o.day === d.getDate());
+        if (hit) { out += hit.amount; billLabels.push(hit.label); }
+      }
     }
 
     // AR landing: expected pay date = due + 14d (or now+7 if already past)
@@ -95,7 +115,9 @@ export async function cashView(): Promise<CashViewOut | CashViewThin> {
       }
     }
 
-    const inLo = wLo * margin + arIn, inMid = wMid * margin + arIn, inHi = wHi * margin + arIn;
+    const inLo = (live ? wLo : wLo * margin) + arIn;
+    const inMid = (live ? wMid : wMid * margin) + arIn;
+    const inHi = (live ? wHi : wHi * margin) + arIn;
     cumLo += inLo - out;
     cumMid += inMid - out;
     weeks.push({
@@ -112,17 +134,26 @@ export async function cashView(): Promise<CashViewOut | CashViewThin> {
 
   const tightOnes = weeks.filter((w) => w.tight);
   const firstTight = tightOnes[0] ?? null;
-  const headline = firstTight
+  const headlineUnanchored = live && !anchored;
+  const headline = headlineUnanchored
+    ? (firstTight
+        ? `Showing <b>net cash flow from $0</b> — the cautious path dips ${money(Math.min(...weeks.map((w) => w.cumLo)))} low. Set your cash on hand above to see the real position.`
+        : `Net cash flow runs <b>positive in the cautious case</b> — set your cash on hand above to anchor the actual position.`)
+    : firstTight
     ? `In the cautious case, cash runs <b>tight the week of ${firstTight.label}</b> (${money(firstTight.cumLo)} low-band) — you have <b>${weeks.indexOf(firstTight) + 1} week${weeks.indexOf(firstTight) ? "s" : ""}</b> of runway to act, which is the point.`
     : `All 13 weeks clear in the <b>cautious case</b> — lowest point ${money(Math.min(...weeks.map((w) => w.cumLo)))}. Planned, not hoped.`;
 
   return {
     ok: true,
     weeks,
-    startCash: BASELINE.cash,
+    startCash,
+    anchored,
+    mode: live ? "live" : "demo",
     tightWeeks: tightOnes.length,
     firstTight,
     headline,
-    cite: `weekly revenue range = p15/p50/p85 of your last ${recent.length} complete weeks × ${(margin * 100).toFixed(0)}% margin · AR weighted ${Object.entries(AR_WEIGHT).map(([k, v]) => `${k}:${v * 100}%`).join(" ")} landing due+14d · bills from the recurring schedule · cautious case = p15 every single week`,
+    cite: live
+      ? `weekly revenue range = p15/p50/p85 of your last ${recent.length} complete weeks (gross) · out = your RECORDED bills (recurring on their days + variable daily) · ${anchored ? `anchored at your stated cash on hand ${money(startCash)}` : "net flow from $0 — cash on hand not set"} · receivables join when invoices connect · cautious case = p15 every single week`
+      : `weekly revenue range = p15/p50/p85 of your last ${recent.length} complete weeks × ${(margin * 100).toFixed(0)}% margin · AR weighted ${Object.entries(AR_WEIGHT).map(([k, v]) => `${k}:${v * 100}%`).join(" ")} landing due+14d · bills from the recurring schedule · cautious case = p15 every single week`,
   };
 }
