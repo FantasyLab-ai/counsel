@@ -22,6 +22,15 @@ export async function composeWeekReview(): Promise<string> {
   lines.push(`${displayName()}${persona ? ` · ${persona.label}` : ""}`);
   lines.push("");
 
+  // ---- the posture first, when it matters ----
+  try {
+    const { financialPosture } = await import("./posture");
+    const po = await financialPosture();
+    if (po.level === "urgent" || po.level === "critical") {
+      lines.push(`THE POSTURE (${po.level.toUpperCase()}): ${strip(po.headline)} First move: ${po.firstMove}.`, "");
+    }
+  } catch { /* thin */ }
+
   // ---- what happened: last complete week vs prior ----
   if (dates.length >= 14) {
     const rows = dates.map((d, i) => ({ d, rev: revenue[i] }));

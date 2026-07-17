@@ -29,6 +29,13 @@ export async function composeDigest(): Promise<string> {
   lines.push(`◆ COUNSEL — morning digest · ${brief.greeting.date}`);
   lines.push(`${displayName()}${persona ? ` · ${persona.label}` : ""}`);
   lines.push("");
+  try {
+    const { financialPosture } = await import("./posture");
+    const po = await financialPosture();
+    if (po.level === "urgent" || po.level === "critical") {
+      lines.push(`THE POSTURE (${po.level.toUpperCase()}): ${strip(po.headline)} First move: ${po.firstMove}.`, "");
+    }
+  } catch { /* thin */ }
   lines.push(`THE READ: ${strip(brief.state.headline)}`);
   lines.push(strip(brief.state.sub));
   lines.push("");

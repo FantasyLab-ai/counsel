@@ -9,6 +9,7 @@ import type { AskAnswer, Brief, Insight, Metric, Source, WatchItem } from "../ap
 import { userCharges, userExpenses, userMeta } from "./dataSource";
 import { displayName } from "./persona";
 import { evaluateContracts, cashSentry, money } from "./insights";
+import { financialPosture, type Posture } from "./posture";
 import { stats as decisionStats } from "./decisions";
 import { hasCloudAccount, cloudStatus } from "./cloudSync";
 
@@ -114,6 +115,9 @@ export async function brief(): Promise<Brief> {
   const w = windows()!;
   const today = new Date();
   const dateLabel = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const posture: Posture = await financialPosture().catch(() => ({
+    level: "steady", headline: "", sub: "", firstMove: "", deficit30: 0, coveragePct: null, cite: "",
+  }) as Posture);
 
   // ---- the read (honest trend, no model theater on thin data) ----
   const delta = w.revPrev30 > 0 ? (w.rev30 - w.revPrev30) / w.revPrev30 : null;
@@ -134,21 +138,27 @@ export async function brief(): Promise<Brief> {
       (delta !== null ? ` vs ${money(w.revPrev30)} the 30 before.` : ".") +
       ` Every figure below is computed on this device from your connected data.`;
 
-  // ---- attention: real signals only ----
+  // Register override: a calm trend line over a burning P&L is a tone lie.
+  const escalated = posture.level === "urgent" || posture.level === "critical";
+  const finalHeadline = escalated ? posture.headline : headline;
+  const finalSub = escalated ? `${posture.sub} Revenue context: ${sub}` : sub;
+
+  // ---- attention: real signals only, in the register they deserve ----
   const attention: Insight[] = [];
-  try {
-    const sentry = await cashSentry();
-    if (sentry && !sentry.clears) {
-      attention.push({
-        id: "live-cash",
-        source: "Cash sentry · banded forecast",
-        headline: `My <b>low estimate</b> runs ${money(-sentry.marginOfSafety)} short of monthly outgoings — worth watching this week.`,
-        confidence: "moderate",
-        confidenceLabel: "Banded forecast",
-        citationChip: "AR(1) · 95% band",
-      });
-    }
-  } catch { /* sentry needs more days — fine */ }
+  if (posture.level !== "steady") {
+    attention.push({
+      id: "live-posture",
+      source: posture.level === "critical" ? "The posture · act now"
+        : posture.level === "urgent" ? "The posture · this week"
+        : "The posture · watching",
+      headline: `${posture.headline} <b>First move:</b> ${posture.firstMove}.`,
+      confidence: posture.coveragePct !== null ? "high" : "moderate",
+      confidenceLabel: posture.level === "critical" ? "Act now — recorded, not projected"
+        : posture.level === "urgent" ? "Act this week"
+        : posture.coveragePct !== null ? "Recorded gap" : "Banded forecast",
+      citationChip: posture.coveragePct !== null ? `${posture.coveragePct}% of spending covered` : "AR(1) · 95% band",
+    });
+  }
   try {
     const fired = (await evaluateContracts()).filter((c) => c.fired);
     for (const f of fired.slice(0, 2)) {
@@ -204,9 +214,11 @@ export async function brief(): Promise<Brief> {
   return {
     greeting: { date: dateLabel, business: displayName() },
     state: {
-      eyebrow: "Right now · your live data",
-      headline,
-      sub,
+      eyebrow: posture.level === "critical" ? "Right now · act, don't watch"
+        : posture.level === "urgent" ? "Right now · this week matters"
+        : "Right now · your live data",
+      headline: finalHeadline,
+      sub: finalSub,
       micro: [
         { label: "30-day revenue", value: money(w.rev30), tone: "hi" },
         { label: "transactions", value: String(w.tx30), tone: "hi" },
@@ -286,12 +298,18 @@ export async function metrics(): Promise<Metric[]> {
     label: "Margin · net of recorded expenses",
     value: marginPct !== null ? `${marginPct.toFixed(0)}%` : "—",
     meaning: marginPct !== null
-      ? `${money(w.rev30)} in, <b>${money(expWindow.exp30)}</b> of recorded expenses out over the last 30 days. Net of everything on file — labeled operating, not gross.`
+      ? marginPct < 0
+        ? `<b>Spending is outrunning revenue</b> — ${money(w.rev30)} in vs ${money(expWindow.exp30)} out means ${money(expWindow.exp30 - w.rev30)} left the business in 30 days. This is the number to fix first — the P&L shows the biggest lever.`
+        : marginPct < 10
+          ? `${money(w.rev30)} in, ${money(expWindow.exp30)} out — <b>a thin ${marginPct.toFixed(0)}%</b>. One bad week eats this; worth a deliberate look at the P&L.`
+          : `${money(w.rev30)} in, <b>${money(expWindow.exp30)}</b> of recorded expenses out over the last 30 days. Net of everything on file — labeled operating, not gross.`
       : hasExp
         ? `Expenses on file, but no revenue in the window to divide against yet.`
         : `<b>Needs expenses.</b> Connect a bank or drop an expense CSV in Power Up and this computes for real — no borrowed number.`,
     confidence: marginPct !== null ? "high" : "insufficient",
-    confidenceLabel: marginPct !== null ? "Your books, exact" : "Awaiting expenses",
+    confidenceLabel: marginPct !== null
+      ? (marginPct < 0 ? "Act now" : "Your books, exact")
+      : "Awaiting expenses",
     ...(marginPct !== null ? {
       math: {
         methodPlain: `Revenue minus every recorded expense in the same 30-day window, divided by revenue. Every row is on file — this is arithmetic, not an estimate.`,
@@ -315,7 +333,9 @@ export async function metrics(): Promise<Metric[]> {
     label: hasExp ? "Burn · monthly" : "Cash runway",
     value: hasExp && expWindow.burnMo > 0 ? money(expWindow.burnMo) : "—",
     meaning: hasExp && expWindow.burnMo > 0
-      ? `True burn from your recorded expenses. <b>Runway = cash ÷ burn</b> — it unlocks when a bank balance arrives; I won't guess your cash position.`
+      ? (w.rev30 > 0 && expWindow.exp30 > w.rev30
+          ? `Burn is running <b>${(expWindow.exp30 / w.rev30).toFixed(1)}× revenue</b> right now. Runway = cash ÷ burn — and at this ratio, whatever the cash is, it's shrinking monthly.`
+          : `True burn from your recorded expenses. <b>Runway = cash ÷ burn</b> — it unlocks when a bank balance arrives; I won't guess your cash position.`)
       : `<b>Needs expenses/bank data</b> for true burn. Until then I won't invent a runway.`,
     confidence: hasExp && expWindow.burnMo > 0 ? "moderate" : "insufficient",
     confidenceLabel: hasExp && expWindow.burnMo > 0 ? "From your books" : "Awaiting expenses",

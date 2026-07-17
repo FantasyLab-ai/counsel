@@ -168,6 +168,26 @@ export async function recommendations(): Promise<Recommendation[]> {
     } catch { /* thin history */ }
   }
 
+  // The posture — when spending outruns revenue, stopping the bleed IS the
+  // top proposal, ahead of every optimization.
+  try {
+    const { financialPosture } = await import("./posture");
+    const po = await financialPosture();
+    if (po.level === "critical" || po.level === "urgent") {
+      out.unshift({
+        id: `rec-posture-${po.level}`,
+        source: po.level === "critical" ? "The posture · act now" : "The posture · this week",
+        action: po.level === "critical"
+          ? "Stop the bleed: cut or renegotiate the top expense category"
+          : "Close the coverage gap: one lever this week",
+        expected: `${money(po.deficit30)}/mo stops leaving the business — first move: ${po.firstMove}`,
+        impact: po.deficit30,
+        gradeInDays: po.level === "critical" ? 7 : 14,
+        cite: po.cite,
+      });
+    }
+  } catch { /* posture needs data */ }
+
   // Goal contract — course-correct only when genuinely behind the band
   try {
     const { goalPace } = await import("./goals");
