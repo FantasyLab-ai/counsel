@@ -329,6 +329,85 @@ async function pulseSquare(cred, n) {
   return made;
 }
 
+
+/* --------------------------- seeded history ------------------------------
+   Months of realistic canonical rows so a brand-new test account has a
+   full story to analyze — WITH planted findings for the engines to
+   discover honestly: a +8% price change (elasticity), a spike day
+   (sentinel ceiling), a creeping subscription and a duplicate charge
+   (the audit), recurring customers throughout (survival/cohorts).
+   Stored in the vault, merged into every sync AHEAD of live rows.
+   Never written to any provider; refused when a LIVE credential exists. */
+
+function generateBackfill(days) {
+  const charges = [];
+  const expenses = [];
+  const today = new Date();
+  const iso = (d) => d.toISOString().slice(0, 10);
+  const wdFactor = [0.7, 0.85, 0.9, 1.0, 1.1, 1.5, 1.45]; // Sun..Sat, weekend business
+  const prices = { latte: 6.5, "taco plate": 14, "market special": 22, "signature bundle": 38, "custom order": 55, "service call": 95 };
+  const priceChangeDay = Math.floor(days / 2); // "taco plate" +8% halfway in
+
+  for (let back = days; back >= 1; back--) {
+    const d = new Date(today.getTime() - back * 86400000);
+    const date = iso(d);
+    const wf = wdFactor[d.getDay()];
+    const growth = 1 + (0.15 * (days - back)) / days;           // gentle uptrend
+    const spike = back === 3 ? 2.6 : 1;                          // the ceiling-break day
+    let n = Math.round((3 + Math.random() * 5) * wf * growth * spike);
+    if (Math.random() < 0.04) n = 0;                             // the odd closed day
+    for (let i = 0; i < n; i++) {
+      const product = pick(PULSE_PRODUCTS);
+      let unit = prices[product] ?? 15;
+      if (product === "taco plate" && back <= priceChangeDay) unit = Math.round(unit * 1.08 * 100) / 100;
+      const qty = Math.random() < 0.25 ? 2 : 1;
+      charges.push({
+        date, product, qty,
+        price: Math.round(unit * (0.95 + Math.random() * 0.1) * 100) / 100,
+        customer: pulseCustomer(),
+        fee: Math.round((unit * qty * 0.029 + 0.3) * 100) / 100,
+        channel: pick(PULSE_CHANNELS),
+      });
+    }
+
+    const dom = d.getDate();
+    if (dom === 1) expenses.push({ d: date, vendor: "Rent — commissary", amount: 1800, cat: "rent" });
+    if (dom === 15 || dom === 28) expenses.push({ d: date, vendor: "Payroll run", amount: 1400, cat: "payroll" });
+    if (d.getDay() === 1) expenses.push({ d: date, vendor: "Restock Supply Co", amount: Math.round(240 + Math.random() * 140), cat: "supplies" });
+    if (dom === 5) {
+      expenses.push({ d: date, vendor: "CloudPOS", amount: 49, cat: "software" });
+      // the monotone creep the audit is built to catch
+      const monthsIn = Math.floor((days - back) / 30);
+      expenses.push({ d: date, vendor: "MarketingApp Pro", amount: 29 + monthsIn * 5, cat: "software" });
+    }
+    if (dom === 12 && back <= 40 && back >= 33) {
+      // the planted duplicate — same vendor, same amount, same day
+      expenses.push({ d: date, vendor: "InsuranceCo Monthly", amount: 210, cat: "insurance" });
+      expenses.push({ d: date, vendor: "InsuranceCo Monthly", amount: 210, cat: "insurance" });
+    } else if (dom === 12) {
+      expenses.push({ d: date, vendor: "InsuranceCo Monthly", amount: 210, cat: "insurance" });
+    }
+  }
+  return { charges, expenses };
+}
+
+async function hasLiveCredential(env, acct) {
+  // Inspect the actual sealed credentials — same standard as the pulse gate.
+  // Stripe: anything not sk_test_/rk_test_ is live. Square: production env.
+  // Shopify: a shpat token is a real store — treated as live, full stop.
+  for (const prov of Object.keys(acct.providers)) {
+    try {
+      const cred = JSON.parse(await openToken(env, acct.providers[prov].t));
+      if (prov === "stripe" && !/^(sk|rk)_test_/.test(cred.key)) return true;
+      if (prov === "square" && cred.env !== "sandbox") return true;
+      if (prov === "shopify") return true;
+    } catch {
+      return true; // unreadable credential -> refuse, err on the safe side
+    }
+  }
+  return false;
+}
+
 async function seedAccount(env, acct, n) {
   const seeded = {};
   for (const provider of Object.keys(acct.providers)) {
@@ -390,6 +469,7 @@ export default {
       const { id, acct } = auth;
 
       if (path === "/v1/account" && req.method === "DELETE") {
+        await env.ACCOUNTS.delete(`bf:${id}`);
         await env.ACCOUNTS.delete(`acct:${id}`);
         return json(req, 200, { ok: true, deleted: id });
       }
@@ -399,6 +479,7 @@ export default {
           providers: Object.keys(acct.providers),
           created: acct.created,
           pulse: !!acct.pulse,
+          backfill: acct.bf ?? null,
         });
       }
 
@@ -410,6 +491,26 @@ export default {
         let seeded = {};
         if (acct.pulse) seeded = await seedAccount(env, acct, 6); // instant burst so the next sync shows life
         return json(req, 200, { ok: true, pulse: acct.pulse, seeded });
+      }
+
+      // -- seeded history: months of canonical test data in the vault --
+      if (path === "/v1/backfill" && req.method === "POST") {
+        if (await hasLiveCredential(env, acct)) {
+          return json(req, 403, { error: "seeded history is for test/sandbox accounts — a live credential is connected" });
+        }
+        const body = (await readBody(req)) ?? {};
+        const days = Math.min(365, Math.max(30, Number(body.days) || 90));
+        const bf = generateBackfill(days);
+        await env.ACCOUNTS.put(`bf:${id}`, JSON.stringify(bf));
+        acct.bf = { c: bf.charges.length, e: bf.expenses.length, days };
+        await saveAcct(env, id, acct);
+        return json(req, 200, { ok: true, charges: bf.charges.length, expenses: bf.expenses.length, days });
+      }
+      if (path === "/v1/backfill" && req.method === "DELETE") {
+        await env.ACCOUNTS.delete(`bf:${id}`);
+        delete acct.bf;
+        await saveAcct(env, id, acct);
+        return json(req, 200, { ok: true });
       }
 
       const connect = /^\/v1\/connect\/([a-z]+)$/.exec(path);
@@ -465,9 +566,24 @@ export default {
             errors[provider] = String(e?.message || e).slice(0, 120);
           }
         }
+        // seeded history rides ahead of the live rows (all historical dates)
+        let expensesOut = [];
+        let seededCounts = null;
+        if (acct.bf) {
+          try {
+            const bf = JSON.parse((await env.ACCOUNTS.get(`bf:${id}`)) ?? "null");
+            if (bf) {
+              charges.push(...bf.charges);
+              expensesOut = bf.expenses;
+              seededCounts = { charges: bf.charges.length, expenses: bf.expenses.length };
+            }
+          } catch { /* corrupt blob -> live rows only */ }
+        }
         charges.sort((a, b) => (a.date < b.date ? -1 : 1));
         return json(req, 200, {
           charges: charges.slice(-MAX_ROWS),
+          expenses: expensesOut,
+          seeded: seededCounts,
           sources: Object.keys(pulled),
           pulled,
           ...(Object.keys(errors).length ? { errors } : {}),

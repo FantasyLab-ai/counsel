@@ -6,7 +6,7 @@
 // except your encrypted token.
 
 import { storeUserData } from "./dataSource";
-import type { Charge } from "./tierMath";
+import type { Charge, Expense } from "./tierMath";
 
 const BASE = "https://counsel-cloud.fantasy-labai.workers.dev";
 const K_ACCOUNT = "counsel.cloud.account";
@@ -59,14 +59,15 @@ export async function listCloudConnections(): Promise<CloudProvider[]> {
   return (res.providers as CloudProvider[]) ?? [];
 }
 
-export interface CloudStatus { providers: CloudProvider[]; pulse: boolean }
+export interface CloudStatus { providers: CloudProvider[]; pulse: boolean; backfill: { c: number; e: number; days: number } | null }
 
 export async function cloudStatus(): Promise<CloudStatus> {
-  if (!hasCloudAccount()) return { providers: [], pulse: false };
+  if (!hasCloudAccount()) return { providers: [], pulse: false, backfill: null };
   const res = await api("/v1/connections");
   return {
     providers: (res.providers as CloudProvider[]) ?? [],
     pulse: !!res.pulse,
+    backfill: (res.backfill as CloudStatus["backfill"]) ?? null,
   };
 }
 
@@ -100,16 +101,33 @@ export interface SyncResult {
 export async function syncNow(days = 365): Promise<SyncResult> {
   const res = await api("/v1/sync", { method: "POST", body: JSON.stringify({ days }) });
   const charges = (res.charges as Charge[]) ?? [];
+  const expenses = (res.expenses as Expense[]) ?? [];
   const pulled = (res.pulled as Record<string, number>) ?? {};
   const sources = (res.sources as string[]) ?? [];
+  const seeded = !!res.seeded;
   if (charges.length) {
-    storeUserData(charges, null, `${sources.join(" + ")} live sync`);
+    const name = `${sources.length ? sources.join(" + ") + " live sync" : "live sync"}${seeded ? " · seeded test history" : ""}`;
+    storeUserData(charges, expenses.length ? expenses : null, name);
   }
   return {
     rows: charges.length,
     pulled,
     ...(res.errors ? { errors: res.errors as Record<string, string> } : {}),
   };
+}
+
+export interface BackfillInfo { c: number; e: number; days: number }
+
+/** Seed months of realistic TEST history into the vault (refused when any
+ * live credential is connected). Every sync then returns history + the
+ * growing pulse data — the full story from day one. */
+export async function seedHistory(days = 90): Promise<{ charges: number; expenses: number }> {
+  const res = await api("/v1/backfill", { method: "POST", body: JSON.stringify({ days }) });
+  return { charges: (res.charges as number) ?? 0, expenses: (res.expenses as number) ?? 0 };
+}
+
+export async function clearHistory(): Promise<void> {
+  await api("/v1/backfill", { method: "DELETE" });
 }
 
 /** Delete the cloud account AND its stored tokens (the on-device data stays). */

@@ -9,7 +9,8 @@ import { clearUserData, hasUserData, storeUserData, userCharges, userExpenses, u
 import { addPostsBulk } from "../engine/socialMath";
 import { getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
 import {
-  cloudStatus, connectProvider, disconnectProvider, setPulse, syncNow, type CloudProvider,
+  clearHistory, cloudStatus, connectProvider, disconnectProvider, seedHistory, setPulse, syncNow,
+  type CloudProvider,
 } from "../engine/cloudSync";
 import { Reveal } from "../components/ui";
 
@@ -174,12 +175,13 @@ function LiveConnect() {
   const [sqEnv, setSqEnv] = useState<"production" | "sandbox">("production");
   const [connected, setConnected] = useState<CloudProvider[]>([]);
   const [pulse, setPulseState] = useState(false);
+  const [backfill, setBackfill] = useState<{ c: number; e: number; days: number } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
   const help = LIVE_HELP[provider];
 
   useEffect(() => {
-    cloudStatus().then((s) => { setConnected(s.providers); setPulseState(s.pulse); }).catch(() => undefined);
+    cloudStatus().then((s) => { setConnected(s.providers); setPulseState(s.pulse); setBackfill(s.backfill); }).catch(() => undefined);
   }, []);
 
   async function doConnect() {
@@ -300,6 +302,34 @@ function LiveConnect() {
           <button className={`dbtn ${pulse ? "primary" : ""}`} disabled={!!busy} onClick={togglePulse}>
             {pulse ? "◉ on" : "○ off"}
           </button>
+        </div>
+      )}
+      {connected.length > 0 && (
+        <div className="pulse-row">
+          <div className="pulse-txt">
+            <b>Seeded history</b> — {backfill
+              ? `${backfill.days} days in the vault (${backfill.c} sales · ${backfill.e} expenses, findings planted for the engines to catch). Every sync returns history + your live pulse.`
+              : "instantly give this test account ~90 days of realistic sales AND expenses — with planted findings (a price change, a spike day, a duplicate charge, a creeping subscription) for the engines to catch. Test/sandbox only."}
+          </div>
+          {backfill ? (
+            <button className="dbtn" disabled={!!busy} onClick={async () => {
+              setBusy("removing history…");
+              try { await clearHistory(); setBackfill(null); setStatus({ ok: true, msg: "seeded history removed — next sync returns only live rows." }); }
+              catch (e) { setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) }); }
+              finally { setBusy(null); }
+            }}>remove</button>
+          ) : (
+            <button className="dbtn primary" disabled={!!busy} onClick={async () => {
+              setBusy("seeding 90 days…");
+              try {
+                const r = await seedHistory(90);
+                setBackfill({ c: r.charges, e: r.expenses, days: 90 });
+                setStatus({ ok: true, msg: `${r.charges} sales + ${r.expenses} expenses seeded — auto-syncing…` });
+                setTimeout(doSync, 900);
+              } catch (e) { setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) }); }
+              finally { setBusy(null); }
+            }}>seed 90d</button>
+          )}
         </div>
       )}
       {busy && <div className="dropin-status ok">{busy}</div>}
