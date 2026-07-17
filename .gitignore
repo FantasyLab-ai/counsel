@@ -12,3 +12,5 @@ android-setup.log
 android/app/src/main/jniLibs/
 android/app/build/
 android/.gradle/
+tsconfig.tsbuildinfo
+.wrangler/
