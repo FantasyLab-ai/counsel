@@ -113,6 +113,16 @@ function isFirstRun(): boolean {
 class ErrorBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
   state = { err: null as Error | null };
   static getDerivedStateFromError(err: Error) { return { err }; }
+  componentDidCatch(err: Error) {
+    // Error NAME + message only — never data. Fire-and-forget.
+    try {
+      fetch("https://counsel-cloud.fantasy-labai.workers.dev/v1/telemetry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: err.name, msg: String(err.message).slice(0, 200), path: window.location.pathname }),
+      }).catch(() => {});
+    } catch { /* telemetry is optional by design */ }
+  }
   render() {
     if (this.state.err) {
       return (

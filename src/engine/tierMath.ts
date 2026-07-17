@@ -57,7 +57,12 @@ const quantile = (a: number[], q: number) => {
   const i = Math.min(s.length - 1, Math.max(0, Math.floor(q * s.length)));
   return s[i];
 };
-export const money = (x: number) => `$${Math.round(x).toLocaleString("en-US")}`;
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", EUR: "\u20ac", GBP: "\u00a3", CAD: "CA$", AUD: "A$" };
+function currencySymbol(): string {
+  try { return CURRENCY_SYMBOLS[localStorage.getItem("counsel.currency") ?? "USD"] ?? "$"; } catch { return "$"; }
+}
+/** Display formatting only — data stays as-recorded; the symbol is cosmetic. */
+export const money = (x: number) => `${currencySymbol()}${Math.round(x).toLocaleString("en-US")}`;
 
 // ============================ A1 · price elasticity =========================
 export interface ElasticityOut {

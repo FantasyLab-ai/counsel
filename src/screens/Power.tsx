@@ -118,6 +118,48 @@ const ITEMS: PowerItem[] = [
   },
 ];
 
+// Put Counsel on the home screen — the elegant version of Chrome's banner.
+function InstallCard() {
+  const [canPrompt, setCanPrompt] = useState(!!window.__deferredInstall);
+  const [installed, setInstalled] = useState(
+    window.matchMedia?.("(display-mode: standalone)").matches ?? false,
+  );
+  useEffect(() => {
+    const onAble = () => setCanPrompt(true);
+    const onDone = () => { setCanPrompt(false); setInstalled(true); };
+    window.addEventListener("counsel:installable", onAble);
+    window.addEventListener("appinstalled", onDone);
+    return () => { window.removeEventListener("counsel:installable", onAble); window.removeEventListener("appinstalled", onDone); };
+  }, []);
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (installed) return null;
+  if (!canPrompt && !isIOS) return null;
+
+  return (
+    <article className="mcard open il-card">
+      <div className="il-head">
+        <span className="il-kick">◆ put Counsel on your home screen</span>
+        <span className="pill lite-hi"><span className="dot" />works offline once installed</span>
+      </div>
+      <div className="mmean">
+        One tap from your home screen, full screen, no browser chrome — the advisor in your pocket, literally.
+      </div>
+      {canPrompt ? (
+        <div className="dropin-row">
+          <button className="dbtn primary" onClick={() => window.__deferredInstall?.prompt()}>
+            Install Counsel
+          </button>
+        </div>
+      ) : (
+        <div className="il-row-sub">
+          <b style={{ color: "var(--ink)" }}>On iPhone:</b> tap the Share button, then <b>Add to Home Screen</b>.
+        </div>
+      )}
+    </article>
+  );
+}
+
 function PersonaStrip() {
   const [p, setP] = useState(getPersona() ?? PERSONAS[PERSONAS.length - 1]);
   return (
@@ -523,6 +565,8 @@ export default function Power() {
           <div className="pw-progress"><span style={{ width: `${(live / mine.length) * 100}%` }} /></div>
         </section>
       </Reveal>
+
+      <Reveal i={1}><InstallCard /></Reveal>
 
       <div className="eyebrow">Your setup path</div>
       <Reveal i={1}><PersonaStrip /></Reveal>

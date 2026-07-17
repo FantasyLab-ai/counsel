@@ -251,3 +251,16 @@ export function BackBtn() {
     </button>
   );
 }
+
+
+/** Shimmering placeholder card — the paper is being set, not stalled. */
+export function Skeleton({ lines = 3, caption }: { lines?: number; caption?: string }) {
+  return (
+    <article className="mcard open il-card" aria-busy="true" aria-live="polite">
+      {caption && <div className="skl-cap">{caption}</div>}
+      {Array.from({ length: lines }, (_, i) => (
+        <div className="skl" style={{ width: `${[92, 66, 80, 54, 74][i % 5]}%` }} key={i} />
+      ))}
+    </article>
+  );
+}

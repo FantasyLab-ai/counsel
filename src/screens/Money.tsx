@@ -11,7 +11,7 @@ import {
 import { money } from "../engine/tierMath";
 import { dataMode, userExpenses } from "../engine/dataSource";
 import { cashView, type CashViewOut, type CashViewThin } from "../engine/cashview";
-import { ActOn, Awaiting, BackBtn, Receipt, Reveal } from "../components/ui";
+import { ActOn, Awaiting, BackBtn, Receipt, Reveal, Skeleton } from "../components/ui";
 
 // Cash on hand — the one number no connector knows yet. The owner states
 // it once; the calendar, the 13-week view and runway anchor on it.
@@ -172,7 +172,7 @@ export default function Money() {
       </div>
 
       {err && <div className="reassure">Money engine unavailable: {err}</div>}
-      {!cal && !err && <div className="il-loading">▶ building your cash calendar…</div>}
+      {!cal && !err && (!liveMode || hasExp) && <Skeleton lines={4} caption="building the money map…" />}
 
       {cal && (ar || liveMode) && (
         <>

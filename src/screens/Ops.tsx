@@ -11,7 +11,7 @@ import { staffingPlan, type StaffDay } from "../engine/money";
 import { money } from "../engine/tierMath";
 import { dataMode } from "../engine/dataSource";
 import { dayEconomics, setDayCost, type DayEconomics, type DayEconThin } from "../engine/dayEconomics";
-import { ActOn, Awaiting, BackBtn, Html, Receipt, Reveal } from "../components/ui";
+import { ActOn, Awaiting, BackBtn, Html, Receipt, Reveal, Skeleton } from "../components/ui";
 
 // The working-day P&L — persona unit economics. Speaks the owner's unit
 // (service day / job day / selling day), shows the real-day band against
@@ -180,7 +180,7 @@ export default function Ops() {
       </div>
 
       {err && <div className="reassure">Ops engine unavailable: {err}</div>}
-      {!out && !err && <div className="il-loading">▶ reading inventory against your demand rates…</div>}
+      {!out && !err && <Skeleton lines={4} caption="reading stock against demand…" />}
 
       {out && (
         <>

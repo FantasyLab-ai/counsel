@@ -10,7 +10,7 @@ import { anchorDate, periodMetrics, resolveWindow, type PeriodId } from "../engi
 import { dataMode } from "../engine/dataSource";
 import { drivers, type DriversOut, type DriversThin } from "../engine/drivers";
 import { money } from "../engine/tierMath";
-import { ActOn, ConfidencePill, CountUp, Html, Receipt, Reveal, ShareCard } from "../components/ui";
+import { ActOn, ConfidencePill, CountUp, Html, Receipt, Reveal, ShareCard, Skeleton } from "../components/ui";
 import { MathView } from "../components/charts";
 
 // The "what changed" card — driver decomposition. Answers WHY revenue moved:
@@ -199,6 +199,7 @@ export default function Numbers() {
       <div className="eyebrow">Why it moved</div>
       <Reveal i={0}><DriversCard /></Reveal>
 
+      {metrics.length === 0 && <Skeleton lines={4} caption="reading the numbers…" />}
       {metrics.map((m, i) => (
         <Reveal i={i} key={`${period}-${m.id}`}>
           <article className={`mcard ${open[m.id] ? "open" : ""}`}>

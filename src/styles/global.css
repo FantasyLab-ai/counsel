@@ -11,7 +11,7 @@
   --card-2: #f3f5f1;
   --ink: #18211c;
   --muted: #77857b;
-  --faint: #a9b4ac;
+  --faint: #75827a; /* contrast-audited: was #a9b4ac */
   --forest: #1c4b3a;
   --forest-tint: #dbe6de;
   --brass: #9c7a46;
@@ -1115,3 +1115,17 @@ h1, .said, .big, .verdict, .analyzing-h, .rec-action { text-wrap: balance; }
   margin-right: 12px; flex-shrink: 0; align-self: flex-start; }
 .backbtn svg { width: 17px; height: 17px; }
 .backbtn:active { transform: scale(.92); }
+
+
+/* ---- skeleton shimmer: paper being set, not a spinner ---- */
+.skl { height: 13px; border-radius: 7px; margin: 10px 0;
+  background: linear-gradient(100deg, #e7e3d6 30%, #f2efe5 46%, #e7e3d6 62%);
+  background-size: 220% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+.skl-big { height: 22px; }
+.skl-cap { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--faint); margin-bottom: 4px; }
+.skl-voice { background: var(--card-ink, #152019); border-radius: 20px; padding: 22px; margin-top: 14px; }
+.skl-dark { background: linear-gradient(100deg, #223028 30%, #2c3b32 46%, #223028 62%);
+  background-size: 220% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+@keyframes shimmer { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+@media (prefers-reduced-motion: reduce) { .skl, .skl-dark { animation: none; } }

@@ -524,6 +524,24 @@ export default {
         return json(req, 200, { accountId, accountSecret });
       }
 
+      // -- crash telemetry: error name + message ONLY, never data (no auth:
+      //    a crashed client may have none; body hard-capped) --
+      if (path === "/v1/telemetry" && req.method === "POST") {
+        const body = (await readBody(req)) ?? {};
+        const entry = {
+          t: new Date().toISOString(),
+          name: String(body.name ?? "?").slice(0, 60),
+          msg: String(body.msg ?? "").slice(0, 200),
+          path: String(body.path ?? "").slice(0, 60),
+        };
+        try {
+          const cur = JSON.parse((await env.ACCOUNTS.get("telemetry:recent")) ?? "[]");
+          cur.unshift(entry);
+          await env.ACCOUNTS.put("telemetry:recent", JSON.stringify(cur.slice(0, 50)));
+        } catch { /* best effort */ }
+        return json(req, 200, { ok: true });
+      }
+
       // -- everything below requires auth --
       const auth = await requireAuth(req, env);
       if (!auth) return json(req, 401, { error: "invalid or missing credentials" });

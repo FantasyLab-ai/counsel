@@ -46,7 +46,15 @@ const SRC_ICONS: Record<string, JSX.Element> = {
   ),
 };
 
+const WHATS_NEW: { v: string; note: string }[] = [
+  { v: "0.4", note: "The P&L statement tab · posture system (urgency earns its register) · live Money map with cash-on-hand anchor · Plaid bank connections" },
+  { v: "0.3", note: "Live sync (Stripe/Square/Shopify) · seeded test history · demo pulse · one-business-many-pipes sync" },
+  { v: "0.2", note: "Decision contracts (Counsel proposes, you accept, the math grades) · driver decomposition · daily sentinel · 13-week cash view" },
+  { v: "0.1", note: "The honest core: nine engines, receipts on every number, on-device analysis, refusal over guessing" },
+];
+
 export default function Settings() {
+  const [showNew, setShowNew] = useState(false);
   const nav = useNavigate();
   const [sources, setSources] = useState<Source[]>([]);
   const [prefs, setPrefs] = useState(getSettings());
@@ -170,6 +178,20 @@ export default function Settings() {
                 <div className="rs">How direct the plain-English reads. Tap to change.</div>
               </div>
               <div className="rr"><span className="rv">{prefs.tone}</span>{CHEV}</div>
+            </div>
+            <div className="srow tap" role="button" tabIndex={0}
+                 onClick={() => {
+                   const order = ["USD", "EUR", "GBP", "CAD", "AUD"];
+                   const cur = localStorage.getItem("counsel.currency") ?? "USD";
+                   localStorage.setItem("counsel.currency", order[(order.indexOf(cur) + 1) % order.length]);
+                   window.location.reload();
+                 }}
+                 onKeyDown={(e) => { if (e.key === "Enter") (e.currentTarget as HTMLElement).click(); }}>
+              <div className="rl">
+                <div className="rt">Display currency</div>
+                <div className="rs">Formatting only — your data stays exactly as recorded. Tap to change.</div>
+              </div>
+              <div className="rr"><span className="rv">{localStorage.getItem("counsel.currency") ?? "USD"}</span>{CHEV}</div>
             </div>
           </div>
         </section>
@@ -328,8 +350,32 @@ export default function Settings() {
         </section>
       </Reveal>
 
+      {showNew && (
+        <div className="sheet-veil" role="dialog" aria-label="What's new"
+             onClick={(e) => { if (e.target === e.currentTarget) setShowNew(false); }}>
+          <div className="sheet">
+            <div className="sheet-grab" aria-hidden="true" />
+            <div className="digest-head">
+              <span className="il-kick">what's new</span>
+              <button className="dt-btn" onClick={() => setShowNew(false)}>close</button>
+            </div>
+            <div className="sheet-body">
+              {WHATS_NEW.map((n) => (
+                <div className="tl-row" key={n.v}>
+                  <div className="tl-name">v{n.v}</div>
+                  <div className="tl-method" style={{ textTransform: "none", letterSpacing: 0 }}>{n.note}</div>
+                </div>
+              ))}
+              <div className="il-cite" style={{ marginTop: 12 }}>an app that narrates its own evolution — no silent changes</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="sfooter">
-        <div className="v">Counsel v0.1.0 · prototype</div>
+        <button className="v lk-b" style={{ textDecoration: "none" }} onClick={() => setShowNew(true)}>
+          Counsel v0.4 · what's new ↗
+        </button>
         <a className="pb" href="https://github.com/FantasyLab-ai/aurora" target="_blank" rel="noopener noreferrer">
           powered by Aurora ↗
         </a>

@@ -68,6 +68,12 @@ export default function Today() {
           <div className="avatar">{displayName()[0]}</div>
         </div>
         <div className="greet">reading your numbers…</div>
+        <div className="skl-voice">
+          <div className="skl skl-dark" style={{ width: "40%" }} />
+          <div className="skl skl-dark skl-big" style={{ width: "88%" }} />
+          <div className="skl skl-dark skl-big" style={{ width: "64%" }} />
+          <div className="skl skl-dark" style={{ width: "76%" }} />
+        </div>
       </div>
     );
   }
