@@ -13,7 +13,7 @@ export interface Ledger {
   revenue: number[];
 }
 
-import { getDaily } from "./dataSource";
+import { getDaily, userExpenses } from "./dataSource";
 
 let _ledger: Ledger | null = null;
 
@@ -46,6 +46,21 @@ export interface CashSentry {
   ms: number;
 }
 
+/** Real outgoings + margin when the user's expenses exist; demo baseline
+ * otherwise. Returns null margin when revenue is too thin to divide. */
+export function liveMoneyBasis(): { outgoings: number; margin: number | null; live: boolean } {
+  const exp = userExpenses();
+  if (!exp || !exp.length) return { outgoings: BASELINE.fixedOutgoings, margin: BASELINE.margin, live: false };
+  const dates = exp.map((e) => e.d).sort();
+  const spanDays = Math.max(
+    28,
+    (new Date(dates[dates.length - 1] + "T00:00:00").getTime() - new Date(dates[0] + "T00:00:00").getTime()) / 86400000 + 1,
+  );
+  const total = exp.reduce((s, e) => s + e.amount, 0);
+  const outgoings = Math.round((total / spanDays) * 30.4); // monthly burn from recorded rows
+  return { outgoings, margin: null, live: true };
+}
+
 export async function cashSentry(): Promise<CashSentry | null> {
   const led = await ledger();
   const t0 = performance.now();
@@ -54,13 +69,25 @@ export async function cashSentry(): Promise<CashSentry | null> {
   if (!fc) return null;
   const lo30 = fc.lo.reduce((s, v) => s + v, 0);
   const hi30 = fc.hi.reduce((s, v) => s + v, 0);
-  // Profit at the LOW band vs fixed outgoings — the honest stress line.
-  const lowProfit = lo30 * BASELINE.margin;
+  // Profit at the LOW band vs outgoings — the honest stress line. With real
+  // expenses on file, BOTH sides come from the user's own data: margin from
+  // the last 30 recorded days (rev vs exp), outgoings from recorded burn.
+  const basis = liveMoneyBasis();
+  let margin = BASELINE.margin;
+  if (basis.live) {
+    const exp = userExpenses()!;
+    const last = led.dates[led.dates.length - 1];
+    const cut = new Date(new Date(last + "T00:00:00").getTime() - 29 * 86400000).toISOString().slice(0, 10);
+    const rev30 = led.revenue.filter((_, i) => led.dates[i] >= cut).reduce((s, v) => s + v, 0);
+    const exp30 = exp.filter((e) => e.d >= cut).reduce((s, e) => s + e.amount, 0);
+    if (rev30 > 0) margin = Math.max(0.05, Math.min(0.95, (rev30 - exp30) / rev30));
+  }
+  const lowProfit = lo30 * margin;
   return {
     lo30,
     hi30,
-    clears: lowProfit >= BASELINE.fixedOutgoings,
-    marginOfSafety: lowProfit - BASELINE.fixedOutgoings,
+    clears: lowProfit >= basis.outgoings,
+    marginOfSafety: lowProfit - basis.outgoings,
     ms,
   };
 }

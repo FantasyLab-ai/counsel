@@ -263,26 +263,62 @@ export async function metrics(): Promise<Metric[]> {
     wide: true,
   };
 
+  // Margin & burn — REAL arithmetic the moment expenses exist. Margin is
+  // net of ALL recorded expenses (labeled — it's operating, not gross-COGS).
+  // Runway still refuses without cash-on-hand: burn is computed, the
+  // division waits for a bank balance. No invented numbers.
+  const exp = userExpenses();
+  let expWindow = { exp30: 0, burnMo: 0 };
+  if (exp && exp.length) {
+    const dayMs = 86400000;
+    const cut30 = new Date(Date.now() - 30 * dayMs).toISOString().slice(0, 10);
+    const ds = exp.map((e) => e.d).sort();
+    const spanDays = Math.max(28, (new Date(ds[ds.length - 1] + "T00:00:00").getTime() - new Date(ds[0] + "T00:00:00").getTime()) / dayMs + 1);
+    expWindow = {
+      exp30: Math.round(exp.filter((e) => e.d >= cut30).reduce((s, e) => s + e.amount, 0)),
+      burnMo: Math.round((exp.reduce((s, e) => s + e.amount, 0) / spanDays) * 30.4),
+    };
+  }
+  const marginPct = hasExp && w.rev30 > 0 ? ((w.rev30 - expWindow.exp30) / w.rev30) * 100 : null;
+
   const margin: Metric = {
     id: "margin",
-    label: "Gross margin",
-    value: hasExp ? "computing" : "—",
-    meaning: hasExp
-      ? `Computed from your expense rows against revenue.`
-      : `<b>Needs expenses.</b> Drop a bank or expense CSV in Power Up and margin computes for real — no borrowed number.`,
-    confidence: hasExp ? "moderate" : "insufficient",
-    confidenceLabel: hasExp ? "From your books" : "Awaiting expenses",
+    label: "Margin · net of recorded expenses",
+    value: marginPct !== null ? `${marginPct.toFixed(0)}%` : "—",
+    meaning: marginPct !== null
+      ? `${money(w.rev30)} in, <b>${money(expWindow.exp30)}</b> of recorded expenses out over the last 30 days. Net of everything on file — labeled operating, not gross.`
+      : hasExp
+        ? `Expenses on file, but no revenue in the window to divide against yet.`
+        : `<b>Needs expenses.</b> Connect a bank or drop an expense CSV in Power Up and this computes for real — no borrowed number.`,
+    confidence: marginPct !== null ? "high" : "insufficient",
+    confidenceLabel: marginPct !== null ? "Your books, exact" : "Awaiting expenses",
+    ...(marginPct !== null ? {
+      math: {
+        methodPlain: `Revenue minus every recorded expense in the same 30-day window, divided by revenue. Every row is on file — this is arithmetic, not an estimate.`,
+        keyStatPlain: `(${money(w.rev30)} − ${money(expWindow.exp30)}) ÷ ${money(w.rev30)} = ${marginPct.toFixed(1)}%.`,
+        keyStatNotation: `(rev₃₀ − exp₃₀) / rev₃₀ · all recorded expense categories included`,
+        viz: {
+          kind: "arithmetic" as const,
+          lines: [
+            { text: `revenue, 30 days: ${money(w.rev30)}` },
+            { text: `recorded expenses, 30 days: −${money(expWindow.exp30)}` },
+            { text: `margin: ${marginPct.toFixed(1)}%`, kind: "result" as const },
+          ],
+        },
+        citation: { method: "transparent arithmetic", source: "your ledger + your expense rows" },
+      },
+    } : {}),
   };
 
   const runway: Metric = {
     id: "runway",
-    label: "Cash runway",
-    value: hasExp ? "computing" : "—",
-    meaning: hasExp
-      ? `Burn from your expense rows; banded, not promised.`
+    label: hasExp ? "Burn · monthly" : "Cash runway",
+    value: hasExp && expWindow.burnMo > 0 ? money(expWindow.burnMo) : "—",
+    meaning: hasExp && expWindow.burnMo > 0
+      ? `True burn from your recorded expenses. <b>Runway = cash ÷ burn</b> — it unlocks when a bank balance arrives; I won't guess your cash position.`
       : `<b>Needs expenses/bank data</b> for true burn. Until then I won't invent a runway.`,
-    confidence: hasExp ? "moderate" : "insufficient",
-    confidenceLabel: hasExp ? "From your books" : "Awaiting expenses",
+    confidence: hasExp && expWindow.burnMo > 0 ? "moderate" : "insufficient",
+    confidenceLabel: hasExp && expWindow.burnMo > 0 ? "From your books" : "Awaiting expenses",
   };
 
   return [revenue, customers, margin, runway];
