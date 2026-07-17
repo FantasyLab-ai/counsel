@@ -245,6 +245,18 @@ export default function Settings() {
               </div>
               <div className="rr">{CHEV}</div>
             </div>
+            <div className="srow" role="link" tabIndex={0} style={{ cursor: "pointer" }}
+                 onClick={() => nav("/trust")}
+                 onKeyDown={(e) => { if (e.key === "Enter") nav("/trust"); }}>
+              <div className="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
+              </div>
+              <div className="rl">
+                <div className="rt">The Trust Ledger</div>
+                <div className="rs">Every claim's method — and exactly when Counsel refuses to speak.</div>
+              </div>
+              <div className="rr">{CHEV}</div>
+            </div>
             <div className="srow">
               <div className="rl">
                 <div className="rt">Where your data lives</div>

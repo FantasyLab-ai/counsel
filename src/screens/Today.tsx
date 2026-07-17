@@ -217,6 +217,7 @@ export default function Today() {
       </Reveal>
 
       {/* The hub — every deep section, one grid. Fixes discovery. */}
+      <div className="fleuron" aria-hidden="true">◆</div>
       <div className="eyebrow">Go deeper</div>
       <Reveal i={9}>
         <div className="hub-grid">

@@ -961,3 +961,69 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* ---- onboarding live-connect form ---- */
 .ob-live-form { display: flex; flex-direction: column; gap: 9px; }
 .ob-live-form .btn { margin-top: 2px; }
+
+/* ============================================================
+   The authored pass — a hand-set journal, not a template.
+   Texture, typographic care, and small editorial signatures.
+   ============================================================ */
+
+/* Paper grain — the single cheapest killer of "flat". Fixed overlay,
+   3% opacity, grains the ink sections too (paper runs through the book). */
+.wrap::after {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 999;
+  opacity: .03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Typographic care: headlines balance, body rags stay pretty,
+   serif passages get oldstyle figures (numbers that sit IN the sentence). */
+h1, .said, .big, .verdict, .analyzing-h, .rec-action { text-wrap: balance; }
+.mmean, .sub, .lede, .sheet-p, .insight-note, .abody { text-wrap: pretty; }
+.said, .big, .verdict { font-feature-settings: "onum" 1; }
+::selection { background: rgba(205, 174, 126, .35); }
+
+/* Letterpress depth: a hairline of light along each card's top edge —
+   paper catching the lamp. */
+.mcard.open { box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 14px 30px -18px rgba(20, 30, 24, 0.35); }
+.voice { box-shadow: inset 0 1px 0 rgba(233,232,226,.07), 0 18px 40px -22px rgba(15, 24, 18, .55); }
+
+/* The active tab earns its mark. */
+.tab { position: relative; }
+.tab.on::after { content: ""; position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+  width: 22px; height: 2.5px; border-radius: 2px; background: var(--brass); }
+
+/* Fleuron — the section-close signature of a set journal. */
+.fleuron { display: flex; align-items: center; gap: 14px; margin: 30px 0 4px;
+  color: var(--brass); font-size: 10px; }
+.fleuron::before, .fleuron::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* Share chip — quiet until wanted. */
+.share-chip { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono);
+  font-size: 9px; letter-spacing: .06em; color: var(--brass); background: none;
+  border: 1px solid var(--line); border-radius: 100px; padding: 4px 10px; cursor: pointer; }
+.share-chip:hover { border-color: var(--brass); }
+
+/* Day economics ---- */
+.de-band { display: flex; align-items: center; gap: 0; height: 34px; margin: 12px 0 4px; position: relative;
+  border-radius: 8px; overflow: hidden; background: var(--card-2); }
+.de-fill { position: absolute; top: 0; bottom: 0; background: #dfe8e1; }
+.de-med { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--forest); border-radius: 2px; }
+.de-thr { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--brass); }
+.de-legend { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9px;
+  color: var(--faint); margin-top: 4px; }
+.de-cost { display: inline-flex; align-items: baseline; gap: 6px; }
+.de-cost input { width: 76px; font-family: var(--mono); font-size: 12px; color: var(--ink);
+  background: var(--card-2); border: 1px solid var(--line); border-radius: 7px; padding: 4px 8px; }
+
+/* Trust Ledger ---- */
+.tl-stand { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+.tl-stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
+.tl-num { font-family: var(--serif); font-size: 26px; color: var(--forest); }
+.tl-lbl { font-family: var(--mono); font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.tl-row { padding: 11px 0; border-bottom: 1px solid var(--line); }
+.tl-row:last-child { border-bottom: none; }
+.tl-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+.tl-method { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
+.tl-refuse { font-size: 11px; color: var(--faint); font-style: italic; margin-top: 3px; }

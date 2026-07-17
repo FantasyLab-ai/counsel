@@ -10,7 +10,77 @@ import { OPS_ASSUMPTIONS, opsReport, type OpsOut } from "../engine/ops";
 import { staffingPlan, type StaffDay } from "../engine/money";
 import { money } from "../engine/tierMath";
 import { dataMode } from "../engine/dataSource";
-import { Awaiting, Reveal } from "../components/ui";
+import { dayEconomics, setDayCost, type DayEconomics, type DayEconThin } from "../engine/dayEconomics";
+import { Awaiting, Html, Receipt, Reveal } from "../components/ui";
+
+// The working-day P&L — persona unit economics. Speaks the owner's unit
+// (service day / job day / selling day), shows the real-day band against
+// THEIR daily bar, and counts — never projects.
+function DayEconCard() {
+  const [de, setDe] = useState<DayEconomics | DayEconThin | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const load = () => dayEconomics().then(setDe).catch((e) => setDe({ ok: false, reason: String(e) }));
+  useEffect(() => { load(); }, []);
+
+  if (!de) return <article className="mcard open il-card"><div className="il-loading">▶ counting your days…</div></article>;
+  if (!de.ok) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="mmean">Day economics: {de.reason}.</div>
+      </article>
+    );
+  }
+
+  const lo = Math.min(de.p25, de.threshold) * 0.85;
+  const hi = Math.max(de.p75, de.threshold) * 1.1;
+  const X = (v: number) => `${Math.min(98, Math.max(1, ((v - lo) / (hi - lo || 1)) * 100))}%`;
+  const mathBlock = {
+    methodPlain: `I took your recent active days (real revenue days, not calendar days), read the p25–p75 band and the median, and counted how many clear the daily bar — ${de.thresholdIsDefault ? "a placeholder bar until you set your true daily cost" : "your own number"}. Counted, not projected.`,
+    keyStatPlain: `Median ${de.unit}: ${money(de.median)} · band ${money(de.p25)}–${money(de.p75)} · ${de.pctClearing}% of days clear ${money(de.threshold)}.`,
+    keyStatNotation: `percentiles over active days · clearing rate = #{day ≥ bar} / #days`,
+    citation: { method: "working-day unit economics", source: "your ledger, recent active days" },
+  };
+
+  return (
+    <article className="mcard open il-card">
+      <div className="il-head"><span className="il-kick">the {de.unit} P&amp;L</span>
+        <span className={`pill ${de.pctClearing >= 80 ? "lite-hi" : de.pctClearing >= 55 ? "lite-mod" : "lite-none"}`}>
+          <span className="dot" />{de.activePerWeek} {de.unit.split(" ")[0]} days/wk</span></div>
+      <div className="mmean">
+        <Receipt math={mathBlock} title={`the ${de.unit} — the math`}><Html text={de.headline} /></Receipt>
+      </div>
+      <div className="de-band">
+        <span className="de-fill" style={{ left: X(de.p25), right: `calc(100% - ${X(de.p75)})` }} />
+        <span className="de-med" style={{ left: X(de.median) }} title={`median ${money(de.median)}`} />
+        <span className="de-thr" style={{ left: X(de.threshold) }} title={`the bar: ${money(de.threshold)}`} />
+      </div>
+      <div className="de-legend">
+        <span>p25 {money(de.p25)}</span>
+        <span>median {money(de.median)}</span>
+        <span>p75 {money(de.p75)}</span>
+      </div>
+      <div className="il-row-sub" style={{ marginTop: 8 }}>
+        <span className="de-cost">
+          <b style={{ color: "var(--ink)" }}>The bar</b> (what a day must clear):
+          {editing ? (
+            <>
+              <input type="number" inputMode="decimal" value={draft} autoFocus
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && draft.trim()) { setDayCost(parseFloat(draft)); setEditing(false); load(); } }} />
+              <button className="dt-btn" onClick={() => { if (draft.trim()) { setDayCost(parseFloat(draft)); load(); } setEditing(false); }}>save</button>
+            </>
+          ) : (
+            <button className="dt-btn" onClick={() => { setDraft(String(de.threshold)); setEditing(true); }}>
+              {money(de.threshold)}{de.thresholdIsDefault ? " · placeholder — set yours" : " · your number"}
+            </button>
+          )}
+        </span>
+      </div>
+      <div className="il-cite">{de.cite}</div>
+    </article>
+  );
+}
 
 const STATUS_LABEL: Record<string, string> = {
   delivered: "delivered", in_transit: "in transit", label_created: "label created",
@@ -75,7 +145,9 @@ export default function Ops() {
             </Reveal>
           </>
         )}
-        <Reveal i={3}>
+        <div className="eyebrow">Your unit economics — computed from YOUR days</div>
+        <Reveal i={3}><DayEconCard /></Reveal>
+        <Reveal i={4}>
           <button className="packet-card" onClick={() => nav("/power")}>
             <div className="pc-ico">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M13 2L3 14h7l-1 8 10-12h-7z" /></svg>
@@ -178,6 +250,9 @@ export default function Ops() {
               <div className="il-cite">tracking IDs come from your commerce platform automatically once connected — or paste them per order · live carrier scans via a tracking service (AfterShip/Shippo) in the connector phase</div>
             </article>
           </Reveal>
+
+          <div className="eyebrow">Your unit economics — the working-day P&amp;L</div>
+          <Reveal i={3}><DayEconCard /></Reveal>
 
           {staff.length > 0 && (
             <>

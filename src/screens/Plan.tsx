@@ -17,7 +17,7 @@ import {
 } from "../engine/insights";
 import { listDecisions, logDecision, type Decision } from "../engine/decisions";
 import { clearGoal, getGoal, goalPace, setGoal, suggestTarget, type GoalPace } from "../engine/goals";
-import { Html, Receipt, Reveal } from "../components/ui";
+import { Html, Receipt, Reveal, ShareCard } from "../components/ui";
 
 // Goal contract — the steering wheel. Set a monthly target; Counsel tracks
 // weekday-weighted pace with an honest variability band, and only calls
@@ -82,8 +82,11 @@ function GoalCard() {
   return (
     <article className="mcard open il-card">
       <div className="il-head"><span className="il-kick">the goal contract · {pace.monthLabel}</span>
-        <span className={`pill ${pace.status === "behind" ? "lite-none" : pace.status === "ahead" ? "lite-hi" : "lite-mod"}`}>
-          <span className="dot" />{pace.status} · target {money(pace.target)}</span></div>
+        <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+          <ShareCard kicker={`goal pace · ${pace.monthLabel}`} headline={pace.headline} cite={pace.cite} business={displayName()} />
+          <span className={`pill ${pace.status === "behind" ? "lite-none" : pace.status === "ahead" ? "lite-hi" : "lite-mod"}`}>
+            <span className="dot" />{pace.status} · target {money(pace.target)}</span>
+        </span></div>
       <div className="mmean">
         <Receipt math={mathBlock} title="goal pace — the math"><Html text={pace.headline} /></Receipt>
       </div>

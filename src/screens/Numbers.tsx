@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { getMetrics, type Metric, type Period } from "../api/counsel";
 import { drivers, type DriversOut, type DriversThin } from "../engine/drivers";
 import { money } from "../engine/tierMath";
-import { ConfidencePill, CountUp, Html, Receipt, Reveal } from "../components/ui";
+import { ConfidencePill, CountUp, Html, Receipt, Reveal, ShareCard } from "../components/ui";
 import { MathView } from "../components/charts";
 
 // The "what changed" card — driver decomposition. Answers WHY revenue moved:
@@ -51,8 +51,13 @@ function DriversCard() {
   return (
     <article className="mcard open il-card">
       <div className="il-head"><span className="il-kick">what changed — the drivers</span>
-        <span className={`pill ${Math.abs(out.deltaPct) < 3 ? "lite-hi" : "lite-mod"}`}><span className="dot" />
-          {out.deltaPct >= 0 ? "+" : ""}{out.deltaPct.toFixed(1)}% vs prior 4 wks</span></div>
+        <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+          <ShareCard kicker="what changed — the drivers" headline={out.headline}
+            sub={`${money(out.rev1)} → ${money(out.rev2)} across two aligned 4-week windows`}
+            cite={out.cite} business={displayName()} />
+          <span className={`pill ${Math.abs(out.deltaPct) < 3 ? "lite-hi" : "lite-mod"}`}><span className="dot" />
+            {out.deltaPct >= 0 ? "+" : ""}{out.deltaPct.toFixed(1)}% vs prior 4 wks</span>
+        </span></div>
       <div className="mmean">
         <Receipt math={mathBlock} title="what changed — the math"><Html text={out.headline} /></Receipt>
       </div>

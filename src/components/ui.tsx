@@ -209,3 +209,18 @@ export function Receipt({ math, title, children }: { math?: MathBlock; title?: s
     </>
   );
 }
+
+// ShareCard — a finding becomes a hand-set card (canvas, no deps) the owner
+// can post. Quiet chip; the card carries the receipt and the standing line.
+import { shareReceiptCard, type ReceiptCardOpts } from "../engine/receiptCard";
+
+export function ShareCard(opts: ReceiptCardOpts) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button className="share-chip" disabled={busy}
+      onClick={async () => { setBusy(true); try { await shareReceiptCard(opts); } finally { setBusy(false); } }}
+      title="Share this finding as a card">
+      {busy ? "…" : "share ↗"}
+    </button>
+  );
+}

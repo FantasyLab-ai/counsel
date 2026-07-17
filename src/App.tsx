@@ -13,6 +13,7 @@ import Power from "./screens/Power";
 import Marketing from "./screens/Marketing";
 import Decisions from "./screens/Decisions";
 import Money from "./screens/Money";
+import Trust from "./screens/Trust";
 
 const TABS = [
   {
@@ -118,6 +119,7 @@ export default function App() {
           <Route path="/marketing" element={<Marketing />} />
           <Route path="/decisions" element={<Decisions />} />
           <Route path="/money" element={<Money />} />
+          <Route path="/trust" element={<Trust />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

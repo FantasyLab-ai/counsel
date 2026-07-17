@@ -14,7 +14,7 @@ import {
   type ElasticityOut, type MonteCarloOut, type NewsvendorOut, type SeasonAdjOut,
   type SurvivalOut,
 } from "../engine/tierMath";
-import { ActOn, Awaiting, Html, Reveal } from "../components/ui";
+import { ActOn, Awaiting, Html, Reveal, ShareCard } from "../components/ui";
 
 interface AllOut {
   elasticity: ElasticityOut | null;
@@ -186,7 +186,13 @@ export default function Insights() {
             <Reveal i={0}>
               <article className="mcard open il-card">
                 <div className="il-head"><span className="il-kick">A1 · price power</span>
-                  <span className="pill lite-hi"><span className="dot" />measured, not guessed</span></div>
+                  <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                    <ShareCard kicker="A1 · price power" business={displayName()}
+                      headline={`Elasticity ${out.elasticity.elasticity.toFixed(2)} — measured from our own price change, not an industry average.`}
+                      sub={out.elasticity.inelastic && out.elasticity.monthlyGain > 0 ? `A further +5% test projects ${money(out.elasticity.monthlyGain)}/mo of margin.` : undefined}
+                      cite={`natural experiment · 90% CI [${out.elasticity.ciLo.toFixed(2)}, ${out.elasticity.ciHi.toFixed(2)}] · ${out.elasticity.nPre}+${out.elasticity.nPost} selling days`} />
+                    <span className="pill lite-hi"><span className="dot" />measured, not guessed</span>
+                  </span></div>
                 <div className="mval"><span className="num">{out.elasticity.elasticity.toFixed(2)}</span><span className="dlt">elasticity</span></div>
                 <div className="mmean">
                   Your Feb 1 price move (+{out.elasticity.pricePct.toFixed(0)}% on the Sunset Mug) cost only{" "}
