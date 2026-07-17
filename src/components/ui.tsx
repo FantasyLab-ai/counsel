@@ -170,14 +170,23 @@ export function MathSheet({ block, title, onClose }: { block: MathBlock; title?:
   // The pedigree finds the method by its own name — where this math works
   // when it isn't working for a small business.
   const ped = findPedigree(`${block.citation.method} ${block.methodPlain} ${block.keyStatNotation}`);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  // Dialog manners: focus moves in on open, Escape closes, focus returns.
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("keydown", onKey); prev?.focus?.(); };
+  }, [onClose]);
   return (
-    <div className="sheet-veil" role="dialog" aria-label="The math"
+    <div className="sheet-veil" role="dialog" aria-modal="true" aria-label={title ?? "The math"}
          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet">
         <div className="sheet-grab" aria-hidden="true" />
         <div className="digest-head">
           <span className="il-kick">{title ?? "the math"}</span>
-          <button className="dt-btn" onClick={onClose}>close</button>
+          <button className="dt-btn" ref={closeRef} onClick={onClose}>close</button>
         </div>
         <div className="sheet-body">
           <div className="sheet-lbl">method, plainly</div>

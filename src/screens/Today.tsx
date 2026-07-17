@@ -32,6 +32,13 @@ export default function Today() {
   const toGrade = overdueCount();
 
   useEffect(() => {
+    if (!digest) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDigest(null); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [digest]);
+
+  useEffect(() => {
     let on = true;
     getBrief().then((b) => on && setBrief(b));
     getMetrics("month").then((m) => on && setMetrics(m));
@@ -101,7 +108,7 @@ export default function Today() {
       </div>
 
       {digest && (
-        <div className="digest-modal" role="dialog" aria-label="Morning digest"
+        <div className="digest-modal" role="dialog" aria-modal="true" aria-label="Morning digest"
              onClick={(e) => { if (e.target === e.currentTarget) setDigest(null); }}>
           <div className="digest-card">
             <div className="digest-head">

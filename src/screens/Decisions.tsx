@@ -91,11 +91,11 @@ function AddForm({ onAdded }: { onAdded: () => void }) {
   return (
     <article className="mcard open il-card">
       <div className="il-kick" style={{ marginBottom: 8 }}>New decision</div>
-      <input className="dt-input" placeholder="What are you doing? e.g. Raising mug price 8%"
+      <input className="dt-input" aria-label="What are you doing?" placeholder="What are you doing? e.g. Raising mug price 8%"
              value={action} maxLength={140} onChange={(e) => setAction(e.target.value)} />
-      <input className="dt-input" placeholder="What do you expect? e.g. revenue holds, volume −5% max"
+      <input className="dt-input" aria-label="What do you expect?" placeholder="What do you expect? e.g. revenue holds, volume −5% max"
              value={expected} maxLength={200} onChange={(e) => setExpected(e.target.value)} />
-      <input className="dt-input" type="number" inputMode="decimal" placeholder="$ at stake per month (optional)"
+      <input className="dt-input" type="number" inputMode="decimal" aria-label="Dollars at stake per month" placeholder="$ at stake per month (optional)"
              value={impact} onChange={(e) => setImpact(e.target.value)} />
       <div className="dt-days">
         <span>Judge it in</span>
@@ -128,7 +128,7 @@ function GradeBox({ d, onDone }: { d: Decision; onDone: () => void }) {
           <button key={v} className={`seg ${verdict === v ? "on" : ""}`} onClick={() => setVerdict(v)}>{v}</button>
         ))}
       </div>
-      <input className="dt-input" placeholder="What actually happened? (check Was it worth it? in Plan)"
+      <input className="dt-input" aria-label="What actually happened?" placeholder="What actually happened? (check Was it worth it? in Plan)"
              value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} />
       <div className="dropin-row">
         <button className="dbtn primary" onClick={() => { gradeDecision(d.id, verdict, note || "graded by owner"); onDone(); }}>

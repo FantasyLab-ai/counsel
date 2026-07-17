@@ -303,6 +303,7 @@ function LiveConnect() {
         const bits = [
           `${r.rows} sales rows`,
           r.expenseRows ? `${r.expenseRows} expense rows` : null,
+          r.deduped ? `${r.deduped} Stripe echo${r.deduped === 1 ? "" : "es"} of Shopify orders removed` : null,
           r.seeded ? "seeded history underneath" : null,
         ].filter(Boolean).join(" · ");
         setStatus({

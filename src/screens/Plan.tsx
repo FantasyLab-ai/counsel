@@ -44,7 +44,7 @@ function GoalCard() {
           your big days count for more — and only call you behind when it's beyond your normal weekly swing.
         </div>
         <div className="dropin-row">
-          <input className="dt-input" style={{ flex: 1 }} type="number" inputMode="decimal"
+          <input className="dt-input" style={{ flex: 1 }} type="number" inputMode="decimal" aria-label="Monthly revenue target, dollars"
             placeholder={hint ? `suggested: ${hint} (median month +8%)` : "monthly target, $"}
             value={draft} onChange={(e) => setDraft(e.target.value)} />
           <button className="dbtn primary" disabled={!draft.trim() && !hint}

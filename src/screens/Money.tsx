@@ -28,7 +28,7 @@ function CashAnchorRow() {
       </div>
       {editing ? (
         <span className="de-cost">
-          <input type="number" inputMode="decimal" autoFocus value={draft}
+          <input type="number" inputMode="decimal" autoFocus value={draft} aria-label="Cash on hand, dollars"
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && draft.trim()) { setCashOnHand(parseFloat(draft)); setEditing(false); window.location.reload(); } }} />
           <button className="dt-btn" onClick={() => { if (draft.trim()) { setCashOnHand(parseFloat(draft)); window.location.reload(); } setEditing(false); force((x) => x + 1); }}>save</button>

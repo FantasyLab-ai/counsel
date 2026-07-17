@@ -64,6 +64,12 @@ export default function Settings() {
     getConnections().then((s) => on && setSources(s));
     return () => { on = false; };
   }, []);
+  useEffect(() => {
+    if (!showNew) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowNew(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [showNew]);
 
   function exportEverything() {
     const bundle = {
@@ -351,7 +357,7 @@ export default function Settings() {
       </Reveal>
 
       {showNew && (
-        <div className="sheet-veil" role="dialog" aria-label="What's new"
+        <div className="sheet-veil" role="dialog" aria-modal="true" aria-label="What's new"
              onClick={(e) => { if (e.target === e.currentTarget) setShowNew(false); }}>
           <div className="sheet">
             <div className="sheet-grab" aria-hidden="true" />

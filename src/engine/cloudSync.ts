@@ -145,9 +145,10 @@ export async function disconnectProvider(provider: CloudProvider): Promise<void>
 }
 
 export interface SyncResult {
-  rows: number;          // charge rows landed (all sales sources, merged)
+  rows: number;          // charge rows landed (all sales sources, merged, deduped)
   expenseRows: number;   // expense rows landed (bank + seeded)
   seeded: boolean;
+  deduped: number;       // Stripe echoes of Shopify orders removed
   pulled: Record<string, number>;
   errors?: Record<string, string>;
 }
@@ -171,6 +172,7 @@ export async function syncNow(days = 365): Promise<SyncResult> {
     rows: charges.length,
     expenseRows: expenses.length,
     seeded,
+    deduped: (res.deduped as number) ?? 0,
     pulled,
     ...(res.errors ? { errors: res.errors as Record<string, string> } : {}),
   };

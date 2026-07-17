@@ -246,6 +246,8 @@ const shopifyAdapter = {
             customer,
             fee: 0,
             channel,
+            _order: String(o.id),
+            _otot: parseFloat(o.total_price),
           });
         }
       }
@@ -257,6 +259,43 @@ const shopifyAdapter = {
     return rows;
   },
 };
+
+/* --- cross-source dedupe -------------------------------------------------
+   The real trap: a Shopify store that takes payment THROUGH Stripe. Connect
+   both and every online order arrives twice — once as a Shopify order (rich:
+   products, customer, channel) and once as a Stripe charge (just the total).
+   We prefer the richer Shopify row and drop the Stripe echo, matched at the
+   ORDER level (date + rounded total), consuming each match once. Stripe-only
+   revenue (subscriptions, invoices, in-person, non-Shopify) is untouched.
+   Only runs when BOTH sources are present — otherwise there's no risk. */
+function dedupeSources(charges) {
+  const hasStripe = charges.some((c) => c._src === "stripe");
+  const hasShopify = charges.some((c) => c._src === "shopify");
+  if (!hasStripe || !hasShopify) return { rows: charges, removed: 0 };
+
+  // one signature per Shopify ORDER (line items collapse back to their order)
+  const sig = new Map();
+  const seenOrders = new Set();
+  for (const c of charges) {
+    if (c._src !== "shopify" || c._order == null) continue;
+    if (seenOrders.has(c._order)) continue;
+    seenOrders.add(c._order);
+    const k = `${c.date}|${Math.round(c._otot)}`;
+    sig.set(k, (sig.get(k) || 0) + 1);
+  }
+
+  let removed = 0;
+  const out = [];
+  for (const c of charges) {
+    if (c._src === "stripe") {
+      const k = `${c.date}|${Math.round(c.price * c.qty)}`;
+      const n = sig.get(k) || 0;
+      if (n > 0) { sig.set(k, n - 1); removed++; continue; } // drop the echo
+    }
+    out.push(c);
+  }
+  return { rows: out, removed };
+}
 
 const ADAPTERS = { stripe: stripeAdapter, square: squareAdapter, shopify: shopifyAdapter };
 
@@ -671,6 +710,7 @@ export default {
             }
             const rows = await ADAPTERS[provider].pull(cred, sinceUnix);
             pulled[provider] = rows.length;
+            for (const r of rows) r._src = provider;
             charges.push(...rows);
           } catch (e) {
             errors[provider] = String(e?.message || e).slice(0, 120);
@@ -689,10 +729,14 @@ export default {
             }
           } catch { /* corrupt blob -> live rows only */ }
         }
-        charges.sort((a, b) => (a.date < b.date ? -1 : 1));
+        const dd = dedupeSources(charges);
+        const cleanCharges = dd.rows
+          .map(({ _src, _order, _otot, ...r }) => r)
+          .sort((a, b) => (a.date < b.date ? -1 : 1));
         expensesOut = [...expensesOut, ...liveExpenses].sort((a, b) => (a.d < b.d ? -1 : 1));
         return json(req, 200, {
-          charges: charges.slice(-MAX_ROWS),
+          charges: cleanCharges.slice(-MAX_ROWS),
+          deduped: dd.removed,
           expenses: expensesOut,
           seeded: seededCounts,
           sources: Object.keys(pulled),

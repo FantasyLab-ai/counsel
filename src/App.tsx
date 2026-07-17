@@ -100,6 +100,16 @@ function TabBar() {
   );
 }
 
+// Human names for the live-region route announcer (screen-reader "you are here").
+const ROUTE_NAMES: Record<string, string> = {
+  "/": "Today", "/numbers": "Numbers", "/pnl": "Profit and loss", "/ask": "Ask",
+  "/plan": "Plan", "/settings": "Settings", "/money": "Money", "/ops": "Stock and shipments",
+  "/insights": "Insights Lab", "/decisions": "Decisions", "/marketing": "Marketing",
+  "/power": "Power Up", "/packet": "Banker's Packet", "/trust": "Trust Ledger",
+  "/engine": "Engine", "/welcome": "Welcome",
+};
+const routeName = (p: string) => ROUTE_NAMES[p] ?? "Counsel";
+
 // First-run: no persona chosen AND never explicitly skipped -> onboarding.
 function isFirstRun(): boolean {
   try {
@@ -159,8 +169,11 @@ export default function App() {
   }
   return (
     <div className="wrap">
+      <a className="skip-link" href="#main">Skip to content</a>
+      {/* live-region announcer: tells a screen reader which screen it landed on */}
+      <div className="sr-only" aria-live="polite" role="status">{routeName(pathname)}</div>
       {/* key on pathname re-triggers the entrance transition per screen */}
-      <div className="screen page-enter" key={pathname}>
+      <main className="screen page-enter" id="main" tabIndex={-1} key={pathname}>
         <ErrorBoundary>
         <Routes>
           <Route path="/welcome" element={<Onboarding />} />
@@ -182,7 +195,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </ErrorBoundary>
-      </div>
+      </main>
       {!inOnboarding && pathname !== "/packet" && pathname !== "/ask" && (
         <button className="ask-fab" aria-label="Ask Counsel" title="Ask — grounded in your data"
           onClick={() => { try { navigator.vibrate?.(8); } catch { /* no haptics */ } nav("/ask"); }}>
