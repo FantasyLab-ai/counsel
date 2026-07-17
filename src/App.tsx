@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 import Today from "./screens/Today";
 import Numbers from "./screens/Numbers";
 import Ask from "./screens/Ask";
+import PnL from "./screens/PnL";
 import Settings from "./screens/Settings";
 import Onboarding from "./screens/Onboarding";
 import Engine from "./screens/Engine";
@@ -43,12 +44,13 @@ const TABS = [
     ),
   },
   {
-    to: "/ask",
-    label: "Ask",
+    to: "/pnl",
+    label: "P&L",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 11.5a7.5 7 0 0 1-7.5 7c-1 0-2-.16-2.9-.47L5 19.5l1.2-3.4A6.8 6.8 0 0 1 5 11.5a7.5 7 0 0 1 15 0z" />
-        <path d="M12.5 9.4l1 2.1 1-2.1-1-2.1z" fill="currentColor" stroke="none" transform="rotate(45 12.5 11.5) scale(.9)" />
+        <path d="M12 5.5C10 4 7.5 3.5 4 3.5v15c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2v-15c-3.5 0-6 .5-8 2z" />
+        <path d="M12 5.5v15" />
+        <path d="M7 8.5h2.5M7 12h2.5M14.5 8.5H17M14.5 12H17" opacity=".55" />
       </svg>
     ),
   },
@@ -108,6 +110,7 @@ function isFirstRun(): boolean {
 
 export default function App() {
   const { pathname } = useLocation();
+  const nav = useNavigate();
   const inOnboarding = pathname.startsWith("/welcome");
   if (pathname === "/" && isFirstRun()) {
     return <Navigate to="/welcome" replace />;
@@ -121,6 +124,7 @@ export default function App() {
           <Route path="/" element={<Today />} />
           <Route path="/numbers" element={<Numbers />} />
           <Route path="/ask" element={<Ask />} />
+          <Route path="/pnl" element={<PnL />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/engine" element={<Engine />} />
           <Route path="/plan" element={<Plan />} />
@@ -135,6 +139,15 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      {!inOnboarding && pathname !== "/packet" && pathname !== "/ask" && (
+        <button className="ask-fab" aria-label="Ask Counsel" title="Ask — grounded in your data"
+          onClick={() => nav("/ask")}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 11.5a7.5 7 0 0 1-7.5 7c-1 0-2-.16-2.9-.47L5 19.5l1.2-3.4A6.8 6.8 0 0 1 5 11.5a7.5 7 0 0 1 15 0z" />
+          </svg>
+          <span className="fab-diamond" aria-hidden="true">◆</span>
+        </button>
+      )}
       {!inOnboarding && pathname !== "/packet" && <TabBar />}
     </div>
   );

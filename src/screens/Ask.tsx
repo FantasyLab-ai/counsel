@@ -4,6 +4,7 @@
 // "working" moment; answers are grounded, never vibes.
 
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { displayName } from "../engine/persona";
 import { ask, getSeededAsk, type AskAnswer } from "../api/counsel";
 import { CitePill, ConfidencePill, Html } from "../components/ui";
@@ -97,6 +98,7 @@ function Answer({ a, decision }: { a: AskAnswer; decision?: RouteDecision }) {
 }
 
 export default function Ask() {
+  const nav = useNavigate();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
@@ -173,7 +175,9 @@ export default function Ask() {
           <p>Grounded in your data</p>
         </div>
         <div className="sp" />
-        <div className="avatar">B</div>
+        <button className="ask-close" aria-label="Close Ask" onClick={() => nav(-1)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
       </div>
 
       <div className="thread">
