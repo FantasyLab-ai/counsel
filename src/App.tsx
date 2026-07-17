@@ -1,3 +1,4 @@
+import { Component, useEffect, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import Today from "./screens/Today";
 import Numbers from "./screens/Numbers";
@@ -108,9 +109,40 @@ function isFirstRun(): boolean {
   }
 }
 
+// A crash in one card must never white-screen the whole advisor.
+class ErrorBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
+  state = { err: null as Error | null };
+  static getDerivedStateFromError(err: Error) { return { err }; }
+  render() {
+    if (this.state.err) {
+      return (
+        <div className="app">
+          <section className="voice" style={{ marginTop: 24 }}>
+            <div className="eyebrow on-dark">A hiccup — not a cover-up</div>
+            <div className="said">Something in this screen <em>misfired.</em></div>
+            <div className="sub">
+              Your data is untouched — this is a display fault, not a data one.
+              ({String(this.state.err.message).slice(0, 120)})
+            </div>
+          </section>
+          <button className="btn brass" style={{ marginTop: 16 }}
+            onClick={() => { this.setState({ err: null }); window.location.assign("/"); }}>
+            Back to Today
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const { pathname } = useLocation();
   const nav = useNavigate();
+
+  // Every screen opens at its top — carrying scroll position between
+  // routes makes pages appear mid-thought.
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   const inOnboarding = pathname.startsWith("/welcome");
   if (pathname === "/" && isFirstRun()) {
     return <Navigate to="/welcome" replace />;
@@ -119,6 +151,7 @@ export default function App() {
     <div className="wrap">
       {/* key on pathname re-triggers the entrance transition per screen */}
       <div className="screen page-enter" key={pathname}>
+        <ErrorBoundary>
         <Routes>
           <Route path="/welcome" element={<Onboarding />} />
           <Route path="/" element={<Today />} />
@@ -138,10 +171,11 @@ export default function App() {
           <Route path="/trust" element={<Trust />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ErrorBoundary>
       </div>
       {!inOnboarding && pathname !== "/packet" && pathname !== "/ask" && (
         <button className="ask-fab" aria-label="Ask Counsel" title="Ask — grounded in your data"
-          onClick={() => nav("/ask")}>
+          onClick={() => { try { navigator.vibrate?.(8); } catch { /* no haptics */ } nav("/ask"); }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 11.5a7.5 7 0 0 1-7.5 7c-1 0-2-.16-2.9-.47L5 19.5l1.2-3.4A6.8 6.8 0 0 1 5 11.5a7.5 7 0 0 1 15 0z" />
           </svg>

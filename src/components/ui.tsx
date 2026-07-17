@@ -101,7 +101,7 @@ export function ActOn({ source, action, expected, impact }: {
     <button
       className={`acton ${done ? "done" : ""}`}
       disabled={done}
-      onClick={() => { trackFromInsight(source, action, expected, impact); setDone(true); }}
+      onClick={() => { tapFeedback(); trackFromInsight(source, action, expected, impact); setDone(true); }}
     >
       {done ? "✓ on the board — grade it when the window closes" : `→ Track it: ${action}`}
     </button>
@@ -232,6 +232,22 @@ export function ShareCard(opts: ReceiptCardOpts) {
       onClick={async () => { setBusy(true); try { await shareReceiptCard(opts); } finally { setBusy(false); } }}
       title="Share this finding as a card">
       {busy ? "…" : "share ↗"}
+    </button>
+  );
+}
+
+
+/** A tiny haptic acknowledgment on meaningful taps (Android; silent elsewhere). */
+export function tapFeedback(): void {
+  try { navigator.vibrate?.(8); } catch { /* not available */ }
+}
+
+/** Back chevron for deep screens — every room needs a door out. */
+export function BackBtn() {
+  return (
+    <button className="backbtn" aria-label="Back"
+      onClick={() => { tapFeedback(); window.history.length > 1 ? window.history.back() : window.location.assign("/"); }}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
     </button>
   );
 }

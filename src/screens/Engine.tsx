@@ -10,7 +10,7 @@ import { getDaily } from "../engine/dataSource";
 import { narrate, type Narration } from "../engine/narrator";
 import type { BreaklineViz, FanViz } from "../api/counsel";
 import { VizView } from "../components/charts";
-import { Reveal } from "../components/ui";
+import { BackBtn, Reveal } from "../components/ui";
 
 interface Ledger { dates: string[]; revenue: number[] }
 
@@ -156,6 +156,7 @@ export default function Engine() {
   return (
     <div className="app">
       <div className="appbar">
+        <BackBtn />
         <div className="titleblock">
           <div className="kicker">aurora-core · Rust → WebAssembly</div>
           <h1>The engine, in your hand</h1>

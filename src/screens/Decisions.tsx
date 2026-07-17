@@ -13,7 +13,7 @@ import {
 import { trackFromInsight } from "../engine/decisions";
 import { dismissRecommendation, recommendations, type Recommendation } from "../engine/recommend";
 import { money } from "../engine/tierMath";
-import { Reveal } from "../components/ui";
+import { BackBtn, Reveal } from "../components/ui";
 import { useEffect } from "react";
 
 // Counsel proposes — the system's own recommendations, computed by the same
@@ -150,11 +150,12 @@ export default function Decisions() {
   return (
     <div className="app">
       <div className="appbar">
+        <BackBtn />
         <div className="titleblock">
           <div className="kicker">{displayName()} · the track record</div>
           <h1>Decisions</h1>
         </div>
-        <div className="avatar">B</div>
+        <div className="avatar">{displayName()[0]}</div>
       </div>
 
       <Reveal i={0}>

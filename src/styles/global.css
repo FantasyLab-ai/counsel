@@ -73,7 +73,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .wrap > * { position: relative; z-index: 1; }
 
 .screen { flex: 1; display: flex; flex-direction: column; }
-.app { padding: calc(env(safe-area-inset-top) + 16px) 20px 8px; flex: 1; }
+.app { padding: calc(env(safe-area-inset-top) + 16px) 20px 84px; flex: 1; }
 
 /* ---------- app bar / greeting ---------- */
 .appbar { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 16px; }
@@ -1107,3 +1107,11 @@ h1, .said, .big, .verdict, .analyzing-h, .rec-action { text-wrap: balance; }
 .pl-net.neg { border-left-color: #a05c2c; }
 .pl-nettotal { border-top: none; padding-top: 2px; }
 .pl-nettotal b { font-family: var(--serif); font-size: 24px; }
+
+
+/* ---- back chevron for deep screens ---- */
+.backbtn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--card); color: var(--forest); cursor: pointer; display: grid; place-items: center;
+  margin-right: 12px; flex-shrink: 0; align-self: flex-start; }
+.backbtn svg { width: 17px; height: 17px; }
+.backbtn:active { transform: scale(.92); }

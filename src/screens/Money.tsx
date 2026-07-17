@@ -11,7 +11,7 @@ import {
 import { money } from "../engine/tierMath";
 import { dataMode, userExpenses } from "../engine/dataSource";
 import { cashView, type CashViewOut, type CashViewThin } from "../engine/cashview";
-import { ActOn, Awaiting, Receipt, Reveal } from "../components/ui";
+import { ActOn, Awaiting, BackBtn, Receipt, Reveal } from "../components/ui";
 
 // Cash on hand — the one number no connector knows yet. The owner states
 // it once; the calendar, the 13-week view and runway anchor on it.
@@ -137,7 +137,7 @@ export default function Money() {
             <div className="kicker">{displayName()} · the money map</div>
             <h1>Money</h1>
           </div>
-          <div className="avatar">B</div>
+          <div className="avatar">{displayName()[0]}</div>
         </div>
         <div className="eyebrow">Runs on data you haven't connected yet</div>
         <Reveal i={0}>
@@ -163,11 +163,12 @@ export default function Money() {
   return (
     <div className="app">
       <div className="appbar">
+        <BackBtn />
         <div className="titleblock">
           <div className="kicker">{displayName()} · the money map</div>
           <h1>Money</h1>
         </div>
-        <div className="avatar">B</div>
+        <div className="avatar">{displayName()[0]}</div>
       </div>
 
       {err && <div className="reassure">Money engine unavailable: {err}</div>}

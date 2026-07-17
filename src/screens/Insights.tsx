@@ -14,7 +14,7 @@ import {
   type ElasticityOut, type MonteCarloOut, type NewsvendorOut, type SeasonAdjOut,
   type SurvivalOut,
 } from "../engine/tierMath";
-import { ActOn, Awaiting, Html, Reveal, ShareCard } from "../components/ui";
+import { ActOn, Awaiting, BackBtn, Html, Reveal, ShareCard } from "../components/ui";
 
 interface AllOut {
   elasticity: ElasticityOut | null;
@@ -192,11 +192,12 @@ export default function Insights() {
   return (
     <div className="app">
       <div className="appbar">
+        <BackBtn />
         <div className="titleblock">
           <div className="kicker">{displayName()} · nine deep reads</div>
           <h1>The Insights Lab</h1>
         </div>
-        <div className="avatar">B</div>
+        <div className="avatar">{displayName()[0]}</div>
       </div>
 
       {err && <div className="reassure">Engine unavailable: {err}</div>}

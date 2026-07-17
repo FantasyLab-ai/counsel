@@ -5,7 +5,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { displayName } from "../engine/persona";
-import { Reveal } from "../components/ui";
+import { BackBtn, Reveal } from "../components/ui";
 
 interface Entry {
   name: string;
@@ -37,6 +37,7 @@ export default function Trust() {
   return (
     <div className="app">
       <div className="appbar">
+        <BackBtn />
         <div className="titleblock">
           <div className="kicker">{displayName()} · the register</div>
           <h1>The Trust Ledger</h1>

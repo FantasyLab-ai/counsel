@@ -10,7 +10,7 @@ import {
   type ChannelRow, type LiftSummary,
 } from "../engine/socialMath";
 import { money } from "../engine/tierMath";
-import { Reveal } from "../components/ui";
+import { BackBtn, Reveal } from "../components/ui";
 
 const PLATFORMS = ["instagram", "tiktok", "facebook", "pinterest", "email", "other"];
 
@@ -36,11 +36,12 @@ export default function Marketing() {
   return (
     <div className="app">
       <div className="appbar">
+        <BackBtn />
         <div className="titleblock">
           <div className="kicker">{displayName()} · reach → revenue</div>
           <h1>Marketing</h1>
         </div>
-        <div className="avatar">B</div>
+        <div className="avatar">{displayName()[0]}</div>
       </div>
 
       {err && <div className="reassure">Engine unavailable: {err}</div>}

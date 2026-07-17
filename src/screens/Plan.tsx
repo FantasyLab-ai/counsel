@@ -131,7 +131,7 @@ export default function Plan() {
           <div className="kicker">{displayName()}</div>
           <h1>Plan</h1>
         </div>
-        <div className="avatar">B</div>
+        <div className="avatar">{displayName()[0]}</div>
       </div>
 
       {err && <div className="reassure">Engine unavailable: {err}</div>}

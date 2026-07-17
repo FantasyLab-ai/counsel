@@ -7,12 +7,12 @@ import { useEffect, useRef, useState } from "react";
 import { parseCharges, parseExpenses, parsePosts } from "../engine/csvParse";
 import { clearUserData, hasUserData, storeUserData, userCharges, userExpenses, userMeta } from "../engine/dataSource";
 import { addPostsBulk } from "../engine/socialMath";
-import { getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
+import { displayName, getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
 import {
   clearHistory, cloudStatus, connectBank, connectProvider, disconnectProvider, seedHistory, setPulse, syncNow,
   type CloudProvider,
 } from "../engine/cloudSync";
-import { Reveal } from "../components/ui";
+import { BackBtn, Reveal } from "../components/ui";
 
 // A provider you can actually open right now. `url` is the stable sign-in /
 // dashboard root (deep links rot); `where` is the breadcrumb to the export.
@@ -485,11 +485,12 @@ export default function Power() {
   return (
     <div className="app">
       <div className="appbar">
+        <BackBtn />
         <div className="titleblock">
           <div className="kicker">the activation map</div>
           <h1>Power up Counsel</h1>
         </div>
-        <div className="avatar">B</div>
+        <div className="avatar">{displayName()[0]}</div>
       </div>
 
       <Reveal i={0}>

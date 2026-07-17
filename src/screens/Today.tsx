@@ -65,7 +65,7 @@ export default function Today() {
       <div className="app">
         <div className="appbar">
           <div className="wordmark"><b>Counsel</b><span>by Aurora</span></div>
-          <div className="avatar">B</div>
+          <div className="avatar">{displayName()[0]}</div>
         </div>
         <div className="greet">reading your numbers…</div>
       </div>
