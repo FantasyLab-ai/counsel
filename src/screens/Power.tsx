@@ -9,7 +9,7 @@ import { clearUserData, hasUserData, storeUserData, userCharges, userExpenses, u
 import { addPostsBulk } from "../engine/socialMath";
 import { displayName, getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
 import {
-  clearHistory, cloudStatus, connectBank, connectProvider, disconnectProvider, seedHistory, setPulse, syncNow,
+  clearHistory, cloudStatus, connectBank, connectProvider, disconnectProvider, seedHistory, setPulse, squareOAuthUrl, syncNow,
   type CloudProvider,
 } from "../engine/cloudSync";
 import { BackBtn, Reveal } from "../components/ui";
@@ -229,7 +229,34 @@ function LiveConnect() {
 
   useEffect(() => {
     cloudStatus().then((s) => { setConnected(s.providers); setPulseState(s.pulse); setBackfill(s.backfill); }).catch(() => undefined);
+    // Returned from a provider OAuth redirect? (?connected=square / ?error=…)
+    const params = new URLSearchParams(window.location.search);
+    const ok = params.get("connected");
+    const err = params.get("error");
+    if (ok || err) {
+      window.history.replaceState({}, "", window.location.pathname); // clean the URL
+      if (ok) {
+        setProvider(ok as CloudProvider);
+        setStatus({ ok: true, msg: `${ok} connected via sign-in — pulling your data…` });
+        cloudStatus().then((s) => setConnected(s.providers)).catch(() => undefined);
+        setTimeout(doSync, 700);
+      } else {
+        setStatus({ ok: false, msg: `sign-in didn't complete (${err}). Nothing connected — try again.` });
+      }
+    }
   }, []);
+
+  async function doSquareOAuth() {
+    setBusy("opening Square sign-in…");
+    setStatus(null);
+    try {
+      const url = await squareOAuthUrl();
+      window.location.assign(url); // full-page redirect to Square
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
+      setBusy(null);
+    }
+  }
 
   async function doConnect() {
     setStatus(null);
@@ -359,15 +386,25 @@ function LiveConnect() {
             value={shop} onChange={(e) => setShop(e.target.value)} autoComplete="off" />
         )}
         {provider === "square" && (
-          <select className="ps-select" value={sqEnv} aria-label="Square environment"
-            onChange={(e) => setSqEnv(e.target.value as "production" | "sandbox")}>
-            <option value="production">Production (real business)</option>
-            <option value="sandbox">Sandbox (developer testing)</option>
-          </select>
+          <>
+            <button className="dbtn primary" disabled={!!busy} onClick={doSquareOAuth}>
+              Connect with Square — sign in
+            </button>
+            <div className="lc-mint">
+              <b>One tap:</b> you sign in on Square and approve read-only access — no key to copy. Or paste an access token below.
+            </div>
+          </>
         )}
         {provider !== "plaid" && (
-          <input className="dt-input" type="password" placeholder={help.hint}
-            value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" />
+          <input className="dt-input" type="password" placeholder={provider === "square" ? "or paste an access token instead" : help.hint}
+            value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" aria-label={`${provider} access key`} />
+        )}
+        {provider === "square" && (
+          <select className="ps-select" value={sqEnv} aria-label="Square token environment (for pasted tokens)"
+            onChange={(e) => setSqEnv(e.target.value as "production" | "sandbox")}>
+            <option value="production">pasted token: Production</option>
+            <option value="sandbox">pasted token: Sandbox</option>
+          </select>
         )}
         <div className="lc-mint">
           <b>{provider === "plaid" ? "How it works:" : "Where to mint it:"}</b> {help.mint}

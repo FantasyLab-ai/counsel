@@ -297,6 +297,48 @@ function dedupeSources(charges) {
   return { rows: out, removed };
 }
 
+/* --------------------------- Square OAuth --------------------------------
+   "Connect with Square": the merchant signs into their own Square account
+   and grants read-only access. We exchange the code for a token and seal it
+   in the vault in the SAME shape the key-paste path uses, so the existing
+   squareAdapter pulls it with zero changes. Config: SQUARE_CLIENT_ID +
+   SQUARE_OAUTH_ENV (vars) + SQUARE_CLIENT_SECRET (secret). */
+const SQUARE_OAUTH_SCOPES = "PAYMENTS_READ ORDERS_READ MERCHANT_PROFILE_READ ITEMS_READ";
+const APP_REDIRECT = "https://counsel-demo.pages.dev/power";
+function squareOAuthHost(env) {
+  return (env.SQUARE_OAUTH_ENV || "production") === "sandbox"
+    ? "https://connect.squareupsandbox.com"
+    : "https://connect.squareup.com";
+}
+function squareAuthorizeUrl(env, state) {
+  const u = new URL(`${squareOAuthHost(env)}/oauth2/authorize`);
+  u.searchParams.set("client_id", env.SQUARE_CLIENT_ID || "");
+  u.searchParams.set("scope", SQUARE_OAUTH_SCOPES);
+  u.searchParams.set("session", "false");
+  u.searchParams.set("state", state);
+  return u.toString();
+}
+async function squareExchange(env, code) {
+  const r = await fetch(`${squareOAuthHost(env)}/oauth2/token`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "Square-Version": "2024-01-18" },
+    body: JSON.stringify({
+      client_id: env.SQUARE_CLIENT_ID,
+      client_secret: env.SQUARE_CLIENT_SECRET,
+      code,
+      grant_type: "authorization_code",
+    }),
+  });
+  const j = await r.json();
+  if (!r.ok || !j.access_token) throw new Error(String(j.errors?.[0]?.detail || j.message || `square_${r.status}`).slice(0, 120));
+  return {
+    token: j.access_token,
+    env: (env.SQUARE_OAUTH_ENV || "production") === "sandbox" ? "sandbox" : "production",
+    refresh: j.refresh_token || "",
+    merchant: j.merchant_id || "",
+  };
+}
+
 const ADAPTERS = { stripe: stripeAdapter, square: squareAdapter, shopify: shopifyAdapter };
 
 /* ------------------------------ demo pulse -------------------------------
@@ -581,6 +623,29 @@ export default {
         return json(req, 200, { ok: true });
       }
 
+      // -- Square OAuth callback: browser redirect from Square, no auth header;
+      //    the state we minted maps back to the device account. --
+      if (path === "/v1/oauth/square/callback" && req.method === "GET") {
+        const code = url.searchParams.get("code");
+        const state = url.searchParams.get("state");
+        const back = (q) => new Response(null, { status: 302, headers: { Location: `${APP_REDIRECT}?${q}` } });
+        if (!code || !state) return back("error=square");
+        const acctId = await env.ACCOUNTS.get(`oauthstate:${state}`);
+        if (!acctId) return back("error=square_expired");
+        await env.ACCOUNTS.delete(`oauthstate:${state}`);
+        try {
+          const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
+          if (!raw) return back("error=square_account");
+          const acct = JSON.parse(raw);
+          const cred = await squareExchange(env, code);
+          acct.providers.square = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
+          await saveAcct(env, acctId, acct);
+          return back("connected=square");
+        } catch (e) {
+          return back(`error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
+        }
+      }
+
       // -- everything below requires auth --
       const auth = await requireAuth(req, env);
       if (!auth) return json(req, 401, { error: "invalid or missing credentials" });
@@ -629,6 +694,14 @@ export default {
         delete acct.bf;
         await saveAcct(env, id, acct);
         return json(req, 200, { ok: true });
+      }
+
+      // -- Square OAuth start: mint state -> account, return the authorize URL --
+      if (path === "/v1/oauth/square/start" && req.method === "POST") {
+        if (!env.SQUARE_CLIENT_ID) return json(req, 400, { error: "Square OAuth not configured — set SQUARE_CLIENT_ID (var) + SQUARE_CLIENT_SECRET (secret)" });
+        const state = `sq_${randHex(16)}`;
+        await env.ACCOUNTS.put(`oauthstate:${state}`, id, { expirationTtl: 600 });
+        return json(req, 200, { url: squareAuthorizeUrl(env, state) });
       }
 
       // -- Plaid Link: token to open the bank picker, then the exchange --
