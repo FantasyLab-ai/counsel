@@ -9,7 +9,7 @@ import { clearUserData, hasUserData, storeUserData, userCharges, userExpenses, u
 import { addPostsBulk } from "../engine/socialMath";
 import { displayName, getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
 import {
-  clearHistory, cloudStatus, connectBank, connectProvider, disconnectProvider, seedHistory, setPulse, squareOAuthUrl, syncNow,
+  clearHistory, cloudStatus, connectBank, connectProvider, disconnectProvider, seedHistory, setPulse, oauthConnectUrl, syncNow,
   type CloudProvider,
 } from "../engine/cloudSync";
 import { BackBtn, Reveal } from "../components/ui";
@@ -213,6 +213,11 @@ const LIVE_HELP: Record<CloudProvider, { hint: string; mint: string; url: string
     mint: "sandbox test bank: pick any bank, login user_good / pass_good",
     url: "",
   },
+  etsy: {
+    hint: "no key needed — you sign into Etsy and approve read-only access",
+    mint: "one tap: sign in on Etsy, approve transactions + shop read access",
+    url: "",
+  },
 };
 
 function LiveConnect() {
@@ -246,12 +251,12 @@ function LiveConnect() {
     }
   }, []);
 
-  async function doSquareOAuth() {
-    setBusy("opening Square sign-in…");
+  async function doOAuth(prov: "square" | "etsy") {
+    setBusy(`opening ${prov} sign-in…`);
     setStatus(null);
     try {
-      const url = await squareOAuthUrl();
-      window.location.assign(url); // full-page redirect to Square
+      const url = await oauthConnectUrl(prov);
+      window.location.assign(url); // full-page redirect to the provider
     } catch (e) {
       setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
       setBusy(null);
@@ -380,6 +385,7 @@ function LiveConnect() {
           <option value="square">Square</option>
           <option value="shopify">Shopify</option>
           <option value="plaid">Bank — expenses (Plaid)</option>
+          <option value="etsy">Etsy — maker sales</option>
         </select>
         {provider === "shopify" && (
           <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
@@ -387,7 +393,7 @@ function LiveConnect() {
         )}
         {provider === "square" && (
           <>
-            <button className="dbtn primary" disabled={!!busy} onClick={doSquareOAuth}>
+            <button className="dbtn primary" disabled={!!busy} onClick={() => doOAuth("square")}>
               Connect with Square — sign in
             </button>
             <div className="lc-mint">
@@ -395,7 +401,12 @@ function LiveConnect() {
             </div>
           </>
         )}
-        {provider !== "plaid" && (
+        {provider === "etsy" && (
+          <button className="dbtn primary" disabled={!!busy} onClick={() => doOAuth("etsy")}>
+            Connect with Etsy — sign in
+          </button>
+        )}
+        {provider !== "plaid" && provider !== "etsy" && (
           <input className="dt-input" type="password" placeholder={provider === "square" ? "or paste an access token instead" : help.hint}
             value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" aria-label={`${provider} access key`} />
         )}

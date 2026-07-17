@@ -11,7 +11,7 @@ import type { Charge, Expense } from "./tierMath";
 const BASE = "https://counsel-cloud.fantasy-labai.workers.dev";
 const K_ACCOUNT = "counsel.cloud.account";
 
-export type CloudProvider = "stripe" | "square" | "shopify" | "plaid";
+export type CloudProvider = "stripe" | "square" | "shopify" | "plaid" | "etsy";
 
 interface CloudAccount { accountId: string; accountSecret: string }
 
@@ -116,9 +116,9 @@ export async function connectBank(): Promise<boolean> {
    Full-page redirect flow: the worker mints state->account and returns the
    Square authorize URL; the merchant signs in on Square; Square redirects to
    the worker callback, which seals the token and bounces back to /power. */
-export async function squareOAuthUrl(): Promise<string> {
+export async function oauthConnectUrl(provider: "square" | "etsy"): Promise<string> {
   await ensureAccount();
-  const res = await api("/v1/oauth/square/start", { method: "POST", body: "{}" });
+  const res = await api(`/v1/oauth/${provider}/start`, { method: "POST", body: "{}" });
   return res.url as string;
 }
 

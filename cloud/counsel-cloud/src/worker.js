@@ -23,7 +23,7 @@
 //
 // Auth: Authorization: Bearer <accountId>.<accountSecret>
 
-const PROVIDERS = ["stripe", "square", "shopify", "plaid"];
+const PROVIDERS = ["stripe", "square", "shopify", "plaid", "etsy"];
 const MAX_ROWS = 5000; // devices store ~4 MB; 5k canonical rows is plenty
 const DEFAULT_DAYS = 365;
 
@@ -339,6 +339,120 @@ async function squareExchange(env, code) {
   };
 }
 
+/* ----------------------------- Etsy (v3) ---------------------------------
+   Maker persona. OAuth 2.0 with PKCE (Etsy mandates it — the code_verifier
+   replaces a client secret, so ETSY_CLIENT_SECRET is unused). Tokens live 1
+   hour; we refresh on every sync and persist the rotated refresh token.
+   Data = shop receipts -> their transactions -> canonical charges.
+   Config: ETSY_CLIENT_ID (keystring, var); redirect registered in the app. */
+
+const ETSY_TOKEN_URL = "https://api.etsy.com/v3/public/oauth/token";
+const ETSY_API = "https://api.etsy.com/v3/application";
+const ETSY_REDIRECT = "https://counsel-cloud.fantasy-labai.workers.dev/v1/oauth/etsy/callback";
+const ETSY_SCOPES = "transactions_r shops_r";
+
+function b64url(bytes) {
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function pkceVerifier() {
+  const b = new Uint8Array(32);
+  crypto.getRandomValues(b);
+  return b64url(b);
+}
+async function pkceChallenge(verifier) {
+  const d = await crypto.subtle.digest("SHA-256", enc.encode(verifier));
+  return b64url(new Uint8Array(d));
+}
+function etsyAuthorizeUrl(env, state, challenge) {
+  const u = new URL("https://www.etsy.com/oauth/connect");
+  u.searchParams.set("response_type", "code");
+  u.searchParams.set("client_id", env.ETSY_CLIENT_ID || "");
+  u.searchParams.set("redirect_uri", ETSY_REDIRECT);
+  u.searchParams.set("scope", ETSY_SCOPES);
+  u.searchParams.set("state", state);
+  u.searchParams.set("code_challenge", challenge);
+  u.searchParams.set("code_challenge_method", "S256");
+  return u.toString();
+}
+async function etsyTokenCall(env, body) {
+  const r = await fetch(ETSY_TOKEN_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const j = await r.json();
+  if (!r.ok || !j.access_token) throw new Error(String(j.error_description || j.error || `etsy_${r.status}`).slice(0, 120));
+  return {
+    token: j.access_token,
+    refresh: j.refresh_token || body.refresh_token || "",
+    expires_at: Math.floor(Date.now() / 1000) + (j.expires_in || 3600),
+  };
+}
+function etsyHeaders(env, token) {
+  return { "x-api-key": env.ETSY_CLIENT_ID, Authorization: `Bearer ${token}` };
+}
+async function etsyGetShopId(env, cred) {
+  if (cred.shop_id) return cred.shop_id;
+  const userId = String(cred.token).split(".")[0];
+  const r = await fetch(`${ETSY_API}/users/${userId}/shops`, { headers: etsyHeaders(env, cred.token) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(String(j.error || `etsy_shop_${r.status}`).slice(0, 100));
+  // response may be a Shop object or a paged list
+  const shopId = j.shop_id ?? j.results?.[0]?.shop_id;
+  if (!shopId) throw new Error("no Etsy shop found for this account");
+  return shopId;
+}
+// Returns { rows, cred } — cred carries the rotated refresh token + shop_id to persist.
+async function etsyPull(env, cred0, sinceUnix) {
+  // refresh first (tokens expire hourly; refresh rotates)
+  const fresh = await etsyTokenCall(env, {
+    grant_type: "refresh_token",
+    client_id: env.ETSY_CLIENT_ID,
+    refresh_token: cred0.refresh,
+  });
+  const cred = { ...cred0, ...fresh };
+  const shopId = await etsyGetShopId(env, cred);
+  cred.shop_id = shopId;
+
+  const rows = [];
+  let offset = 0;
+  for (let page = 0; page < 10 && rows.length < MAX_ROWS; page++) {
+    const params = new URLSearchParams({ limit: "100", offset: String(offset), min_created: String(sinceUnix) });
+    const r = await fetch(`${ETSY_API}/shops/${shopId}/receipts?${params}`, { headers: etsyHeaders(env, cred.token) });
+    if (!r.ok) break;
+    const data = await r.json();
+    const receipts = data.results ?? [];
+    for (const rc of receipts) {
+      const date = new Date((rc.created_timestamp || 0) * 1000).toISOString().slice(0, 10);
+      const customer = String(rc.buyer_user_id || "guest").slice(0, 60);
+      const txns = Array.isArray(rc.transactions) && rc.transactions.length ? rc.transactions : null;
+      if (txns) {
+        for (const t of txns) {
+          const price = (t.price?.amount ?? 0) / (t.price?.divisor || 100);
+          if (!(price > 0)) continue;
+          rows.push({
+            date,
+            product: String(t.title || "etsy item").slice(0, 60),
+            qty: Math.max(1, t.quantity | 0),
+            price,
+            customer,
+            fee: 0,
+            channel: "etsy",
+          });
+        }
+      } else {
+        const gt = (rc.grandtotal?.amount ?? 0) / (rc.grandtotal?.divisor || 100);
+        if (gt > 0) rows.push({ date, product: "etsy order", qty: 1, price: gt, customer, fee: 0, channel: "etsy" });
+      }
+    }
+    if (receipts.length < 100) break;
+    offset += 100;
+  }
+  return { rows, cred };
+}
+
 const ADAPTERS = { stripe: stripeAdapter, square: squareAdapter, shopify: shopifyAdapter };
 
 /* ------------------------------ demo pulse -------------------------------
@@ -646,6 +760,35 @@ export default {
         }
       }
 
+      // -- Etsy OAuth callback (PKCE): browser redirect, no auth header --
+      if (path === "/v1/oauth/etsy/callback" && req.method === "GET") {
+        const code = url.searchParams.get("code");
+        const state = url.searchParams.get("state");
+        const back = (q) => new Response(null, { status: 302, headers: { Location: `${APP_REDIRECT}?${q}` } });
+        if (!code || !state) return back("error=etsy");
+        const raw = await env.ACCOUNTS.get(`oauthstate:${state}`);
+        if (!raw) return back("error=etsy_expired");
+        await env.ACCOUNTS.delete(`oauthstate:${state}`);
+        try {
+          const { id: acctId, verifier } = JSON.parse(raw);
+          const araw = await env.ACCOUNTS.get(`acct:${acctId}`);
+          if (!araw) return back("error=etsy_account");
+          const acct = JSON.parse(araw);
+          const cred = await etsyTokenCall(env, {
+            grant_type: "authorization_code",
+            client_id: env.ETSY_CLIENT_ID,
+            redirect_uri: ETSY_REDIRECT,
+            code,
+            code_verifier: verifier,
+          });
+          acct.providers.etsy = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
+          await saveAcct(env, acctId, acct);
+          return back("connected=etsy");
+        } catch (e) {
+          return back(`error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
+        }
+      }
+
       // -- everything below requires auth --
       const auth = await requireAuth(req, env);
       if (!auth) return json(req, 401, { error: "invalid or missing credentials" });
@@ -696,6 +839,16 @@ export default {
         return json(req, 200, { ok: true });
       }
 
+      // -- Etsy OAuth start (PKCE): mint state+verifier, return authorize URL --
+      if (path === "/v1/oauth/etsy/start" && req.method === "POST") {
+        if (!env.ETSY_CLIENT_ID) return json(req, 400, { error: "Etsy not configured — set ETSY_CLIENT_ID (var)" });
+        const state = `et_${randHex(16)}`;
+        const verifier = pkceVerifier();
+        const challenge = await pkceChallenge(verifier);
+        await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, verifier }), { expirationTtl: 600 });
+        return json(req, 200, { url: etsyAuthorizeUrl(env, state, challenge) });
+      }
+
       // -- Square OAuth start: mint state -> account, return the authorize URL --
       if (path === "/v1/oauth/square/start" && req.method === "POST") {
         if (!env.SQUARE_CLIENT_ID) return json(req, 400, { error: "Square OAuth not configured — set SQUARE_CLIENT_ID (var) + SQUARE_CLIENT_SECRET (secret)" });
@@ -740,6 +893,9 @@ export default {
           if (provider === "plaid") {
             return json(req, 400, { error: "banks connect via Plaid Link — use /v1/plaid/link-token" });
           }
+          if (provider === "etsy") {
+            return json(req, 400, { error: "Etsy connects via sign-in — use /v1/oauth/etsy/start" });
+          }
           const body = await readBody(req);
           if (!body) return json(req, 400, { error: "bad body" });
           let cred;
@@ -779,6 +935,15 @@ export default {
               const rows = await plaidExpenses(env, cred);
               pulled.plaid = rows.length;
               liveExpenses.push(...rows);
+              continue;
+            }
+            if (provider === "etsy") {
+              const { rows, cred: fresh } = await etsyPull(env, cred, sinceUnix);
+              pulled.etsy = rows.length;
+              for (const r of rows) r._src = "etsy";
+              charges.push(...rows);
+              acct.providers.etsy.t = await sealToken(env, JSON.stringify(fresh)); // persist rotated token
+              await saveAcct(env, id, acct);
               continue;
             }
             const rows = await ADAPTERS[provider].pull(cred, sinceUnix);
