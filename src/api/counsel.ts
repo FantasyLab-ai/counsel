@@ -174,7 +174,11 @@ export function getMetrics(period: Period): Promise<Metric[]> {
   return real.enabled ? real.metrics(period) : mock.metrics(period);
 }
 
-export function ask(question: string): Promise<AskAnswer> {
+export async function ask(question: string): Promise<AskAnswer> {
+  // Ask v2: the on-device intent router answers the top owner questions with
+  // REAL computed numbers in both modes; unmatched questions fall through.
+  const routed = await import("../engine/askRouter").then((r) => r.routeAsk(question)).catch(() => null);
+  if (routed) return routed;
   if (dataMode() === "live") return live.ask(question);
   return real.enabled ? real.ask(question) : mock.ask(question);
 }

@@ -11,6 +11,8 @@ import {
   customerSurvival, feeAudit, money, newsvendor, priceElasticity,
 } from "./tierMath";
 import { cashSentry } from "./insights";
+import { menuMap } from "./menu";
+import { cashView } from "./cashview";
 import { arAging } from "./money";
 import { dataMode, userExpenses } from "./dataSource";
 import { listDecisions } from "./decisions";
@@ -130,6 +132,41 @@ export async function recommendations(): Promise<Recommendation[]> {
       });
     }
   } catch { /* sentry needs more days */ }
+
+  // Menu engineering — proposals from the product map
+  try {
+    const m = await menuMap();
+    if (m.ok) {
+      for (const p of m.proposals.slice(0, 2)) {
+        out.push({
+          id: `rec-menu-${p.action.slice(0, 30)}`,
+          source: p.source,
+          action: p.action,
+          expected: p.expected,
+          ...(p.impact != null ? { impact: p.impact } : {}),
+          gradeInDays: 21,
+          cite: p.cite,
+        });
+      }
+    }
+  } catch { /* needs product variety */ }
+
+  // 13-week tight spot — propose action while there's runway to act
+  if (!live || hasExp) {
+    try {
+      const cv = await cashView();
+      if (cv.ok && cv.firstTight) {
+        out.push({
+          id: `rec-cw-${cv.firstTight.startIso}`,
+          source: "13-week cash view",
+          action: `Cover the week of ${cv.firstTight.label} (cautious case dips to ${money(cv.firstTight.cumLo)})`,
+          expected: "chase AR early, shift a bill, or set aside a buffer — chosen and done BEFORE the tight week",
+          gradeInDays: Math.min(60, 7 * (cv.weeks.indexOf(cv.firstTight) + 1)),
+          cite: "cautious path = p15 revenue every week × margin + weighted AR − bill schedule",
+        });
+      }
+    } catch { /* thin history */ }
+  }
 
   // AR chase — demo/showroom only until real invoices exist
   if (!live) {

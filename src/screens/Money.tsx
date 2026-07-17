@@ -10,7 +10,70 @@ import {
 } from "../engine/money";
 import { money } from "../engine/tierMath";
 import { dataMode } from "../engine/dataSource";
-import { ActOn, Awaiting, Reveal } from "../components/ui";
+import { cashView, type CashViewOut, type CashViewThin } from "../engine/cashview";
+import { ActOn, Awaiting, Receipt, Reveal } from "../components/ui";
+
+// The 13-week cash view — THE fractional-CFO deliverable. Weekly banded
+// cash-in vs scheduled bills, cumulated into a runway ribbon; tight weeks
+// flagged months ahead so there's time to act.
+function CashViewCard() {
+  const [cv, setCv] = useState<CashViewOut | CashViewThin | null>(null);
+  useEffect(() => {
+    let on = true;
+    cashView().then((c) => on && setCv(c)).catch((e) => on && setCv({ ok: false, reason: String(e) }));
+    return () => { on = false; };
+  }, []);
+
+  if (!cv) return <article className="mcard open il-card"><div className="il-loading">▶ building 13 weeks…</div></article>;
+  if (!cv.ok) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="mmean">13-week view {cv.reason} — it sharpens as history builds.</div>
+      </article>
+    );
+  }
+
+  const lo = Math.min(...cv.weeks.map((w) => w.cumLo), 0);
+  const hi = Math.max(...cv.weeks.map((w) => w.cumMid), cv.startCash);
+  const scale = (v: number) => ((v - lo) / (hi - lo || 1)) * 100;
+  const mathBlock = {
+    methodPlain: `Each week: your recent-regime revenue range (p15/p50/p85 of the last 8 complete weeks) × margin, plus probability-weighted receivables, minus the recurring bill schedule — cumulated from cash on hand. The cautious line assumes the LOW band every single week.`,
+    keyStatPlain: cv.firstTight
+      ? `Cautious-case tight point: week of ${cv.firstTight.label} at ${money(cv.firstTight.cumLo)}.`
+      : `Cautious-case low point stays above ${money(Math.min(...cv.weeks.map((w) => w.cumLo)))} across all 13 weeks.`,
+    keyStatNotation: `cum_w = cash₀ + Σ(rev_band × margin + AR·p − bills) · p15 path = cautious`,
+    citation: { method: "13-week cash projection (banded, probability-weighted AR)", source: "your ledger + invoice book + bill schedule" },
+  };
+
+  return (
+    <article className="mcard open il-card">
+      <div className="il-head"><span className="il-kick">the 13-week view</span>
+        <span className={`pill ${cv.tightWeeks ? "lite-mod" : "lite-hi"}`}><span className="dot" />
+          {cv.tightWeeks ? `${cv.tightWeeks} tight week${cv.tightWeeks === 1 ? "" : "s"}` : "clear in the cautious case"}</span></div>
+      <div className="mmean">
+        <Receipt math={mathBlock} title="the 13-week view — the math">
+          <span dangerouslySetInnerHTML={{ __html: cv.headline }} />
+        </Receipt>
+      </div>
+      <div className="cw-ribbon" role="img" aria-label="13-week cash ribbon">
+        {cv.weeks.map((w, i) => (
+          <div className="cw-col" key={w.startIso} title={`${w.label}: cautious ${money(w.cumLo)} · mid ${money(w.cumMid)}${w.billLabels.length ? ` · ${w.billLabels.join(", ")}` : ""}`}>
+            <div className="cw-bars">
+              <span className="cw-mid" style={{ height: `${scale(w.cumMid)}%` }} />
+              <span className={`cw-lo ${w.tight ? "tight" : ""}`} style={{ height: `${Math.max(2, scale(w.cumLo))}%` }} />
+            </div>
+            <span className="cw-lbl">{i % 2 === 0 ? w.label : ""}</span>
+          </div>
+        ))}
+      </div>
+      <div className="il-row-sub">
+        <b style={{ color: "var(--ink)" }}>Reading it:</b> tall bar = mid path, short bar = the cautious path.
+        {cv.firstTight ? ` Amber = cautious case dips tight — move cash or chase AR before then.` : ` Both paths stay clear.`}
+      </div>
+      <div className="il-cite">{cv.cite}</div>
+    </article>
+  );
+}
 
 export default function Money() {
   const [cal, setCal] = useState<CalendarOut | null>(null);
@@ -53,6 +116,10 @@ export default function Money() {
           <Awaiting title="The tax pot" needs="your expenses (true profit)"
             unlocks="A monthly set-aside computed from real profit — no surprises in April." />
         </Reveal>
+        <Reveal i={3}>
+          <Awaiting title="The 13-week cash view" needs="your expenses + invoices (bills & receivables)"
+            unlocks="Week-by-week banded cash against your real bills — tight weeks flagged months ahead. The report CFOs charge thousands for." />
+        </Reveal>
       </div>
     );
   }
@@ -86,8 +153,11 @@ export default function Money() {
             </section>
           </Reveal>
 
+          <div className="eyebrow">Thirteen weeks out — planned, not hoped</div>
+          <Reveal i={1}><CashViewCard /></Reveal>
+
           <div className="eyebrow">The cash calendar</div>
-          <Reveal i={1}>
+          <Reveal i={2}>
             <article className="mcard open il-card">
               <div className="cal-grid">
                 {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (

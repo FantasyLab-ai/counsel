@@ -142,8 +142,21 @@ export default function Ask() {
     const question = q.trim();
     if (!question) return;
     setInput("");
-    const decision = route(question);
     setTurns((t) => [...t, { kind: "q", text: question }]);
+
+    // Ask v2: the intent router first. If a REAL engine can answer this
+    // question with computed numbers, it stays on-device — no cloud consent
+    // needed, because nothing would leave.
+    setTurns((t) => [...t, { kind: "thinking" }]);
+    const routed = await import("../engine/askRouter").then((r) => r.routeAsk(question)).catch(() => null);
+    if (routed) {
+      const decision: RouteDecision = { task: "ask-known", runWhere: "device", reason: "matched a computed analysis — answered by the engine, on-device" };
+      setTurns((t) => [...t.filter((x) => x.kind !== "thinking"), { kind: "a", a: routed, decision }]);
+      return;
+    }
+    setTurns((t) => t.filter((x) => x.kind !== "thinking"));
+
+    const decision = route(question);
     if (decision.runWhere === "cloud" && decision.disclosure) {
       // The transparency step: show what would be sent, let the user choose.
       setTurns((t) => [...t, { kind: "disclosure", d: decision.disclosure!, decision }]);

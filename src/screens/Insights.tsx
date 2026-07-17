@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { dataMode, userExpenses } from "../engine/dataSource";
+import { menuMap, type MenuOut, type MenuThin, type Quadrant } from "../engine/menu";
 import { displayName } from "../engine/persona";
 import {
   benchmarks, counterfactual, creditReadiness, customerSurvival, expenses,
@@ -25,6 +26,64 @@ interface AllOut {
   mc: MonteCarloOut;
   season: SeasonAdjOut;
   ms: number;
+}
+
+const QUADS: { id: Quadrant; name: string; note: string }[] = [
+  { id: "star", name: "★ Stars", note: "protect — never discount" },
+  { id: "puzzle", name: "◆ Puzzles", note: "high margin, low volume — promote" },
+  { id: "workhorse", name: "▮ Workhorses", note: "volume, thin margin — price-test" },
+  { id: "dog", name: "· Dogs", note: "rework or retire" },
+];
+
+// The product map — menu engineering for every product business.
+function MenuCard() {
+  const [m, setM] = useState<MenuOut | MenuThin | null>(null);
+  useEffect(() => {
+    let on = true;
+    menuMap().then((x) => on && setM(x)).catch((e) => on && setM({ ok: false, reason: String(e) }));
+    return () => { on = false; };
+  }, []);
+
+  if (!m) return <article className="mcard open il-card"><div className="il-loading">▶ mapping products…</div></article>;
+  if (!m.ok) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="il-head"><span className="il-kick">A1½ · the product map</span>
+          <span className="pill lite-fc"><span className="dot" />warming up</span></div>
+        <div className="mmean">Product map: {m.reason}.</div>
+      </article>
+    );
+  }
+  return (
+    <article className="mcard open il-card">
+      <div className="il-head"><span className="il-kick">A1½ · the product map</span>
+        <span className="pill lite-hi"><span className="dot" />margin × velocity</span></div>
+      <div className="mn-grid">
+        {QUADS.map((qd) => (
+          <div className={`mn-cell ${qd.id}`} key={qd.id}>
+            <div className="mn-qname">{qd.name}</div>
+            <div className="mn-items">
+              {m.items.filter((i) => i.quadrant === qd.id).map((i) => (
+                <span className="mn-chip" key={i.product} title={`${i.unitsPerWeek}/wk · ${money(i.marginPerUnit)}/unit margin`}>
+                  {i.product}
+                </span>
+              ))}
+              {m.items.every((i) => i.quadrant !== qd.id) && <span className="mn-none">—</span>}
+            </div>
+            <div className="mn-note">{qd.note}</div>
+          </div>
+        ))}
+      </div>
+      {m.proposals.map((p) => (
+        <div className="il-row" key={p.action}>
+          <div className="il-row-main"><b>{p.action}</b>{p.impact != null && <> · ~<b>{money(p.impact)}/mo</b></>}</div>
+          <div className="il-row-sub">{p.expected}</div>
+          <ActOn source={p.source} action={p.action} expected={p.expected} impact={p.impact} />
+        </div>
+      ))}
+      <div className="il-cite">{m.cite}</div>
+    </article>
+  );
 }
 
 export default function Insights() {
@@ -97,6 +156,8 @@ export default function Insights() {
               </article>
             </Reveal>
           )}
+
+          <Reveal i={1}><MenuCard /></Reveal>
 
           <Reveal i={1}>
             <article className="mcard open il-card">
