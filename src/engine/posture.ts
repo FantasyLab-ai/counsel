@@ -51,7 +51,7 @@ export async function financialPosture(): Promise<Posture> {
     if (deficit <= 0) {
       return {
         level: "steady",
-        headline: `Revenue covers spending with <b>${money(-deficit)}</b> to spare.`,
+        headline: `Revenue covers spending with <em>${money(-deficit)}</em> to spare.`,
         sub: `${money(rev30)} in vs ${money(exp30)} out over the last 30 days.`,
         firstMove: "protect what's working — the engines will flag drift",
         deficit30: 0,
@@ -62,7 +62,7 @@ export async function financialPosture(): Promise<Posture> {
     if (uncovered >= 0.4) {
       return {
         level: "critical",
-        headline: `Spending is <b>running ${(exp30 / Math.max(1, rev30)).toFixed(1)}× revenue</b> — this needs action now, not observation.`,
+        headline: `Spending is <em>running ${(exp30 / Math.max(1, rev30)).toFixed(1)}× revenue</em> — this needs action now, not observation.`,
         sub: `Revenue covered only ${Math.round(coverage)}% of the last 30 days' spending — ${money(deficit)} left the business. At this pace that repeats every month.`,
         firstMove: "open the P&L, find the biggest expense category, and cut or renegotiate it THIS WEEK — then price and volume levers",
         deficit30: Math.round(deficit),
@@ -73,7 +73,7 @@ export async function financialPosture(): Promise<Posture> {
     if (uncovered >= 0.15) {
       return {
         level: "urgent",
-        headline: `Revenue is covering only <b>${Math.round(coverage)}%</b> of spending — pick a lever this week.`,
+        headline: `Revenue is covering only <em>${Math.round(coverage)}%</em> of spending — pick a lever this week.`,
         sub: `${money(deficit)} uncovered over the last 30 days. Not an emergency yet; ignoring it makes it one.`,
         firstMove: "one lever this week: the top expense category, the price test, or the win-back — and grade it",
         deficit30: Math.round(deficit),
@@ -83,7 +83,7 @@ export async function financialPosture(): Promise<Posture> {
     }
     return {
       level: "attention",
-      headline: `Spending edged past revenue by <b>${money(deficit)}</b> this month.`,
+      headline: `Spending edged past revenue by <em>${money(deficit)}</em> this month.`,
       sub: `${Math.round(coverage)}% covered — small gap, worth a deliberate look rather than a shrug.`,
       firstMove: "check the P&L's biggest movers vs last month",
       deficit30: Math.round(deficit),
@@ -102,8 +102,8 @@ export async function financialPosture(): Promise<Posture> {
       return {
         level,
         headline: level === "urgent"
-          ? `The cautious case misses your bills by <b>${money(-s.marginOfSafety)}</b> — line up the buffer now.`
-          : `The cautious case runs <b>${money(-s.marginOfSafety)}</b> short of bills — worth watching this week.`,
+          ? `The cautious case misses your bills by <em>${money(-s.marginOfSafety)}</em> — line up the buffer now.`
+          : `The cautious case runs <em>${money(-s.marginOfSafety)}</em> short of bills — worth watching this week.`,
         sub: `Low-band forecast vs monthly outgoings. A projection, not a recorded deficit — which is why the register stays measured.`,
         firstMove: "chase receivables early or park a buffer before the tight stretch",
         deficit30: Math.round(-s.marginOfSafety),

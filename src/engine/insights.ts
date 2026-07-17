@@ -92,6 +92,27 @@ export async function cashSentry(): Promise<CashSentry | null> {
   };
 }
 
+/** Revenue: recent history flowing into the AR(1) band ahead — the fan
+ * chart. History = last 28 trading days; forecast = 14 days with 95%
+ * analytic intervals from aurora-core. Null when history is too thin. */
+export interface RevenueBand {
+  history: number[];
+  mid: number[]; hi: number[]; lo: number[];
+  hi14: number; lo14: number; // summed 14-day band, for the receipt
+}
+export async function revenueBand(): Promise<RevenueBand | null> {
+  const led = await ledger();
+  if (led.revenue.length < 14) return null;
+  const fc = ar1Forecast(led.revenue, 14, 0.05);
+  if (!fc) return null;
+  return {
+    history: led.revenue.slice(-28),
+    mid: [...fc.forecast], hi: [...fc.hi], lo: [...fc.lo],
+    hi14: fc.hi.reduce((s2, v) => s2 + v, 0),
+    lo14: fc.lo.reduce((s2, v) => s2 + v, 0),
+  };
+}
+
 // --- what-if scenarios (transparent arithmetic + honest bands) ---------------
 export interface HireResult {
   cushionAvg: number;

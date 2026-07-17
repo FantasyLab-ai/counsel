@@ -8,10 +8,11 @@ import { useNavigate } from "react-router-dom";
 import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
 import { demoView, hasUserData } from "../engine/dataSource";
 import { composeDigest } from "../engine/digest";
+import { money, revenueBand, type RevenueBand } from "../engine/insights";
 import { overdueCount } from "../engine/decisions";
 import { sentinel, type SentinelOut } from "../engine/sentinel";
 import { CitePill, ConfidencePill, CountUp, Html, Receipt, Reveal, Written } from "../components/ui";
-import { BreakSpark } from "../components/charts";
+import { BreakSpark, VizView } from "../components/charts";
 
 const SHIELD = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -27,6 +28,7 @@ export default function Today() {
   const [artifactTitle, setArtifactTitle] = useState("morning digest");
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState<SentinelOut | null>(null);
+  const [band, setBand] = useState<RevenueBand | null>(null);
   const toGrade = overdueCount();
 
   useEffect(() => {
@@ -34,6 +36,7 @@ export default function Today() {
     getBrief().then((b) => on && setBrief(b));
     getMetrics("month").then((m) => on && setMetrics(m));
     sentinel().then((s) => on && setSent(s)).catch(() => undefined);
+    revenueBand().then((b) => on && setBand(b)).catch(() => undefined);
     return () => { on = false; };
   }, []);
 
@@ -208,6 +211,32 @@ export default function Today() {
           </Reveal>
         ))}
       </div>
+
+      {band && (
+        <>
+          <div className="eyebrow">The band ahead — two weeks, honestly ranged</div>
+          <Reveal i={6}>
+            <article className="mcard open il-card">
+              <VizView viz={{
+                kind: "fan",
+                history: band.history,
+                mid: band.mid, hi: band.hi, lo: band.lo,
+                hiLabel: money(band.hi14), loLabel: money(band.lo14),
+              }} />
+              <div className="il-row-sub" style={{ marginTop: 8 }}>
+                <Receipt title="the band ahead — the math" math={{
+                  methodPlain: "Your last 28 trading days flow into a 14-day AR(1) forecast with 95% analytic intervals — the shaded fan IS the honest answer; the middle line is just its center.",
+                  keyStatPlain: `Next 14 days: ${money(band.lo14)}–${money(band.hi14)} of revenue.`,
+                  keyStatNotation: "AR(1) · 95% analytic prediction intervals · aurora-core (parity-tested)",
+                  citation: { method: "AR(1) banded forecast", source: "your daily revenue" },
+                }}>
+                  <span>Next 14 days: <b>{money(band.lo14)}–{money(band.hi14)}</b> — a range, because ranges are the honest answer.</span>
+                </Receipt>
+              </div>
+            </article>
+          </Reveal>
+        </>
+      )}
 
       <div className="eyebrow">Watching · not ready to call</div>
       <Reveal i={7}>
