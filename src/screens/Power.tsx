@@ -251,11 +251,11 @@ function LiveConnect() {
     }
   }, []);
 
-  async function doOAuth(prov: "square" | "etsy") {
+  async function doOAuth(prov: "square" | "etsy" | "shopify") {
     setBusy(`opening ${prov} sign-in…`);
     setStatus(null);
     try {
-      const url = await oauthConnectUrl(prov);
+      const url = await oauthConnectUrl(prov, prov === "shopify" ? { shop: shop.trim() } : undefined);
       window.location.assign(url); // full-page redirect to the provider
     } catch (e) {
       setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
@@ -388,8 +388,16 @@ function LiveConnect() {
           <option value="etsy">Etsy — maker sales</option>
         </select>
         {provider === "shopify" && (
-          <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
-            value={shop} onChange={(e) => setShop(e.target.value)} autoComplete="off" />
+          <>
+            <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
+              value={shop} onChange={(e) => setShop(e.target.value)} autoComplete="off" aria-label="Shopify shop name" />
+            <button className="dbtn primary" disabled={!!busy || !shop.trim()} onClick={() => doOAuth("shopify")}>
+              Connect with Shopify — sign in
+            </button>
+            <div className="lc-mint">
+              <b>One tap:</b> enter your shop, sign in on Shopify, approve read-only access. Or paste an Admin token below.
+            </div>
+          </>
         )}
         {provider === "square" && (
           <>

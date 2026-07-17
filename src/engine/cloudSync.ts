@@ -116,9 +116,9 @@ export async function connectBank(): Promise<boolean> {
    Full-page redirect flow: the worker mints state->account and returns the
    Square authorize URL; the merchant signs in on Square; Square redirects to
    the worker callback, which seals the token and bounces back to /power. */
-export async function oauthConnectUrl(provider: "square" | "etsy"): Promise<string> {
+export async function oauthConnectUrl(provider: "square" | "etsy" | "shopify", extra?: { shop?: string }): Promise<string> {
   await ensureAccount();
-  const res = await api(`/v1/oauth/${provider}/start`, { method: "POST", body: "{}" });
+  const res = await api(`/v1/oauth/${provider}/start`, { method: "POST", body: JSON.stringify(extra ?? {}) });
   return res.url as string;
 }
 

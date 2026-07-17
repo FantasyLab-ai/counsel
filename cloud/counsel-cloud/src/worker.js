@@ -453,6 +453,58 @@ async function etsyPull(env, cred0, sinceUnix) {
   return { rows, cred };
 }
 
+/* --------------------------- Shopify OAuth -------------------------------
+   "Connect with Shopify": the merchant enters their shop, signs in on
+   Shopify's own admin, approves read scopes; we HMAC-verify the callback,
+   exchange the code for an OFFLINE access token (no expiry), and seal it in
+   the {shop, token} shape the existing shopifyAdapter already pulls. Config:
+   SHOPIFY_CLIENT_ID (var) + SHOPIFY_CLIENT_SECRET (secret). */
+const SHOPIFY_OAUTH_SCOPES = "read_orders,read_products";
+const SHOPIFY_REDIRECT = "https://counsel-cloud.fantasy-labai.workers.dev/v1/oauth/shopify/callback";
+
+// Normalize "shop" or "shop.myshopify.com" -> validated subdomain, or null.
+function shopifySubdomain(raw) {
+  const m = /^([a-z0-9][a-z0-9-]{0,59})(\.myshopify\.com)?$/i.exec(String(raw || "").trim().toLowerCase());
+  return m ? m[1] : null;
+}
+function shopifyAuthorizeUrl(env, sub, state) {
+  const u = new URL(`https://${sub}.myshopify.com/admin/oauth/authorize`);
+  u.searchParams.set("client_id", env.SHOPIFY_CLIENT_ID || "");
+  u.searchParams.set("scope", SHOPIFY_OAUTH_SCOPES);
+  u.searchParams.set("redirect_uri", SHOPIFY_REDIRECT);
+  u.searchParams.set("state", state);
+  return u.toString();
+}
+// Verify the callback really came from Shopify: HMAC-SHA256 of the sorted
+// query (minus hmac) with the app secret.
+async function shopifyVerifyHmac(env, url) {
+  const given = url.searchParams.get("hmac");
+  if (!given || !env.SHOPIFY_CLIENT_SECRET) return false;
+  const pairs = [...url.searchParams.entries()]
+    .filter(([k]) => k !== "hmac" && k !== "signature")
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("&");
+  const key = await crypto.subtle.importKey("raw", enc.encode(env.SHOPIFY_CLIENT_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(pairs));
+  const hex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  // constant-time-ish compare
+  if (hex.length !== given.length) return false;
+  let diff = 0;
+  for (let i = 0; i < hex.length; i++) diff |= hex.charCodeAt(i) ^ given.charCodeAt(i);
+  return diff === 0;
+}
+async function shopifyExchange(env, sub, code) {
+  const r = await fetch(`https://${sub}.myshopify.com/admin/oauth/access_token`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ client_id: env.SHOPIFY_CLIENT_ID, client_secret: env.SHOPIFY_CLIENT_SECRET, code }),
+  });
+  const j = await r.json();
+  if (!r.ok || !j.access_token) throw new Error(String(j.errors || j.error || `shopify_${r.status}`).slice(0, 120));
+  return { shop: sub, token: j.access_token };
+}
+
 const ADAPTERS = { stripe: stripeAdapter, square: squareAdapter, shopify: shopifyAdapter };
 
 /* ------------------------------ demo pulse -------------------------------
@@ -789,6 +841,33 @@ export default {
         }
       }
 
+      // -- Shopify OAuth callback: HMAC-verified browser redirect --
+      if (path === "/v1/oauth/shopify/callback" && req.method === "GET") {
+        const code = url.searchParams.get("code");
+        const state = url.searchParams.get("state");
+        const shopParam = url.searchParams.get("shop");
+        const back = (q) => new Response(null, { status: 302, headers: { Location: `${APP_REDIRECT}?${q}` } });
+        if (!env.SHOPIFY_CLIENT_SECRET) return back("error=shopify_config");
+        if (!code || !state || !shopParam) return back("error=shopify");
+        if (!(await shopifyVerifyHmac(env, url))) return back("error=shopify_hmac");
+        const sub = shopifySubdomain(shopParam);
+        if (!sub) return back("error=shopify_shop");
+        const acctId = await env.ACCOUNTS.get(`oauthstate:${state}`);
+        if (!acctId) return back("error=shopify_expired");
+        await env.ACCOUNTS.delete(`oauthstate:${state}`);
+        try {
+          const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
+          if (!raw) return back("error=shopify_account");
+          const acct = JSON.parse(raw);
+          const cred = await shopifyExchange(env, sub, code);
+          acct.providers.shopify = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
+          await saveAcct(env, acctId, acct);
+          return back("connected=shopify");
+        } catch (e) {
+          return back(`error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
+        }
+      }
+
       // -- everything below requires auth --
       const auth = await requireAuth(req, env);
       if (!auth) return json(req, 401, { error: "invalid or missing credentials" });
@@ -847,6 +926,17 @@ export default {
         const challenge = await pkceChallenge(verifier);
         await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, verifier }), { expirationTtl: 600 });
         return json(req, 200, { url: etsyAuthorizeUrl(env, state, challenge) });
+      }
+
+      // -- Shopify OAuth start: needs the shop; mint state, return authorize URL --
+      if (path === "/v1/oauth/shopify/start" && req.method === "POST") {
+        if (!env.SHOPIFY_CLIENT_ID) return json(req, 400, { error: "Shopify OAuth not configured — set SHOPIFY_CLIENT_ID (var) + SHOPIFY_CLIENT_SECRET (secret)" });
+        const body = (await readBody(req)) ?? {};
+        const sub = shopifySubdomain(body.shop);
+        if (!sub) return json(req, 400, { error: "enter your shop, e.g. your-shop (from your-shop.myshopify.com)" });
+        const state = `sh_${randHex(16)}`;
+        await env.ACCOUNTS.put(`oauthstate:${state}`, id, { expirationTtl: 600 });
+        return json(req, 200, { url: shopifyAuthorizeUrl(env, sub, state) });
       }
 
       // -- Square OAuth start: mint state -> account, return the authorize URL --

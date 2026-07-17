@@ -18,7 +18,8 @@
     "PLAID_ENV": "sandbox",
     "SQUARE_CLIENT_ID": "sq0idp-t2S6tWCrHRvCMSGwdTG3DA",
     "SQUARE_OAUTH_ENV": "production",
-    "ETSY_CLIENT_ID": "9jrjuecsq3mxb5jusixtbcqk"
+    "ETSY_CLIENT_ID": "9jrjuecsq3mxb5jusixtbcqk",
+    "SHOPIFY_CLIENT_ID": "a2448137f1eaae2812da54bebd40540f"
   },
   // demo pulse: every 30 min, seed 1–3 fake sales into pulse-enabled accounts
   // (test/sandbox credentials only — live keys are never written to)
