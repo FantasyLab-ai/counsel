@@ -39,7 +39,10 @@ async function api(path: string, init?: RequestInit, auth = true): Promise<Recor
     },
   });
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!res.ok) throw new Error(String(body.error ?? `request failed (${res.status})`));
+  if (!res.ok) {
+    const msg = [body.error, body.detail].filter(Boolean).join(": ") || `request failed (${res.status})`;
+    throw new Error(String(msg));
+  }
   return body;
 }
 
@@ -142,12 +145,17 @@ export async function disconnectProvider(provider: CloudProvider): Promise<void>
 }
 
 export interface SyncResult {
-  rows: number;
+  rows: number;          // charge rows landed (all sales sources, merged)
+  expenseRows: number;   // expense rows landed (bank + seeded)
+  seeded: boolean;
   pulled: Record<string, number>;
   errors?: Record<string, string>;
 }
 
-/** Pull from every connected provider and land rows in the on-device store. */
+/** ONE sync, the whole business: every connected provider is pulled in the
+ * same pass — sales sources merge into a single ledger, the bank feeds
+ * expenses, seeded history rides underneath. Stores whatever arrived:
+ * an expenses-only sync (bank connected, no sales source yet) still lands. */
 export async function syncNow(days = 365): Promise<SyncResult> {
   const res = await api("/v1/sync", { method: "POST", body: JSON.stringify({ days }) });
   const charges = (res.charges as Charge[]) ?? [];
@@ -155,12 +163,14 @@ export async function syncNow(days = 365): Promise<SyncResult> {
   const pulled = (res.pulled as Record<string, number>) ?? {};
   const sources = (res.sources as string[]) ?? [];
   const seeded = !!res.seeded;
-  if (charges.length) {
+  if (charges.length || expenses.length) {
     const name = `${sources.length ? sources.join(" + ") + " live sync" : "live sync"}${seeded ? " · seeded test history" : ""}`;
-    storeUserData(charges, expenses.length ? expenses : null, name);
+    storeUserData(charges.length ? charges : null, expenses.length ? expenses : null, name);
   }
   return {
     rows: charges.length,
+    expenseRows: expenses.length,
+    seeded,
     pulled,
     ...(res.errors ? { errors: res.errors as Record<string, string> } : {}),
   };

@@ -169,7 +169,7 @@ const LIVE_HELP: Record<CloudProvider, { hint: string; mint: string; url: string
   plaid: {
     hint: "no key needed — you sign into your bank in Plaid's own window",
     mint: "sandbox test bank: pick any bank, login user_good / pass_good",
-    url: "https://plaid.com/",
+    url: "",
   },
 };
 
@@ -248,15 +248,26 @@ function LiveConnect() {
   }
 
   async function doSync() {
-    setBusy("pulling & normalizing…");
+    setBusy("pulling every connected source…");
     setStatus(null);
     try {
       const r = await syncNow();
-      if (r.rows === 0) {
-        setStatus({ ok: false, msg: `connected, but 0 transactions came back${r.errors ? ` (${Object.values(r.errors)[0]})` : " — is there activity in the last year?"}` });
+      if (r.rows === 0 && r.expenseRows === 0) {
+        setStatus({ ok: false, msg: `connected, but nothing came back${r.errors ? ` (${Object.values(r.errors)[0]})` : " — fresh bank connections take ~30s to prepare; try Sync again"}` });
       } else {
-        setStatus({ ok: true, msg: `${r.rows} transactions synced (${Object.entries(r.pulled).map(([k, v]) => `${k}: ${v}`).join(", ")}) — opening Insights…` });
-        setTimeout(() => window.location.assign("/insights"), 1200);
+        const perPipe = Object.entries(r.pulled)
+          .map(([k, v]) => `${k === "plaid" ? "bank" : k} ${v}`)
+          .join(" + ");
+        const bits = [
+          `${r.rows} sales rows`,
+          r.expenseRows ? `${r.expenseRows} expense rows` : null,
+          r.seeded ? "seeded history underneath" : null,
+        ].filter(Boolean).join(" · ");
+        setStatus({
+          ok: true,
+          msg: `one ledger, every pipe: ${perPipe || "seeded history"} → ${bits}${r.errors ? ` · note: ${Object.entries(r.errors).map(([k, e]) => `${k}: ${e}`).join("; ")}` : ""} — opening Insights…`,
+        });
+        setTimeout(() => window.location.assign("/insights"), 1600);
       }
     } catch (e) {
       setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
@@ -274,10 +285,24 @@ function LiveConnect() {
         </span>
       </div>
       <div className="mmean">
-        Mint a <b>read-only key in your own dashboard</b>, paste it once, and Counsel syncs your real
-        transactions on demand. The key is encrypted server-side; your business data is a pass-through —
-        it's stored <b>only on this device</b>.
+        <b>One business, many pipes.</b> Connect each tool once — a single sync then pulls them
+        ALL together: sales from every register merge into one ledger, the bank feeds expenses,
+        and every engine reads the whole picture. Keys are encrypted server-side; your data is a
+        pass-through, stored <b>only on this device</b>.
       </div>
+      {connected.length > 0 && (
+        <div className="pipes-row">
+          <div className="pipes">
+            {connected.map((p) => (
+              <span className="pipe-chip" key={p}>● {p === "plaid" ? "bank" : p}</span>
+            ))}
+          </div>
+          <button className="dbtn primary" disabled={!!busy} onClick={doSync}>
+            Sync everything
+          </button>
+        </div>
+      )}
+      <div className="pw-csv-lbl" style={{ marginTop: connected.length ? 14 : 0 }}>add a source</div>
       <div className="lc-form">
         <select className="ps-select" value={provider} aria-label="Provider"
           onChange={(e) => { setProvider(e.target.value as CloudProvider); setStatus(null); }}>
@@ -302,8 +327,8 @@ function LiveConnect() {
             value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" />
         )}
         <div className="lc-mint">
-          <b>Where to mint it:</b> {help.mint}{" "}
-          <a href={help.url} target="_blank" rel="noopener noreferrer">open ↗</a>
+          <b>{provider === "plaid" ? "How it works:" : "Where to mint it:"}</b> {help.mint}
+          {help.url && <> <a href={help.url} target="_blank" rel="noopener noreferrer">open ↗</a></>}
         </div>
       </div>
       <div className="dropin-row">
@@ -314,7 +339,9 @@ function LiveConnect() {
             ? (connected.includes("plaid") ? "Reconnect a bank" : "Open the bank picker")
             : `${connected.includes(provider) ? "Reconnect" : "Connect"} ${provider}`}
         </button>
-        <button className="dbtn" disabled={!!busy || !connected.length} onClick={doSync}>Sync now</button>
+        {!connected.length && (
+          <button className="dbtn" disabled={!!busy} onClick={doSync}>Sync now</button>
+        )}
         {connected.includes(provider) && (
           <button className="dbtn" disabled={!!busy}
             onClick={async () => { await disconnectProvider(provider).catch(() => undefined); setConnected((await cloudStatus().catch(() => ({ providers: [] as CloudProvider[], pulse: false }))).providers); setStatus({ ok: true, msg: `${provider} disconnected — its token was deleted server-side.` }); }}>

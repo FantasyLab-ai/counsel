@@ -1051,3 +1051,10 @@ h1, .said, .big, .verdict, .analyzing-h, .rec-action { text-wrap: balance; }
 .ped-box { border-left: 3px solid var(--brass); background: var(--card-2); border-radius: 8px;
   padding: 4px 14px 12px; margin-top: 14px; }
 .ped-home { color: var(--muted); font-style: italic; margin-top: 6px; }
+
+/* ---- one business, many pipes ---- */
+.pipes-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 2px;
+  background: var(--forest-tint, #e2ebe5); border-radius: 11px; padding: 10px 12px; }
+.pipes { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; }
+.pipe-chip { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--forest);
+  background: var(--card); border: 1px solid var(--line); border-radius: 100px; padding: 4px 10px; }
