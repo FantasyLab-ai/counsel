@@ -1,6 +1,7 @@
 # Counsel — Shopify app configuration (config-as-code for the new dev dashboard).
-# Deploy a new version with:   npx @shopify/cli@latest app deploy
-# (run from this directory; it will prompt you to log in and pick the org)
+# Released via the dev-dashboard "New version" UI (apps/<id>/versions/new);
+# this file mirrors that config for the record. CLI alternative:
+#   cd this directory && npx @shopify/cli@latest app deploy
 #
 # What this version changes vs the one released 2026-07-16:
 #   * embedded = false  — Counsel is a STANDALONE app (merchants use it at
@@ -17,6 +18,9 @@ embedded = false
 
 [access_scopes]
 scopes = "read_orders,read_products"
+# Legacy install flow = the classic authorization-code grant our worker
+# implements — deterministic for a standalone app.
+use_legacy_install_flow = true
 
 [auth]
 redirect_urls = [
