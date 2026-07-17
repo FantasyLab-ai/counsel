@@ -7,6 +7,9 @@
 <meta name="description" content="The whole C-suite in your pocket. Real statistical engines, receipts on every number, analysis on your device. Receipts, not narratives." />
 <meta property="og:title" content="Counsel — the honest AI CFO" />
 <meta property="og:description" content="Runs the numbers like a CFO. Watches operations like a COO. Calls the plays like a CEO. Honest like none of them." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://counsel-site.pages.dev" />
+<meta name="twitter:card" content="summary" />
 <meta name="theme-color" content="#152019" />
 <link rel="icon" href="https://counsel-demo.pages.dev/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,9 +17,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
 /* ============================================================
-   COUNSEL — the landing. Same hand-set journal identity as the
-   app: paper, forest, brass, ink stationery. Motion is physical
-   and quiet: pointer-tilt 3D, scroll parallax, ink reveals.
+   COUNSEL — the landing. The same hand-set journal as the app:
+   paper, forest, brass, ink stationery. Motion is physical and
+   quiet — the advisor writes, the paper tilts, nothing shouts.
    ============================================================ */
 :root{
   --paper:#F4F1E9; --card:#FBFAF5; --card2:#EFEBDF; --ink:#1F2A23;
@@ -33,12 +36,14 @@ html{scroll-behavior:smooth}
 body{background:var(--paper);color:var(--ink);font:16px/1.65 var(--sans);
   overflow-x:hidden;-webkit-font-smoothing:antialiased}
 ::selection{background:rgba(205,174,126,.35)}
-h1,h2,h3{text-wrap:balance;font-feature-settings:"onum" 1}
+h1,h2,h3,h4{text-wrap:balance;font-feature-settings:"onum" 1}
 p{text-wrap:pretty}
 a{color:inherit}
 img{max-width:100%}
+section{scroll-margin-top:76px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* paper grain over everything */
+/* paper grain over everything — the single cheapest killer of flat */
 body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.03;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
 
@@ -50,9 +55,11 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;op
 .dark .eyebrow{color:var(--brass-hi)}
 .dark .eyebrow::after{background:var(--line-ink)}
 
-/* ---------- nav ---------- */
+/* ---------- nav + the reading hairline ---------- */
 nav{position:fixed;top:0;left:0;right:0;z-index:100;transition:background .3s var(--ease),box-shadow .3s var(--ease)}
-nav.scrolled{background:rgba(21,32,25,.86);backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--line-ink)}
+nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow:0 1px 0 var(--line-ink)}
+#progress{position:fixed;top:0;left:0;height:2px;z-index:101;background:var(--brass);width:0;
+  box-shadow:0 0 8px rgba(205,174,126,.6)}
 .nav-in{max-width:1140px;margin:0 auto;padding:18px 28px;display:flex;align-items:center;gap:26px}
 .wordmark{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--bone);letter-spacing:-.01em;text-decoration:none;display:flex;align-items:baseline;gap:8px}
 .wordmark .d{color:var(--brass-hi);font-size:14px}
@@ -74,7 +81,7 @@ nav.scrolled{background:rgba(21,32,25,.86);backdrop-filter:blur(14px);box-shadow
 .hero .wm{position:absolute;font-family:var(--serif);font-size:44vw;line-height:1;color:rgba(205,174,126,.04);
   right:-8vw;top:-6vw;user-select:none;pointer-events:none}
 .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:center;width:100%}
-@media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:70px}.hero{padding-top:120px}}
+@media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:74px}.hero{padding-top:118px;min-height:0}}
 .hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,5.4vw,68px);line-height:1.06;letter-spacing:-.02em;margin:22px 0 20px}
 .hero h1 em{font-style:italic;color:var(--brass-soft)}
 .hero .lede{font-size:17.5px;line-height:1.7;color:var(--bone-dim);max-width:52ch}
@@ -83,28 +90,37 @@ nav.scrolled{background:rgba(21,32,25,.86);backdrop-filter:blur(14px);box-shadow
 .btn{display:inline-flex;align-items:center;gap:10px;border-radius:100px;padding:15px 26px;
   font:600 15px var(--sans);text-decoration:none;transition:transform .25s var(--spring),box-shadow .25s var(--ease),background .2s;cursor:pointer;border:none}
 .btn.brass{background:var(--brass);color:#1b1508;box-shadow:0 12px 30px -10px rgba(156,122,70,.55)}
-.btn.brass:hover{transform:translateY(-2px);background:var(--brass-hi)}
 .btn.ghost{background:transparent;color:var(--bone);border:1px solid var(--line-ink)}
-.btn.ghost:hover{border-color:var(--bone-dim);transform:translateY(-2px)}
-.hero-proof{display:flex;gap:26px;margin-top:44px;flex-wrap:wrap}
+@media(hover:hover){
+  .btn.brass:hover{transform:translateY(-2px);background:var(--brass-hi)}
+  .btn.ghost:hover{border-color:var(--bone-dim);transform:translateY(-2px)}
+}
+.hero-proof{display:flex;gap:28px;margin-top:44px;flex-wrap:wrap}
 .hp{display:flex;flex-direction:column;gap:3px}
 .hp b{font-family:var(--serif);font-size:24px;font-weight:500;color:var(--bone);font-feature-settings:"tnum" 1}
-.hp span{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.hp span{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--bone-dim)}
 
-/* ---------- the 3D stage ---------- */
+/* ---------- the 3D stage ----------
+   One transform writer: CSS composes the pieces from custom properties, so
+   parallax never stomps tilt — that's where the crispness lives. */
 .stage{perspective:1400px;position:relative;display:flex;justify-content:center}
+.t3{transform:translate3d(0,var(--py,0px),0) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transform-style:preserve-3d;will-change:transform}
 .phone{width:330px;background:var(--inkcard2);border-radius:44px;padding:12px;
   border:1px solid rgba(233,232,226,.1);
-  box-shadow:0 60px 120px -40px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.08);
-  transform-style:preserve-3d;will-change:transform}
+  box-shadow:0 60px 120px -40px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.08)}
 .phone .screen{background:var(--paper);border-radius:34px;overflow:hidden;color:var(--ink)}
 .float-card{position:absolute;background:var(--card);border-radius:16px;padding:16px 18px;color:var(--ink);
-  border:1px solid var(--line);box-shadow:0 40px 80px -24px rgba(0,0,0,.5);width:250px;
-  transform-style:preserve-3d;will-change:transform}
+  border:1px solid var(--line);box-shadow:0 40px 80px -24px rgba(0,0,0,.5);width:250px}
 .fc-receipt{right:-56px;top:44px}
 .fc-contract{left:-72px;bottom:52px}
 @media(max-width:1100px){.fc-receipt{right:-16px}.fc-contract{left:-20px}}
-@media(max-width:640px){.phone{width:290px}.fc-receipt{right:-6px;top:20px;width:210px}.fc-contract{left:-8px;bottom:20px;width:220px}}
+@media(max-width:640px){.phone{width:288px}.fc-receipt{right:-4px;top:16px;width:206px}.fc-contract{left:-6px;bottom:16px;width:218px}}
+/* entrance: the desk gets set */
+@keyframes settle{from{opacity:0;transform:translate3d(0,42px,0) rotateX(6deg)}to{opacity:1;transform:translate3d(0,0,0) rotateX(0)}}
+.hero .phone{animation:settle 1.1s var(--ease) .15s backwards}
+.hero .fc-receipt{animation:settle 1.1s var(--ease) .5s backwards}
+.hero .fc-contract{animation:settle 1.1s var(--ease) .72s backwards}
 
 /* ---- in-mock app components (faithful to the real screens) ---- */
 .m-bar{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 8px}
@@ -112,7 +128,8 @@ nav.scrolled{background:rgba(21,32,25,.86);backdrop-filter:blur(14px);box-shadow
 .m-word i{font-style:normal;font-family:var(--mono);font-size:7.5px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;margin-left:5px}
 .m-chip{font-family:var(--mono);font-size:8.5px;color:var(--forest);border:1px solid var(--line);border-radius:100px;padding:4px 9px}
 .m-greet{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:0 18px 10px}
-.m-voice{background:var(--inkcard);color:var(--bone);border-radius:18px;margin:0 12px;padding:16px}
+.m-voice{background:var(--inkcard);color:var(--bone);border-radius:18px;margin:0 12px;padding:16px;
+  box-shadow:inset 0 1px 0 rgba(233,232,226,.07)}
 .m-eyebrow{font-family:var(--mono);font-size:7.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass-hi);display:flex;gap:8px;align-items:center}
 .m-eyebrow::after{content:"";flex:1;height:1px;background:var(--line-ink)}
 .m-said{font-family:var(--serif);font-size:19px;line-height:1.25;margin:9px 0 7px;font-weight:400}
@@ -120,15 +137,18 @@ nav.scrolled{background:rgba(21,32,25,.86);backdrop-filter:blur(14px);box-shadow
 .m-sub{font-size:10.5px;line-height:1.55;color:var(--bone-dim)}
 .m-micro{display:flex;gap:7px;margin-top:12px}
 .m-m{flex:1;background:rgba(233,232,226,.06);border-radius:9px;padding:7px 9px}
-.m-ml{font-family:var(--mono);font-size:6.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.m-ml{font-family:var(--mono);font-size:6.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--bone-dim)}
 .m-mv{font-family:var(--mono);font-size:11px;font-weight:600;margin-top:2px}
 .m-mv i{font-style:normal;color:#7FCE9F;margin-right:3px;font-size:8px}
 .m-sent{display:flex;gap:9px;margin:10px 12px 0;background:var(--card);border:1px solid var(--line);
   border-left:3px solid var(--forest);border-radius:11px;padding:10px 12px;font-size:9.5px;line-height:1.5;color:var(--ink)}
-.m-sent .dot{width:6px;height:6px;border-radius:50%;background:var(--forest);margin-top:4px;flex-shrink:0}
+.m-sent .dot{width:6px;height:6px;border-radius:50%;background:var(--forest);margin-top:4px;flex-shrink:0;
+  animation:breathe 2.6s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.35}}
 .m-sent b{font-weight:600}
 .m-tiles{display:flex;gap:9px;margin:10px 12px 14px}
-.m-tile{flex:1;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 12px}
+.m-tile{flex:1;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 12px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
 .m-tl{font-family:var(--mono);font-size:6.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
 .m-tv{font-family:var(--serif);font-size:21px;font-weight:500;margin-top:3px;font-feature-settings:"tnum" 1}
 .m-td{font-family:var(--mono);font-size:7.5px;color:var(--rust);margin-left:4px}
@@ -153,14 +173,14 @@ nav.scrolled{background:rgba(21,32,25,.86);backdrop-filter:blur(14px);box-shadow
 .fc-btn.go{background:var(--forest);border-color:var(--forest);color:var(--bone)}
 
 /* ---------- sections ---------- */
-section{padding:110px 0}
+section{padding:112px 0}
 .sec-h{font-family:var(--serif);font-weight:400;font-size:clamp(30px,3.8vw,46px);line-height:1.12;letter-spacing:-.015em;margin:20px 0 16px}
 .sec-h em{font-style:italic;color:var(--brass)}
 .dark .sec-h em{color:var(--brass-soft)}
 .sec-p{font-size:16.5px;color:var(--muted);max-width:62ch;line-height:1.7}
 .dark .sec-p{color:var(--bone-dim)}
 
-/* comparison ledger */
+/* comparison ledger — set like a statement, closed with a double rule */
 .ledger{margin-top:44px;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 30px 60px -30px rgba(31,42,35,.25)}
 .lg-row{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
@@ -173,7 +193,11 @@ section{padding:110px 0}
 .lg-head .lg-cell{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:13px 24px}
 .lg-head .lg-cell:first-child{color:var(--faint)}
 .lg-head .lg-cell:last-child{color:var(--brass)}
-@media(max-width:640px){.lg-cell{padding:14px 16px;font-size:12.5px}}
+.lg-total{border-top:3px double var(--ink)}
+.lg-total .lg-cell{font-family:var(--serif);font-size:16px}
+.lg-total .lg-cell:last-child{font-weight:500}
+.lg-total .lg-cell:last-child em{font-style:italic;color:var(--brass)}
+@media(max-width:640px){.lg-cell{padding:14px 16px;font-size:12.5px}.lg-total .lg-cell{font-size:14px}}
 
 /* triptych */
 .trip{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:52px}
@@ -181,8 +205,8 @@ section{padding:110px 0}
 .trip-card{perspective:900px}
 .trip-inner{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 24px 56px -28px rgba(31,42,35,.35);
-  transform-style:preserve-3d;transition:transform .5s var(--spring),box-shadow .5s var(--ease);will-change:transform}
-.trip-card:hover .trip-inner{box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 42px 80px -30px rgba(31,42,35,.45)}
+  transition:box-shadow .5s var(--ease)}
+@media(hover:hover){.trip-card:hover .trip-inner{box-shadow:inset 0 1px 0 rgba(255,255,255,.6), 0 42px 80px -30px rgba(31,42,35,.45)}}
 .trip-shot{padding:18px 18px 0;background:linear-gradient(180deg,var(--card2),var(--card))}
 .trip-copy{padding:20px 22px 24px}
 .trip-copy h3{font-family:var(--serif);font-weight:500;font-size:20px;margin-bottom:7px}
@@ -197,7 +221,7 @@ section{padding:110px 0}
 .pl-d.up{color:var(--forest);background:var(--forest-tint)}
 .pl-d.dn{color:var(--rust);background:#F3E4D8}
 .pl-amt{font-family:var(--mono);font-size:10px;font-weight:600;font-feature-settings:"tnum" 1}
-.pl-total{display:flex;gap:7px;border-top:2px solid var(--ink);margin-top:5px;padding:8px 2px 10px;font-size:11px;font-weight:600}
+.pl-total{display:flex;gap:7px;border-top:3px double var(--ink);margin-top:5px;padding:8px 2px 10px;font-size:11px;font-weight:600}
 .pl-total span{flex:1}
 .mini .m-voice{margin:0 0 10px;border-radius:12px;padding:12px}
 .mini .m-said{font-size:14.5px}
@@ -213,8 +237,8 @@ section{padding:110px 0}
 @media(max-width:920px){.ped-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.ped-grid{grid-template-columns:1fr}}
 .ped{background:var(--inkcard2);border:1px solid var(--line-ink);border-radius:18px;padding:24px 22px;
-  transform-style:preserve-3d;transition:transform .5s var(--spring),border-color .3s;will-change:transform}
-.ped:hover{border-color:rgba(205,174,126,.4)}
+  transition:border-color .3s}
+@media(hover:hover){.ped:hover{border-color:rgba(205,174,126,.4)}}
 .ped .k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass-hi)}
 .ped h3{font-family:var(--serif);font-weight:500;font-size:19px;margin:10px 0 8px;line-height:1.25}
 .ped p{font-size:12.5px;line-height:1.6;color:var(--bone-dim)}
@@ -237,7 +261,8 @@ section{padding:110px 0}
 /* posture strip */
 .posture-band{margin-top:46px;display:grid;grid-template-columns:1fr 1fr;gap:22px}
 @media(max-width:820px){.posture-band{grid-template-columns:1fr}}
-.po{border-radius:18px;padding:24px 26px;border:1px solid var(--line);background:var(--card)}
+.po{border-radius:18px;padding:24px 26px;border:1px solid var(--line);background:var(--card);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
 .po.crit{border-left:4px solid var(--rust)}
 .po.calm{border-left:4px solid var(--forest)}
 .po .k{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase}
@@ -255,21 +280,22 @@ section{padding:110px 0}
 .priv h3{font-family:var(--serif);font-weight:500;font-size:19px;margin:12px 0 8px}
 .priv p{font-size:13px;color:var(--bone-dim);line-height:1.65}
 
-/* personas marquee */
+/* personas marquee — the trade and its unit of thought, hand-set */
 .marquee{overflow:hidden;margin-top:44px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
-.mq-track{display:flex;gap:12px;width:max-content;animation:mq 46s linear infinite}
+.mq-track{display:flex;gap:12px;width:max-content;animation:mq 52s linear infinite}
 .marquee:hover .mq-track{animation-play-state:paused}
 @keyframes mq{to{transform:translateX(-50%)}}
-.mq-chip{font-size:13.5px;background:var(--card);border:1px solid var(--line);border-radius:100px;
-  padding:10px 18px;white-space:nowrap;color:var(--muted)}
-.mq-chip b{margin-right:6px}
+.mq-chip{display:inline-flex;align-items:baseline;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:100px;
+  padding:10px 18px;white-space:nowrap}
+.mq-chip b{font-family:var(--serif);font-weight:500;font-size:14.5px;color:var(--ink)}
+.mq-chip i{font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass)}
 
 /* connectors */
 .conn-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:40px}
 .conn{font-family:var(--mono);font-size:12px;letter-spacing:.04em;background:var(--card);
   border:1px solid var(--line);border-radius:12px;padding:14px 22px;display:flex;gap:10px;align-items:center;
   transition:transform .3s var(--spring),border-color .2s}
-.conn:hover{transform:translateY(-3px);border-color:var(--brass)}
+@media(hover:hover){.conn:hover{transform:translateY(-3px);border-color:var(--brass)}}
 .conn .dot{width:7px;height:7px;border-radius:50%;background:var(--forest)}
 .conn.soon .dot{background:var(--faint)}
 .conn.soon{color:var(--faint)}
@@ -281,12 +307,18 @@ section{padding:110px 0}
 .final h2{font-family:var(--serif);font-weight:400;font-size:clamp(36px,5vw,58px);letter-spacing:-.02em;line-height:1.08}
 .final h2 em{font-style:italic;color:var(--brass-soft)}
 .final p{color:var(--bone-dim);margin:18px auto 0;max-width:48ch;font-size:16.5px}
-footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(--line-ink);padding:34px 0}
-.foot-in{max-width:1140px;margin:0 auto;padding:0 28px;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
-.foot-in .mono{font-size:10px;letter-spacing:.08em}
+
+/* footer + colophon — a journal signs its work */
+footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(--line-ink);padding:36px 0 30px}
+.foot-in{max-width:1140px;margin:0 auto;padding:0 28px}
+.foot-top{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.foot-top .mono{font-size:10px;letter-spacing:.08em}
 .foot-links{margin-left:auto;display:flex;gap:20px}
 .foot-links a{font-family:var(--mono);font-size:10.5px;color:var(--bone-dim);text-decoration:none}
 .foot-links a:hover{color:var(--bone)}
+.colophon{margin-top:22px;padding-top:18px;border-top:1px solid var(--line-ink);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;line-height:1.9;color:rgba(184,189,180,.55)}
+.colophon .sw{display:inline-block;width:8px;height:8px;border-radius:2px;vertical-align:-1px;margin:0 3px 0 8px}
 
 /* fleuron */
 .fleuron{display:flex;align-items:center;gap:16px;color:var(--brass);font-size:11px;margin:0 auto;max-width:1140px;padding:0 28px}
@@ -296,18 +328,25 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 /* ---------- motion ---------- */
 [data-reveal]{opacity:0;transform:translateY(26px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
 [data-reveal].in{opacity:1;transform:none}
-[data-depth]{will-change:transform}
+/* the ink write — the app's signature, brought home */
+[data-write] .w{display:inline-block;opacity:0;filter:blur(4px);transform:translateY(5px)}
+[data-write].in .w{animation:inkIn .5s var(--ease) forwards;animation-delay:var(--wd,0ms)}
+@keyframes inkIn{to{opacity:1;filter:blur(0);transform:none}}
 @media(prefers-reduced-motion:reduce){
   [data-reveal]{opacity:1;transform:none;transition:none}
+  [data-write] .w{opacity:1;filter:none;transform:none;animation:none}
   .mq-track{animation:none}
-  .phone,.float-card,.ped,.trip-inner{transform:none!important}
+  .m-sent .dot{animation:none}
+  .hero .phone,.hero .float-card{animation:none}
+  .t3{transform:none!important}
   html{scroll-behavior:auto}
 }
 </style>
 </head>
 <body>
 
-<nav id="nav">
+<div id="progress" aria-hidden="true"></div>
+<nav id="nav" aria-label="Main">
   <div class="nav-in">
     <a class="wordmark" href="#top"><span class="d">◆</span>Counsel <span>by Aurora</span></a>
     <div class="nav-links">
@@ -321,11 +360,11 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 
 <!-- ================= HERO ================= -->
 <header class="hero" id="top">
-  <div class="wm" data-depth="0.06">◆</div>
+  <div class="wm t3" data-depth="0.06" aria-hidden="true">◆</div>
   <div class="wrap hero-grid">
     <div>
       <div class="eyebrow" data-reveal>The honest AI CFO</div>
-      <h1 data-reveal>The whole C-suite,<br /><em>in your pocket.</em></h1>
+      <h1 data-write>The whole C-suite,<br /><em>in your pocket.</em></h1>
       <p class="lede" data-reveal>
         Runs the numbers like a CFO. Watches operations like a COO. Calls the plays like a CEO.
         <b>Honest like none of them.</b> Real statistical engines read your business and tell you
@@ -343,8 +382,10 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
       </div>
     </div>
 
-    <div class="stage" data-reveal>
-      <div class="phone tilt" data-tilt="10">
+    <div class="stage">
+      <p class="sr">A preview of the Counsel app: the morning brief reads “Trailing 30 days are up 12% on the 30 before,” a sentinel notes every day is inside its weekday band, and metric tiles show revenue with tap-to-open math receipts.</p>
+      <div aria-hidden="true" style="display:contents">
+      <div class="phone t3 tilt" data-tilt="10">
         <div class="screen">
           <div class="m-bar">
             <div class="m-word">Counsel<i>by Aurora</i></div>
@@ -380,7 +421,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
         </div>
       </div>
 
-      <div class="float-card fc-receipt tilt" data-tilt="14" data-depth="-0.03">
+      <div class="float-card fc-receipt t3 tilt" data-tilt="14" data-depth="-0.03">
         <div class="fc-kick">the math · tap any number</div>
         <div class="fc-h">where this math comes from</div>
         <p class="fc-p"><b>Kaplan–Meier survival analysis.</b> Reads who's quietly gone versus who just hasn't come back yet.</p>
@@ -390,7 +431,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
         <div class="fc-cite">censored at today · 87 repeat customers · receipts on every claim</div>
       </div>
 
-      <div class="float-card fc-contract tilt" data-tilt="14" data-depth="0.035">
+      <div class="float-card fc-contract t3 tilt" data-tilt="14" data-depth="0.035">
         <div class="fc-head">
           <span class="fc-kick">A1 · price power</span>
           <span class="fc-pill">● $556/mo at stake</span>
@@ -398,9 +439,10 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
         <div class="fc-action">Run the +5% price test</div>
         <p class="fc-exp">expected: margin ≈ $556/mo; volume drop stays inside the CI · judge in 30 days</p>
         <div class="fc-btns">
-          <button class="fc-btn go">✓ Accept the contract</button>
-          <button class="fc-btn">Not now</button>
+          <span class="fc-btn go">✓ Accept the contract</span>
+          <span class="fc-btn">Not now</span>
         </div>
+      </div>
       </div>
     </div>
   </div>
@@ -410,7 +452,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 <section id="receipts">
   <div class="wrap">
     <div class="eyebrow" data-reveal>Receipts, not narratives</div>
-    <h2 class="sec-h" data-reveal>The incumbents ship AI that <em>summarizes.</em><br />Counsel ships AI that <em>shows its work.</em></h2>
+    <h2 class="sec-h" data-write>The incumbents ship AI that <em>summarizes.</em><br />Counsel ships AI that <em>shows its work.</em></h2>
     <p class="sec-p" data-reveal>
       Fluent paragraphs with no error bars are a new kind of risk. Every claim Counsel makes carries the
       method that produced it, the confidence it deserves, and a tap-to-open receipt. When the math can't
@@ -423,21 +465,22 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
       <div class="lg-row"><div class="lg-cell">“Consider reviewing your pricing.”</div><div class="lg-cell">“Measured elasticity −0.7 from your own price change; +5% projects ≈ <b>$556/mo</b>. Track it; grade it in 30 days.”</div></div>
       <div class="lg-row"><div class="lg-cell">Insights you read</div><div class="lg-cell">Insights that become <b>tracked, graded decisions</b></div></div>
       <div class="lg-row"><div class="lg-cell">Your books on their cloud</div><div class="lg-cell">Analysis <b>on your device</b> — airplane mode works</div></div>
+      <div class="lg-row lg-total"><div class="lg-cell">Sum of the difference</div><div class="lg-cell">An advisor you can <em>audit.</em></div></div>
     </div>
   </div>
 </section>
 
-<div class="fleuron">◆</div>
+<div class="fleuron" aria-hidden="true">◆</div>
 
 <!-- ================= TRIPTYCH ================= -->
 <section>
   <div class="wrap">
     <div class="eyebrow" data-reveal>Three rooms, one advisor</div>
-    <h2 class="sec-h" data-reveal>The morning read. The statement.<br />The <em>engine room.</em></h2>
+    <h2 class="sec-h" data-write>The morning read. The statement.<br />The <em>engine room.</em></h2>
     <div class="trip">
       <div class="trip-card" data-reveal>
-        <div class="trip-inner tilt" data-tilt="6">
-          <div class="trip-shot">
+        <div class="trip-inner t3 tilt" data-tilt="6">
+          <div class="trip-shot" aria-hidden="true">
             <div class="mini">
               <div class="m-voice">
                 <div class="m-eyebrow">Right now · act, don't watch</div>
@@ -455,8 +498,8 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
       </div>
 
       <div class="trip-card" data-reveal>
-        <div class="trip-inner tilt" data-tilt="6">
-          <div class="trip-shot">
+        <div class="trip-inner t3 tilt" data-tilt="6">
+          <div class="trip-shot" aria-hidden="true">
             <div class="mini">
               <div style="font-family:var(--serif);font-size:13px;text-align:center;margin-bottom:8px">‹ &nbsp;March 2026 · in progress&nbsp; ›</div>
               <div class="pl-line"><span class="pl-name">sunset mug</span><span class="pl-d up">▲ 9%</span><span class="pl-amt">$31,420</span></div>
@@ -474,8 +517,8 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
       </div>
 
       <div class="trip-card" data-reveal>
-        <div class="trip-inner tilt" data-tilt="6">
-          <div class="trip-shot">
+        <div class="trip-inner t3 tilt" data-tilt="6">
+          <div class="trip-shot" aria-hidden="true">
             <div class="mini">
               <div class="lab-row"><span class="lab-k">A1</span><span class="lab-t">Price power — measured from <b>your own</b> price change</span><span class="lab-ms">3.1ms</span></div>
               <div class="lab-row"><span class="lab-k">A2</span><span class="lab-t">Customers at risk — survival analysis</span><span class="lab-ms">1.8ms</span></div>
@@ -500,32 +543,32 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 <section class="dark" id="math">
   <div class="wrap">
     <div class="eyebrow" data-reveal>Math with a pedigree</div>
-    <h2 class="sec-h" data-reveal>The math your accountant's software <em>doesn't have.</em></h2>
+    <h2 class="sec-h" data-write>The math your accountant's software <em>doesn't have.</em></h2>
     <p class="sec-p" data-reveal>
       Counsel is powered by Aurora, a glass-box statistical engine whose Rust core is parity-tested
       against scientific reference implementations. These aren't dashboard tricks — they're the same
       instruments serious rooms run, sized to your shop and translated into plain English.
     </p>
     <div class="ped-grid">
-      <div class="ped tilt" data-tilt="8" data-reveal>
+      <div class="ped t3 tilt" data-tilt="8" data-reveal>
         <div class="k">Change-points</div>
         <h3>PELT detection</h3>
         <p>Finds the exact day your numbers structurally changed — not a dip, a regime change.</p>
         <div class="home">The detector genomics labs use.</div>
       </div>
-      <div class="ped tilt" data-tilt="8" data-reveal>
+      <div class="ped t3 tilt" data-tilt="8" data-reveal>
         <div class="k">Survival</div>
         <h3>Kaplan–Meier</h3>
         <p>Knows who's quietly gone versus who just hasn't come back yet — the math can tell the difference.</p>
         <div class="home">The method hospitals use to read patient outcomes.</div>
       </div>
-      <div class="ped tilt" data-tilt="8" data-reveal>
+      <div class="ped t3 tilt" data-tilt="8" data-reveal>
         <div class="k">Risk</div>
         <h3>Monte Carlo</h3>
         <p>Runs a thousand plausible versions of your next 90 days and counts how many go wrong.</p>
         <div class="home">How engineers stress-test bridges — applied to your cash.</div>
       </div>
-      <div class="ped tilt" data-tilt="8" data-reveal>
+      <div class="ped t3 tilt" data-tilt="8" data-reveal>
         <div class="k">Inventory</div>
         <h3>Newsvendor fractile</h3>
         <p>Balances the cost of running out against the cost of sitting on stock — an optimum, not a hunch.</p>
@@ -539,7 +582,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 <section>
   <div class="wrap">
     <div class="eyebrow" data-reveal>Advice with a batting average</div>
-    <h2 class="sec-h" data-reveal>Counsel proposes. You commit.<br />The math <em>grades.</em></h2>
+    <h2 class="sec-h" data-write>Counsel proposes. You commit.<br />The math <em>grades.</em></h2>
     <p class="sec-p" data-reveal>
       Every insight can become a tracked decision contract: the action, the expected outcome, the dollars
       at stake, and a judgment date. When the window closes, the outcome gets graded against the numbers —
@@ -582,24 +625,24 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 <section class="dark" id="privacy">
   <div class="wrap">
     <div class="eyebrow" data-reveal>Private by architecture</div>
-    <h2 class="sec-h" data-reveal><em>Airplane mode</em> works.</h2>
+    <h2 class="sec-h" data-write><em>Airplane mode</em> works.</h2>
     <p class="sec-p" data-reveal>
       That's not a slogan — it's a testable claim. The engines run in your hand, your books stay on your
       device, and the sync service holds encrypted tokens, never your data.
     </p>
     <div class="priv-grid">
       <div class="priv" data-reveal>
-        <div class="ic">◆</div>
+        <div class="ic" aria-hidden="true">◆</div>
         <h3>Analysis on your device</h3>
         <p>Aurora's Rust core compiled to WebAssembly runs the full battery locally — change-points in milliseconds, no server in the loop.</p>
       </div>
       <div class="priv" data-reveal>
-        <div class="ic">◆</div>
+        <div class="ic" aria-hidden="true">◆</div>
         <h3>Tokens, not books</h3>
         <p>Connect Stripe, Square, Shopify, your bank — read-only. The cloud stores AES-encrypted access tokens only; transactions pass through to your device and are never persisted.</p>
       </div>
       <div class="priv" data-reveal>
-        <div class="ic">◆</div>
+        <div class="ic" aria-hidden="true">◆</div>
         <h3>Nothing sold, nothing trained</h3>
         <p>No ads, no analytics SDKs, no training on your data. Export everything or delete everything, any time, from Settings.</p>
       </div>
@@ -611,7 +654,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 <section>
   <div class="wrap">
     <div class="eyebrow" data-reveal>Built for the real economy</div>
-    <h2 class="sec-h" data-reveal>It speaks <em>your line of work.</em></h2>
+    <h2 class="sec-h" data-write>It speaks <em>your line of work.</em></h2>
     <p class="sec-p" data-reveal>
       A food truck thinks in service days. A landscaper thinks in job days. A maker thinks in market
       stalls. Counsel tailors what it leads with — and its working-day P&amp;L — to 44 lines of work.
@@ -619,26 +662,26 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
   </div>
   <div class="marquee" data-reveal>
     <div class="mq-track" id="mq">
-      <span class="mq-chip"><b>🚚</b>Food truck</span>
-      <span class="mq-chip"><b>🌱</b>Landscaping</span>
-      <span class="mq-chip"><b>🔨</b>General contractor</span>
-      <span class="mq-chip"><b>🍽</b>Restaurant</span>
-      <span class="mq-chip"><b>🏺</b>Etsy maker</span>
-      <span class="mq-chip"><b>💈</b>Salon</span>
-      <span class="mq-chip"><b>☕</b>Coffee shop</span>
-      <span class="mq-chip"><b>🔧</b>Plumbing</span>
-      <span class="mq-chip"><b>⚡</b>Electrical</span>
-      <span class="mq-chip"><b>🏋️</b>Gym &amp; PT</span>
-      <span class="mq-chip"><b>📷</b>Photographer</span>
-      <span class="mq-chip"><b>🛒</b>Ecommerce</span>
-      <span class="mq-chip"><b>🍺</b>Brewery</span>
-      <span class="mq-chip"><b>💻</b>Freelancer</span>
-      <span class="mq-chip"><b>🏡</b>Real estate</span>
-      <span class="mq-chip"><b>🐕</b>Pet care</span>
-      <span class="mq-chip"><b>🚛</b>Owner-operator</span>
-      <span class="mq-chip"><b>🛏</b>Airbnb host</span>
-      <span class="mq-chip"><b>❄️</b>HVAC</span>
-      <span class="mq-chip"><b>🎪</b>Events</span>
+      <span class="mq-chip"><b>Food trucks</b><i>service days</i></span>
+      <span class="mq-chip"><b>Landscapers</b><i>job days</i></span>
+      <span class="mq-chip"><b>Contractors</b><i>draw schedules</i></span>
+      <span class="mq-chip"><b>Restaurants</b><i>covers</i></span>
+      <span class="mq-chip"><b>Makers</b><i>market stalls</i></span>
+      <span class="mq-chip"><b>Salons</b><i>chair hours</i></span>
+      <span class="mq-chip"><b>Coffee shops</b><i>the morning rush</i></span>
+      <span class="mq-chip"><b>Plumbers</b><i>call-outs</i></span>
+      <span class="mq-chip"><b>Electricians</b><i>bids</i></span>
+      <span class="mq-chip"><b>Gyms</b><i>memberships</i></span>
+      <span class="mq-chip"><b>Photographers</b><i>bookings</i></span>
+      <span class="mq-chip"><b>Ecommerce</b><i>carts</i></span>
+      <span class="mq-chip"><b>Breweries</b><i>pours</i></span>
+      <span class="mq-chip"><b>Freelancers</b><i>retainers</i></span>
+      <span class="mq-chip"><b>Realtors</b><i>closings</i></span>
+      <span class="mq-chip"><b>Pet groomers</b><i>appointments</i></span>
+      <span class="mq-chip"><b>Truckers</b><i>miles</i></span>
+      <span class="mq-chip"><b>Hosts</b><i>stays</i></span>
+      <span class="mq-chip"><b>HVAC</b><i>the season swing</i></span>
+      <span class="mq-chip"><b>Event planners</b><i>deposits</i></span>
     </div>
   </div>
   <div class="wrap">
@@ -662,11 +705,11 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 <!-- ================= FINAL CTA ================= -->
 <section class="final">
   <div class="wrap">
-    <div class="fleuron dark-fleuron" style="margin-bottom:44px">◆</div>
-    <h2 data-reveal>Meet your <em>Counsel.</em></h2>
+    <div class="fleuron dark-fleuron" style="margin-bottom:44px" aria-hidden="true">◆</div>
+    <h2 data-write>Meet your <em>Counsel.</em></h2>
     <p data-reveal>The live demo runs the full engine battery in your browser — no install, no sign-up, no data leaves your device. Bring a CSV if you want to see it read your business.</p>
     <div class="cta-row" style="justify-content:center" data-reveal>
-      <a class="btn brass" href="https://counsel-demo.pages.dev" target="_blank" rel="noopener">Open the live demo →</a>
+      <a class="btn brass" href="https://counsel-demo.pages.dev" target="_blank" rel="noopener">Walk into the office →</a>
       <a class="btn ghost" href="https://counsel-demo.pages.dev/privacy" target="_blank" rel="noopener">Read the privacy promise</a>
     </div>
   </div>
@@ -674,11 +717,21 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 
 <footer>
   <div class="foot-in">
-    <span class="mono">◆ COUNSEL — the honest AI CFO · fabricated numbers: 0</span>
-    <div class="foot-links">
-      <a href="https://counsel-demo.pages.dev" target="_blank" rel="noopener">Live demo</a>
-      <a href="https://counsel-demo.pages.dev/privacy" target="_blank" rel="noopener">Privacy</a>
-      <a href="https://github.com/FantasyLab-ai/aurora" target="_blank" rel="noopener">Powered by Aurora</a>
+    <div class="foot-top">
+      <span class="mono">◆ COUNSEL — the honest AI CFO · fabricated numbers: 0</span>
+      <div class="foot-links">
+        <a href="https://counsel-demo.pages.dev" target="_blank" rel="noopener">Live demo</a>
+        <a href="https://counsel-demo.pages.dev/privacy" target="_blank" rel="noopener">Privacy</a>
+        <a href="https://github.com/FantasyLab-ai/aurora" target="_blank" rel="noopener">Powered by Aurora</a>
+      </div>
+    </div>
+    <div class="colophon">
+      Colophon — set in Fraunces, Inter &amp; JetBrains Mono on hand-grained paper.
+      <span class="sw" style="background:#F4F1E9;border:1px solid rgba(233,232,226,.2)"></span>paper №F4F1E9
+      <span class="sw" style="background:#1C4B3A"></span>forest №1C4B3A
+      <span class="sw" style="background:#9C7A46"></span>brass №9C7A46
+      <span class="sw" style="background:#152019;border:1px solid rgba(233,232,226,.2)"></span>ink №152019
+      · no trackers, no cookies, no analytics · this page is one file · made by FantasyLab
     </div>
   </div>
 </footer>
@@ -687,11 +740,42 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 (() => {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* nav scroll state */
+  /* nav state + the reading hairline */
   const nav = document.getElementById("nav");
-  addEventListener("scroll", () => nav.classList.toggle("scrolled", scrollY > 30), { passive: true });
+  const bar = document.getElementById("progress");
+  const onScroll = () => {
+    nav.classList.toggle("scrolled", scrollY > 30);
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = max > 0 ? `${(scrollY / max) * 100}%` : "0";
+  };
+  addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
 
-  /* reveals */
+  /* the ink write — split words, keep <em>/<br>, stagger on reveal */
+  document.querySelectorAll("[data-write]").forEach((h) => {
+    let t = 0;
+    const step = 46;
+    const walk = (node) => {
+      [...node.childNodes].forEach((n) => {
+        if (n.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          n.textContent.split(/(\s+)/).forEach((word) => {
+            if (!word.trim()) { frag.append(word); return; }
+            const s = document.createElement("span");
+            s.className = "w";
+            s.style.setProperty("--wd", `${t}ms`);
+            s.textContent = word;
+            t += step;
+            frag.append(s);
+          });
+          n.replaceWith(frag);
+        } else if (n.nodeType === 1 && n.tagName !== "BR") walk(n);
+      });
+    };
+    walk(h);
+  });
+
+  /* reveals (shared by data-reveal and data-write) */
   const io = new IntersectionObserver((es) => es.forEach((e) => {
     if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
   }), { threshold: 0.14 });
@@ -699,6 +783,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
     el.style.transitionDelay = `${(i % 5) * 70}ms`;
     io.observe(el);
   });
+  document.querySelectorAll("[data-write]").forEach((el) => io.observe(el));
 
   /* count-up */
   const cio = new IntersectionObserver((es) => es.forEach((e) => {
@@ -714,41 +799,46 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
   }), { threshold: 0.6 });
   document.querySelectorAll("[data-count]").forEach((el) => cio.observe(el));
 
-  /* marquee: duplicate the track for the seamless loop */
+  /* marquee: aria-hidden duplicate for the seamless loop */
   const mq = document.getElementById("mq");
-  if (mq) mq.innerHTML += mq.innerHTML;
+  if (mq) {
+    const dup = mq.cloneNode(true);
+    dup.setAttribute("aria-hidden", "true");
+    [...dup.children].forEach((c) => mq.append(c));
+  }
 
   if (reduced) return;
 
-  /* pointer-tilt 3D — lerped for the crispy-smooth feel */
+  /* pointer-tilt + scroll parallax — one writer via CSS custom properties,
+     lerped every frame. Composition, not competition: that's the crisp. */
   const tilts = [...document.querySelectorAll(".tilt")].map((el) => ({
     el, max: +(el.dataset.tilt || 8), rx: 0, ry: 0, tx: 0, ty: 0,
   }));
-  addEventListener("pointermove", (ev) => {
-    for (const t of tilts) {
-      const r = t.el.getBoundingClientRect();
-      if (!r.width) continue;
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      const dx = (ev.clientX - cx) / innerWidth, dy = (ev.clientY - cy) / innerHeight;
-      const near = Math.max(0, 1 - (Math.abs(dx) + Math.abs(dy)) * 1.6); // influence falls off with distance
-      t.tx = -dy * t.max * 2 * near;
-      t.ty = dx * t.max * 2 * near;
-    }
-  }, { passive: true });
+  const fine = matchMedia("(pointer: fine)").matches;
+  if (fine) {
+    addEventListener("pointermove", (ev) => {
+      for (const t of tilts) {
+        const r = t.el.getBoundingClientRect();
+        if (!r.width) continue;
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const dx = (ev.clientX - cx) / innerWidth, dy = (ev.clientY - cy) / innerHeight;
+        const near = Math.max(0, 1 - (Math.abs(dx) + Math.abs(dy)) * 1.6);
+        t.tx = -dy * t.max * 2 * near;
+        t.ty = dx * t.max * 2 * near;
+      }
+    }, { passive: true });
+  }
 
-  /* scroll parallax depths */
   const depths = [...document.querySelectorAll("[data-depth]")];
-
   const loop = () => {
     for (const t of tilts) {
-      t.rx += (t.tx - t.rx) * 0.07;
-      t.ry += (t.ty - t.ry) * 0.07;
-      t.el.style.transform = `rotateX(${t.rx.toFixed(2)}deg) rotateY(${t.ry.toFixed(2)}deg)`;
+      t.rx += (t.tx - t.rx) * 0.075;
+      t.ry += (t.ty - t.ry) * 0.075;
+      t.el.style.setProperty("--rx", `${t.rx.toFixed(3)}deg`);
+      t.el.style.setProperty("--ry", `${t.ry.toFixed(3)}deg`);
     }
     for (const el of depths) {
-      const d = +el.dataset.depth;
-      const extra = el.classList.contains("tilt") ? el.style.transform.replace(/translateY\([^)]*\)\s*/, "") : "";
-      el.style.transform = `translateY(${(scrollY * d).toFixed(1)}px) ${extra}`;
+      el.style.setProperty("--py", `${(scrollY * +el.dataset.depth).toFixed(1)}px`);
     }
     requestAnimationFrame(loop);
   };
