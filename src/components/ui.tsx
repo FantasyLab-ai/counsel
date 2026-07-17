@@ -158,3 +158,54 @@ export function Written({ text, mode = "letters", startDelay = 0 }: {
   }, [text, mode, startDelay]);
   return <span className="written" dangerouslySetInnerHTML={{ __html: html }} />;
 }
+
+// ---- The universal receipt gesture -----------------------------------------
+// Receipt wraps ANY displayed number/claim; tapping opens the MathSheet — the
+// method card: what was computed, over what window, under what assumptions.
+// This is "show the math" as a physical gesture, app-wide.
+import type { MathBlock } from "../api/counsel";
+
+export function MathSheet({ block, title, onClose }: { block: MathBlock; title?: string; onClose: () => void }) {
+  return (
+    <div className="sheet-veil" role="dialog" aria-label="The math"
+         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sheet">
+        <div className="sheet-grab" aria-hidden="true" />
+        <div className="digest-head">
+          <span className="il-kick">{title ?? "the math"}</span>
+          <button className="dt-btn" onClick={onClose}>close</button>
+        </div>
+        <div className="sheet-body">
+          <div className="sheet-lbl">method, plainly</div>
+          <p className="sheet-p">{block.methodPlain}</p>
+          <div className="sheet-lbl">the key figure</div>
+          <p className="sheet-p"><b>{block.keyStatPlain}</b></p>
+          {block.extraPlain && <p className="sheet-p">{block.extraPlain}</p>}
+          {block.viz?.kind === "arithmetic" && (
+            <div className="sheet-arith">
+              {block.viz.lines.map((l, i) => (
+                <div className={`sa-line ${l.kind ?? ""}`} key={i}>{l.op && <span className="sa-op">{l.op}</span>}{l.text}</div>
+              ))}
+            </div>
+          )}
+          <div className="sheet-notation">{block.keyStatNotation}</div>
+          <div className="il-cite">{block.citation.method} · {block.citation.source}{block.citation.reference ? ` · ${block.citation.reference}` : ""}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Receipt({ math, title, children }: { math?: MathBlock; title?: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  if (!math) return <>{children}</>;
+  return (
+    <>
+      <button className="receipt" onClick={() => setOpen(true)} title="Show the math">
+        {children}
+        <span className="receipt-mark" aria-hidden="true">≡</span>
+      </button>
+      {open && <MathSheet block={math} title={title} onClose={() => setOpen(false)} />}
+    </>
+  );
+}

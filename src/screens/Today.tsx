@@ -9,7 +9,8 @@ import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
 import { demoView, hasUserData } from "../engine/dataSource";
 import { composeDigest } from "../engine/digest";
 import { overdueCount } from "../engine/decisions";
-import { CitePill, ConfidencePill, CountUp, Html, Reveal, Written } from "../components/ui";
+import { sentinel, type SentinelOut } from "../engine/sentinel";
+import { CitePill, ConfidencePill, CountUp, Html, Receipt, Reveal, Written } from "../components/ui";
 import { BreakSpark } from "../components/charts";
 
 const SHIELD = (
@@ -24,12 +25,14 @@ export default function Today() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [digest, setDigest] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [sent, setSent] = useState<SentinelOut | null>(null);
   const toGrade = overdueCount();
 
   useEffect(() => {
     let on = true;
     getBrief().then((b) => on && setBrief(b));
     getMetrics("month").then((m) => on && setMetrics(m));
+    sentinel().then((s) => on && setSent(s)).catch(() => undefined);
     return () => { on = false; };
   }, []);
 
@@ -107,6 +110,20 @@ export default function Today() {
         </section>
       </Reveal>
 
+      {/* The daily sentinel — quiet by design; speaks when a day breaks its
+          weekday band or a soft streak forms. Holiday-aware. */}
+      {sent && (
+        <Reveal i={1}>
+          <div className={`sentinel ${sent.status}`}>
+            <span className="sentinel-dot" />
+            <div>
+              <div className="sentinel-txt"><Html text={sent.headline} /></div>
+              <div className="sentinel-sub">{sent.detail}{sent.todaySoFar ? ` · ${sent.todaySoFar}` : ""}</div>
+            </div>
+          </div>
+        </Reveal>
+      )}
+
       {/* Power Up — the app-wide activation banner. Front and center until
           real data is loaded; slims down once your data is active. */}
       <Reveal i={1}>
@@ -154,7 +171,9 @@ export default function Today() {
           <Reveal i={i + 3} key={m.id} className={m.wide ? "tile wide" : "tile"}>
             <div className="tl">{m.label}</div>
             <div className="tv">
-              <CountUp value={m.value} />
+              <Receipt math={m.math} title={m.label}>
+                <CountUp value={m.value} />
+              </Receipt>
               {m.delta && <span className={`dlt ${m.delta.dir}`}>{m.delta.text}</span>}
             </div>
             {m.spark && <BreakSpark viz={m.spark} />}

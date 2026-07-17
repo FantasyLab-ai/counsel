@@ -5,6 +5,8 @@
 
 import { getBrief } from "../api/counsel";
 import { dataMode } from "./dataSource";
+import { drivers } from "./drivers";
+import { sentinel } from "./sentinel";
 import { displayName } from "./persona";
 import { cashSentry, money, BASELINE } from "./insights";
 import { evaluateContracts } from "./insights";
@@ -30,6 +32,14 @@ export async function composeDigest(): Promise<string> {
   lines.push(`THE READ: ${strip(brief.state.headline)}`);
   lines.push(strip(brief.state.sub));
   lines.push("");
+  try {
+    const drv = await drivers();
+    if (drv.ok) lines.push(`WHY: ${strip(drv.headline)}`, "");
+  } catch { /* thin data — the digest stays honest by omission */ }
+  try {
+    const s = await sentinel();
+    if (s.status !== "quiet") lines.push(`SENTINEL: ${strip(s.headline)}`, "");
+  } catch { /* same */ }
   if (brief.attention.length) {
     lines.push("NEEDS YOU:");
     brief.attention.forEach((a, i) =>

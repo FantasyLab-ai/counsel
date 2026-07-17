@@ -6,8 +6,78 @@ import { useEffect, useState } from "react";
 import { displayName } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getMetrics, type Metric, type Period } from "../api/counsel";
-import { ConfidencePill, CountUp, Html, Reveal } from "../components/ui";
+import { drivers, type DriversOut, type DriversThin } from "../engine/drivers";
+import { money } from "../engine/tierMath";
+import { ConfidencePill, CountUp, Html, Receipt, Reveal } from "../components/ui";
 import { MathView } from "../components/charts";
+
+// The "what changed" card — driver decomposition. Answers WHY revenue moved:
+// traffic × basket × price (parts sum to the move exactly), plus mix and
+// who bought. The engine every narrative quotes.
+function DriversCard() {
+  const [out, setOut] = useState<DriversOut | DriversThin | null>(null);
+  useEffect(() => {
+    let on = true;
+    drivers().then((d) => on && setOut(d)).catch((e) => on && setOut({ ok: false, reason: String(e) }));
+    return () => { on = false; };
+  }, []);
+
+  if (!out) return <article className="mcard open il-card"><div className="il-loading">▶ decomposing the move…</div></article>;
+  if (!out.ok) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="il-head"><span className="il-kick">what changed</span>
+          <span className="pill lite-fc"><span className="dot" />warming up</span></div>
+        <div className="mmean">Driver decomposition {out.reason}. <b>I won't decompose a move I can't support.</b></div>
+      </article>
+    );
+  }
+
+  const maxAbs = Math.max(...out.parts.map((p) => Math.abs(p.dollars)), 1);
+  const mathBlock = {
+    methodPlain: `I compared two aligned ${out.windowDays}-day windows (identical weekday counts, so weekend rhythm can't fake a trend) and split the revenue change using Rev = sales × units/sale × $/unit. The three parts telescope — they sum to the move exactly.`,
+    keyStatPlain: `${money(out.rev1)} → ${money(out.rev2)}: a ${out.deltaDollars >= 0 ? "+" : ""}${money(out.deltaDollars)} move, fully attributed.`,
+    keyStatNotation: `ΔRev = ΔT·U₁·P₁ + T₂·ΔU·P₁ + T₂·U₂·ΔP · exact identity`,
+    viz: {
+      kind: "arithmetic" as const,
+      lines: [
+        ...out.parts.map((p) => ({ text: `${p.key}: ${p.dollars >= 0 ? "+" : "−"}${money(Math.abs(p.dollars))} (${p.detail})` })),
+        { text: `total: ${out.deltaDollars >= 0 ? "+" : "−"}${money(Math.abs(out.deltaDollars))}`, kind: "result" as const },
+      ],
+    },
+    citation: { method: "revenue driver decomposition (exact identity)", source: "your ledger, two aligned 28-day windows" },
+  };
+
+  return (
+    <article className="mcard open il-card">
+      <div className="il-head"><span className="il-kick">what changed — the drivers</span>
+        <span className={`pill ${Math.abs(out.deltaPct) < 3 ? "lite-hi" : "lite-mod"}`}><span className="dot" />
+          {out.deltaPct >= 0 ? "+" : ""}{out.deltaPct.toFixed(1)}% vs prior 4 wks</span></div>
+      <div className="mmean">
+        <Receipt math={mathBlock} title="what changed — the math"><Html text={out.headline} /></Receipt>
+      </div>
+      <div className="drv-bars">
+        {out.parts.map((p) => (
+          <div className="drv-row" key={p.key}>
+            <span className="drv-name">{p.label} <span className="drv-detail">{p.detail}</span></span>
+            <span className={`drv-val ${p.dollars >= 0 ? "pos" : "neg"}`}>{p.dollars >= 0 ? "+" : "−"}{money(Math.abs(p.dollars))}</span>
+            <span className="drv-track">
+              <span className={`drv-fill ${p.dollars >= 0 ? "pos" : "neg"}`}
+                style={{ left: "0", width: `${(Math.abs(p.dollars) / maxAbs) * 100}%` }} />
+            </span>
+          </div>
+        ))}
+      </div>
+      {out.mix && (
+        <div className="il-row-sub"><b style={{ color: "var(--ink)" }}>Mix:</b> {out.mix.product} carried {out.mix.to}% of revenue, {out.mix.to > out.mix.from ? "up" : "down"} from {out.mix.from}%.</div>
+      )}
+      {out.customers && (
+        <div className="il-row-sub"><b style={{ color: "var(--ink)" }}>Who bought:</b> {out.customers.returningShare}% returning · {out.customers.newShare}% new (was {out.customers.prevNewShare}% new).</div>
+      )}
+      <div className="il-cite">{out.cite}</div>
+    </article>
+  );
+}
 
 const PERIODS: { id: Period; label: string }[] = [
   { id: "month", label: "This month" },
@@ -61,6 +131,9 @@ export default function Numbers() {
         </svg>
         Every number below can show its work. Tap “show the math” on any card.
       </div>
+
+      <div className="eyebrow">Why it moved</div>
+      <Reveal i={0}><DriversCard /></Reveal>
 
       {metrics.map((m, i) => (
         <Reveal i={i} key={m.id}>

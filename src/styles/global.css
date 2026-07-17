@@ -871,3 +871,54 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* ---- Counsel proposes (decision contracts) ---- */
 .rec-card { border-left: 3px solid var(--brass); }
 .rec-action { font-family: var(--serif); font-size: 18px; color: var(--ink); margin: 6px 0 4px; line-height: 1.3; }
+
+/* ---- the receipt gesture + math sheet ---- */
+.receipt { display: inline-flex; align-items: baseline; gap: 6px; background: none; border: none;
+  padding: 0; font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
+.receipt-mark { font-family: var(--mono); font-size: 10px; color: var(--brass); opacity: .75;
+  border: 1px solid var(--line); border-radius: 5px; padding: 1px 4px; transform: translateY(-2px); }
+.receipt:hover .receipt-mark { opacity: 1; border-color: var(--brass); }
+.sheet-veil { position: fixed; inset: 0; z-index: 95; background: rgba(24,33,28,.45);
+  backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center;
+  animation: modalIn var(--d-norm) var(--ease-out); overscroll-behavior: contain; }
+.sheet { width: min(520px, 100%); max-height: 78vh; overflow: auto; background: var(--card);
+  border-radius: 22px 22px 0 0; padding: 10px 20px calc(env(safe-area-inset-bottom) + 20px);
+  animation: sheetUp var(--d-slow) var(--spring); }
+@keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet-grab { width: 40px; height: 4px; border-radius: 100px; background: var(--line); margin: 4px auto 12px; }
+.sheet-lbl { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--brass); margin: 14px 0 4px; }
+.sheet-p { font-size: 13.5px; line-height: 1.6; color: var(--ink); margin: 0; }
+.sheet-arith { font-family: var(--mono); font-size: 11.5px; color: var(--ink); background: var(--card-2);
+  border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+.sa-line { padding: 2px 0; }
+.sa-line.result { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px; font-weight: 700; }
+.sa-line.warn { color: #a05c2c; }
+.sa-op { color: var(--brass); margin-right: 8px; }
+.sheet-notation { font-family: var(--mono); font-size: 10px; color: var(--faint); margin-top: 12px; }
+
+/* ---- drivers card ---- */
+.drv-bars { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 4px; }
+.drv-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+.drv-name { font-size: 12px; color: var(--ink); }
+.drv-detail { font-family: var(--mono); font-size: 9.5px; color: var(--faint); }
+.drv-val { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.drv-val.pos { color: var(--forest); }
+.drv-val.neg { color: #a05c2c; }
+.drv-track { grid-column: 1 / -1; height: 6px; border-radius: 100px; background: var(--card-2);
+  position: relative; overflow: hidden; }
+.drv-fill { position: absolute; top: 0; bottom: 0; border-radius: 100px; }
+.drv-fill.pos { background: var(--forest); }
+.drv-fill.neg { background: #c8845a; }
+
+/* ---- sentinel strip ---- */
+.sentinel { display: flex; gap: 12px; align-items: flex-start; background: var(--card);
+  border: 1px solid var(--line); border-left: 3px solid var(--forest); border-radius: 12px;
+  padding: 13px 15px; }
+.sentinel.watch { border-left-color: var(--brass); }
+.sentinel.fired { border-left-color: #a05c2c; }
+.sentinel-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--forest); margin-top: 5px; flex-shrink: 0; }
+.sentinel.watch .sentinel-dot { background: var(--brass); }
+.sentinel.fired .sentinel-dot { background: #a05c2c; animation: breathe 1.6s ease-in-out infinite; }
+.sentinel-txt { font-size: 12.5px; line-height: 1.55; color: var(--ink); }
+.sentinel-sub { font-family: var(--mono); font-size: 9.5px; color: var(--faint); margin-top: 3px; }
