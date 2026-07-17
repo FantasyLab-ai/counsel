@@ -2,9 +2,13 @@
 // trust-forward connect → the WORKING MOMENT (real method names checking
 // off; never a generic spinner) → the first cited finding.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PERSONA_GROUPS, PERSONAS, setBusinessName, setPersona } from "../engine/persona";
+import { connectProvider, syncNow, type CloudProvider } from "../engine/cloudSync";
+import { parseCharges } from "../engine/csvParse";
+import { storeUserData, userCharges } from "../engine/dataSource";
+import { money } from "../engine/tierMath";
 
 const ARROW = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -32,6 +36,62 @@ export default function Onboarding() {
   const [bizName, setBizName] = useState("");
   const persona = PERSONAS.find((p) => p.id === who)!;
   const [done, setDone] = useState(0); // analyzing checklist progress
+
+  // v3 connect-first: real doors on step 3.
+  const csvRef = useRef<HTMLInputElement>(null);
+  const [liveForm, setLiveForm] = useState(false);
+  const [obProvider, setObProvider] = useState<CloudProvider>("stripe");
+  const [obKey, setObKey] = useState("");
+  const [obShop, setObShop] = useState("");
+  const [obEnv, setObEnv] = useState<"production" | "sandbox">("production");
+  const [obBusy, setObBusy] = useState<string | null>(null);
+  const [obErr, setObErr] = useState<string | null>(null);
+  const [usedReal, setUsedReal] = useState(false);
+
+  async function onCsv(file: File | undefined) {
+    if (!file) return;
+    setObErr(null);
+    try {
+      const res = parseCharges(await file.text());
+      if (res.error) { setObErr(res.error); return; }
+      if (!res.rows.length) { setObErr("no usable rows found — needs date + amount columns"); return; }
+      storeUserData(res.rows as never, null, file.name);
+      setUsedReal(true);
+      setStep(4);
+    } catch (e) {
+      setObErr(String(e instanceof Error ? e.message : e));
+    }
+  }
+
+  async function obConnect() {
+    setObErr(null);
+    setObBusy("validating with the provider…");
+    try {
+      const creds = obProvider === "stripe" ? { key: obKey.trim() }
+        : obProvider === "square" ? { token: obKey.trim(), env: obEnv }
+        : { shop: obShop.trim(), token: obKey.trim() };
+      await connectProvider(obProvider, creds);
+      setObBusy("pulling your transactions…");
+      await syncNow();
+      setObKey("");
+      setUsedReal(true);
+      setStep(4);
+    } catch (e) {
+      setObErr(String(e instanceof Error ? e.message : e));
+    } finally {
+      setObBusy(null);
+    }
+  }
+
+  // The real first summary (step 5, connect-first path).
+  const mine = usedReal ? userCharges() : null;
+  const realStats = (() => {
+    if (!mine || !mine.length) return null;
+    const days = new Set(mine.map((c) => c.date)).size;
+    const cut = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+    const rev30 = mine.filter((c) => c.date >= cut).reduce((s, c) => s + c.qty * c.price, 0);
+    return { rows: mine.length, days, rev30: Math.round(rev30) };
+  })();
 
   const isPaper = step === 2 || step === 3;
 
@@ -141,12 +201,55 @@ export default function Onboarding() {
               </div>
             </div>
           </div>
-          {/* TODO(PHASE 2): real Stripe OAuth. This button is a prototype stub. */}
-          <button className="btn" onClick={() => setStep(4)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-            Connect Stripe securely
-          </button>
-          <div className="subbtn">Prefer another tool? Connect Shopify or Square instead.</div>
+          {/* v3: REAL doors. Live key connect (the vault) or a CSV right here —
+              either way the final step shows THEIR numbers, not theater. */}
+          {!liveForm ? (
+            <>
+              <button className="btn" onClick={() => setLiveForm(true)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                Connect live sync (Stripe · Square · Shopify)
+              </button>
+              <button className="btn ghost" onClick={() => csvRef.current?.click()}>
+                Drop a sales CSV instead — on-device
+              </button>
+              <input ref={csvRef} type="file" accept=".csv,text/csv" hidden
+                onChange={(e) => onCsv(e.target.files?.[0])} />
+              <div className="subbtn" role="button" tabIndex={0}
+                onClick={() => { setUsedReal(false); setStep(4); }}
+                onKeyDown={(e) => { if (e.key === "Enter") { setUsedReal(false); setStep(4); } }}>
+                Just exploring? Continue with the demo ledger →
+              </div>
+            </>
+          ) : (
+            <div className="ob-live-form">
+              <select className="ps-select" value={obProvider} aria-label="Provider"
+                onChange={(e) => setObProvider(e.target.value as CloudProvider)}>
+                <option value="stripe">Stripe — secret/restricted key</option>
+                <option value="square">Square — access token</option>
+                <option value="shopify">Shopify — shpat_ Admin token</option>
+              </select>
+              {obProvider === "shopify" && (
+                <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
+                  value={obShop} onChange={(e) => setObShop(e.target.value)} autoComplete="off" />
+              )}
+              {obProvider === "square" && (
+                <select className="ps-select" value={obEnv} aria-label="Square environment"
+                  onChange={(e) => setObEnv(e.target.value as "production" | "sandbox")}>
+                  <option value="production">Production (real business)</option>
+                  <option value="sandbox">Sandbox (developer testing)</option>
+                </select>
+              )}
+              <input className="dt-input" type="password" autoComplete="off"
+                placeholder={obProvider === "stripe" ? "sk_… or rk_… (read-only)" : obProvider === "square" ? "EAAA… access token" : "shpat_…"}
+                value={obKey} onChange={(e) => setObKey(e.target.value)} />
+              <button className="btn" disabled={!!obBusy || !obKey.trim()} onClick={obConnect}>
+                {obBusy ?? "Connect & pull my data"}
+              </button>
+              {obErr && <div className="dropin-status err">{obErr}</div>}
+              <div className="subbtn" role="button" tabIndex={0} onClick={() => setLiveForm(false)}
+                onKeyDown={(e) => { if (e.key === "Enter") setLiveForm(false); }}>← other options</div>
+            </div>
+          )}
         </section>
       )}
 
@@ -154,10 +257,20 @@ export default function Onboarding() {
         <section className="step dark active">
           <div className="content">
             <div className="orbit" />
-            <div className="analyzing-h">Reading your last 41 days…</div>
+            <div className="analyzing-h">
+              {usedReal && realStats ? `Reading your ${realStats.rows} transactions…` : "Reading your last 41 days…"}
+            </div>
             <div className="analyzing-s">Running the real math — this is Aurora at work.</div>
             <div className="checklist">
-              {ANALYZE_STEPS.map((s, i) => (
+              {(usedReal && realStats
+                ? [
+                    `Loaded ${realStats.rows} transactions across ${realStats.days} day${realStats.days === 1 ? "" : "s"}`,
+                    "Building weekday norms & bands",
+                    "Priming the nine engines",
+                    "Writing your first brief",
+                  ]
+                : ANALYZE_STEPS
+              ).map((s, i) => (
                 <div className={`ci ${done > i ? "done" : ""}`} key={s}>
                   <div className="box">{CHECK}</div>
                   <span className="cl">{s}</span>
@@ -168,7 +281,31 @@ export default function Onboarding() {
         </section>
       )}
 
-      {step === 5 && (
+      {step === 5 && usedReal && realStats && (
+        <section className="step dark active">
+          <div className="content">
+            <div className="kick">Your data is in</div>
+            <h1 className="big">
+              {realStats.rows} transactions read — <em>your numbers now run this app.</em>
+            </h1>
+            <div className="chips-row">
+              <span className="pill conf-hi"><span className="dot" />{money(realStats.rev30)} · last 30 days</span>
+              <span className="pill cite-dark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
+                {realStats.days} trading day{realStats.days === 1 ? "" : "s"} of history
+              </span>
+            </div>
+            <div className="insight-note">
+              Honest expectations, {persona.label.toLowerCase()}: the deep engines — change-points, price power,
+              seasonality — earn their confidence at ~8 weeks of history. Until then I'll tell you what I know,
+              what I don't, and exactly when each one wakes up. No theater.
+            </div>
+          </div>
+          <button className="btn brass" onClick={() => { markVisited(); nav("/"); }}>See my dashboard {ARROW}</button>
+        </section>
+      )}
+
+      {step === 5 && !(usedReal && realStats) && (
         <section className="step dark active">
           <div className="content">
             <div className="kick">Your first finding</div>

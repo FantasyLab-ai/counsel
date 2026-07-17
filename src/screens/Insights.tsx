@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { dataMode, userExpenses } from "../engine/dataSource";
 import { menuMap, type MenuOut, type MenuThin, type Quadrant } from "../engine/menu";
+import { cohorts, type CohortsOut, type CohortsThin } from "../engine/cohorts";
 import { displayName } from "../engine/persona";
 import {
   benchmarks, counterfactual, creditReadiness, customerSurvival, expenses,
@@ -13,7 +14,7 @@ import {
   type ElasticityOut, type MonteCarloOut, type NewsvendorOut, type SeasonAdjOut,
   type SurvivalOut,
 } from "../engine/tierMath";
-import { ActOn, Awaiting, Reveal } from "../components/ui";
+import { ActOn, Awaiting, Html, Reveal } from "../components/ui";
 
 interface AllOut {
   elasticity: ElasticityOut | null;
@@ -82,6 +83,54 @@ function MenuCard() {
         </div>
       ))}
       <div className="il-cite">{m.cite}</div>
+    </article>
+  );
+}
+
+// Who your best customers are — TO-DATE value by cohort & channel.
+// Deliberately not "LTV": we don't project lifetimes we haven't observed.
+function CohortsCard() {
+  const [c, setC] = useState<CohortsOut | CohortsThin | null>(null);
+  useEffect(() => {
+    let on = true;
+    cohorts().then((x) => on && setC(x)).catch((e) => on && setC({ ok: false, reason: String(e) }));
+    return () => { on = false; };
+  }, []);
+
+  if (!c) return <article className="mcard open il-card"><div className="il-loading">▶ building cohorts…</div></article>;
+  if (!c.ok) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="il-head"><span className="il-kick">A2½ · your best customers</span>
+          <span className="pill lite-fc"><span className="dot" />honest gap</span></div>
+        <div className="mmean">Cohort math: {c.reason}.</div>
+      </article>
+    );
+  }
+  const maxVal = Math.max(...c.channels.map((ch) => ch.valueToDate), 1);
+  return (
+    <article className="mcard open il-card">
+      <div className="il-head"><span className="il-kick">A2½ · your best customers</span>
+        <span className="pill lite-hi"><span className="dot" />to-date, not projected</span></div>
+      <div className="mmean"><Html text={c.headline} /></div>
+      {c.channels.length > 0 && (
+        <div className="drv-bars">
+          {c.channels.map((ch) => (
+            <div className="drv-row" key={ch.channel}>
+              <span className="drv-name">{ch.channel} <span className="drv-detail">{ch.customers} customers · {ch.repeatRate}% repeat</span></span>
+              <span className="drv-val pos">{money(ch.valueToDate)}</span>
+              <span className="drv-track"><span className="drv-fill pos" style={{ width: `${(ch.valueToDate / maxVal) * 100}%` }} /></span>
+            </div>
+          ))}
+        </div>
+      )}
+      {c.rows.length > 0 && (
+        <div className="il-row-sub" style={{ marginTop: 8 }}>
+          <b style={{ color: "var(--ink)" }}>Cohorts:</b>{" "}
+          {c.rows.map((r) => `${r.cohort}: ${r.customers} customers, ${r.repeatRate}% repeat, ${money(r.valueToDate)} avg`).join(" · ")}
+        </div>
+      )}
+      <div className="il-cite">{c.cite}</div>
     </article>
   );
 }
@@ -176,6 +225,8 @@ export default function Insights() {
               <div className="il-cite">survival analysis on {out.survival.repeaters} repeat customers · censored at today · P(return after 45d) = {(out.survival.pReturn45 * 100).toFixed(0)}%</div>
             </article>
           </Reveal>
+
+          <Reveal i={2}><CohortsCard /></Reveal>
 
           {out.news.length > 0 && (
             <Reveal i={2}>

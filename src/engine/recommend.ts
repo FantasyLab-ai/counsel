@@ -168,6 +168,42 @@ export async function recommendations(): Promise<Recommendation[]> {
     } catch { /* thin history */ }
   }
 
+  // Goal contract — course-correct only when genuinely behind the band
+  try {
+    const { goalPace } = await import("./goals");
+    const g = await goalPace();
+    if (g.ok && g.status === "behind") {
+      out.push({
+        id: `rec-goal-${g.monthLabel}`,
+        source: "Goal contract",
+        action: `Close the ${money(g.expectedMTD - g.actualMTD)} pace gap on ${g.monthLabel}`,
+        expected: `pick ONE lever this week — the price test, the win-back, or a spotlight post — and grade it against pace`,
+        impact: g.target - g.projected > 0 ? Math.round(g.target - g.projected) : undefined,
+        gradeInDays: 14,
+        cite: "behind beyond your own weekly-variability band — signal, not noise",
+      });
+    }
+  } catch { /* no goal set */ }
+
+  // Best-channel double-down — only when cohorts have real spread
+  try {
+    const { cohorts } = await import("./cohorts");
+    const c = await cohorts();
+    if (c.ok && c.bestChannel && c.channels.length >= 2) {
+      const worst = c.channels[c.channels.length - 1];
+      if (c.bestChannel.valueToDate > worst.valueToDate * 1.5) {
+        out.push({
+          id: `rec-channel-${c.bestChannel.channel}`,
+          source: "Cohorts · channel value",
+          action: `Shift next week's marketing push to ${c.bestChannel.channel}`,
+          expected: `its customers are worth ${(c.bestChannel.valueToDate / Math.max(1, worst.valueToDate)).toFixed(1)}× ${worst.channel}'s to date (${c.bestChannel.repeatRate}% repeat)`,
+          gradeInDays: 21,
+          cite: "to-date value by first-touch channel — measured, not projected",
+        });
+      }
+    }
+  } catch { /* ids too thin */ }
+
   // AR chase — demo/showroom only until real invoices exist
   if (!live) {
     try {

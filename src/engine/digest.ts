@@ -37,6 +37,11 @@ export async function composeDigest(): Promise<string> {
     if (drv.ok) lines.push(`WHY: ${strip(drv.headline)}`, "");
   } catch { /* thin data — the digest stays honest by omission */ }
   try {
+    const { goalPace } = await import("./goals");
+    const g = await goalPace();
+    if (g.ok) lines.push(`GOAL: ${strip(g.headline)}`, "");
+  } catch { /* no goal set — silence, not nagging */ }
+  try {
     const s = await sentinel();
     if (s.status !== "quiet") lines.push(`SENTINEL: ${strip(s.headline)}`, "");
   } catch { /* same */ }

@@ -16,7 +16,90 @@ import {
   type CashSentry, type ContractStatus, type Seasonality, type WorthIt,
 } from "../engine/insights";
 import { listDecisions, logDecision, type Decision } from "../engine/decisions";
-import { Reveal } from "../components/ui";
+import { clearGoal, getGoal, goalPace, setGoal, suggestTarget, type GoalPace } from "../engine/goals";
+import { Html, Receipt, Reveal } from "../components/ui";
+
+// Goal contract — the steering wheel. Set a monthly target; Counsel tracks
+// weekday-weighted pace with an honest variability band, and only calls
+// you behind when it's beyond your normal weekly swing.
+function GoalCard() {
+  const [pace, setPace] = useState<GoalPace | null>(null);
+  const [editing, setEditing] = useState(!getGoal());
+  const [draft, setDraft] = useState("");
+  const [hint, setHint] = useState<number | null>(null);
+
+  const refresh = () => { goalPace().then((p) => setPace(p.ok ? p : null)).catch(() => setPace(null)); };
+  useEffect(() => {
+    refresh();
+    suggestTarget().then(setHint).catch(() => undefined);
+  }, []);
+
+  if (editing || !getGoal()) {
+    return (
+      <article className="mcard open il-card">
+        <div className="il-head"><span className="il-kick">the goal contract</span>
+          <span className="pill lite-fc"><span className="dot" />pace, honestly measured</span></div>
+        <div className="mmean">
+          Name the month's revenue target. I'll track <b>weekday-weighted pace</b> against it —
+          your big days count for more — and only call you behind when it's beyond your normal weekly swing.
+        </div>
+        <div className="dropin-row">
+          <input className="dt-input" style={{ flex: 1 }} type="number" inputMode="decimal"
+            placeholder={hint ? `suggested: ${hint} (median month +8%)` : "monthly target, $"}
+            value={draft} onChange={(e) => setDraft(e.target.value)} />
+          <button className="dbtn primary" disabled={!draft.trim() && !hint}
+            onClick={() => { setGoal(draft.trim() ? parseFloat(draft) : hint!); setEditing(false); setDraft(""); refresh(); }}>
+            Set the goal
+          </button>
+        </div>
+        {getGoal() && (
+          <div className="dropin-row">
+            <button className="dbtn" onClick={() => setEditing(false)}>Cancel</button>
+          </div>
+        )}
+      </article>
+    );
+  }
+
+  if (!pace) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="mmean">Goal set ({money(getGoal()!.monthlyTarget)}/mo) — pace math needs ~2 weeks of history.</div>
+        <div className="dropin-row"><button className="dbtn" onClick={() => setEditing(true)}>Change target</button></div>
+      </article>
+    );
+  }
+
+  const mathBlock = {
+    methodPlain: `Pace is weekday-weighted: each elapsed day contributes its weekday's average share of a month, so a slow Monday doesn't read as "behind" and a big Saturday doesn't read as "ahead". The on-pace band is your own last-8-weeks weekly variability.`,
+    keyStatPlain: `${money(pace.actualMTD)} so far vs ${money(pace.expectedMTD)} expected by now — pace ratio ${pace.paceRatio.toFixed(2)} against a ${pace.bandLo.toFixed(2)}–${pace.bandHi.toFixed(2)} band.`,
+    keyStatNotation: `expectedMTD = target × Σ(elapsed weekday weights)/Σ(month weekday weights)`,
+    citation: { method: "weekday-weighted pace vs target", source: "your ledger + your stated target" },
+  };
+  const pct = Math.min(100, (pace.actualMTD / pace.target) * 100);
+  const expPct = Math.min(100, (pace.expectedMTD / pace.target) * 100);
+
+  return (
+    <article className="mcard open il-card">
+      <div className="il-head"><span className="il-kick">the goal contract · {pace.monthLabel}</span>
+        <span className={`pill ${pace.status === "behind" ? "lite-none" : pace.status === "ahead" ? "lite-hi" : "lite-mod"}`}>
+          <span className="dot" />{pace.status} · target {money(pace.target)}</span></div>
+      <div className="mmean">
+        <Receipt math={mathBlock} title="goal pace — the math"><Html text={pace.headline} /></Receipt>
+      </div>
+      <div className="goal-track">
+        <span className="goal-fill" style={{ width: `${pct}%` }} />
+        <span className="goal-exp" style={{ left: `${expPct}%` }} title="expected by now (weekday-weighted)" />
+      </div>
+      <div className="il-row-sub">▮ actual {money(pace.actualMTD)} · | expected-by-now marker · projection {money(pace.projected)}</div>
+      <div className="dropin-row">
+        <button className="dbtn" onClick={() => setEditing(true)}>Change target</button>
+        <button className="dbtn" onClick={() => { clearGoal(); setPace(null); setEditing(true); }}>Drop the goal</button>
+      </div>
+      <div className="il-cite">{pace.cite}</div>
+    </article>
+  );
+}
 
 export default function Plan() {
   const nav2 = useNavigate();
@@ -75,6 +158,10 @@ export default function Plan() {
           )}
         </section>
       </Reveal>
+
+      {/* ---- goal contract ---- */}
+      <div className="eyebrow">The goal — a target with a steering wheel</div>
+      <Reveal i={1}><GoalCard /></Reveal>
 
       {/* ---- what-if planner ---- */}
       <div className="eyebrow">Rehearse a decision — before you make it</div>

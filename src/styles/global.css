@@ -946,3 +946,18 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   border-radius: 100px; padding: 3px 9px; }
 .mn-none { color: var(--faint); font-size: 11px; }
 .mn-note { font-size: 9.5px; color: var(--muted); margin-top: 7px; font-style: italic; }
+
+/* ---- goal contract ---- */
+.goal-track { position: relative; height: 10px; border-radius: 100px; background: var(--card-2);
+  margin: 12px 0 8px; overflow: visible; }
+.goal-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 100px;
+  background: var(--forest); transition: width var(--d-slow) var(--ease-out); }
+.goal-exp { position: absolute; top: -3px; bottom: -3px; width: 2.5px; background: var(--brass);
+  border-radius: 2px; }
+
+/* ---- artifact buttons (digest + week) ---- */
+.artifact-btns { display: flex; gap: 7px; }
+
+/* ---- onboarding live-connect form ---- */
+.ob-live-form { display: flex; flex-direction: column; gap: 9px; }
+.ob-live-form .btn { margin-top: 2px; }
