@@ -130,6 +130,12 @@ function CohortsCard() {
           {c.rows.map((r) => `${r.cohort}: ${r.customers} customers, ${r.repeatRate}% repeat, ${money(r.valueToDate)} avg`).join(" · ")}
         </div>
       )}
+      {c.bestChannel && c.channels.length >= 2 && c.bestChannel.valueToDate > c.channels[c.channels.length - 1].valueToDate * 1.5 && (
+        <ActOn source="Cohorts · channel value"
+          action={`Shift next week's push to ${c.bestChannel.channel}`}
+          expected={`its customers are worth ${(c.bestChannel.valueToDate / Math.max(1, c.channels[c.channels.length - 1].valueToDate)).toFixed(1)}× to date — judge new-customer value in 3 weeks`}
+          impact={c.bestChannel.valueToDate} />
+      )}
       <div className="il-cite">{c.cite}</div>
     </article>
   );

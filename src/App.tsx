@@ -15,13 +15,20 @@ import Decisions from "./screens/Decisions";
 import Money from "./screens/Money";
 import Trust from "./screens/Trust";
 
+// The tab set — drawn as a set, not picked from a sheet: 1.5px strokes,
+// round caps, one idea each. Today is the morning sun over the horizon;
+// Numbers is the ledger's bars ON a baseline; Ask is the advisor's bubble
+// with the ◆; Plan is a compass wanting north; Settings is three sliders
+// (a craftsman's board, not a machine's cog).
 const TABS = [
   {
     to: "/",
     label: "Today",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M3 12l9-8 9 8M5 10v10h14V10" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6.5 17a5.5 5.5 0 0 1 11 0" />
+        <path d="M12 8V5.5M5.6 10.6L4 9M18.4 10.6L20 9" />
+        <path d="M3 20h18" />
       </svg>
     ),
   },
@@ -29,8 +36,9 @@ const TABS = [
     to: "/numbers",
     label: "Numbers",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 19v-6M11 19V5M16 19v-9M21 19v-3" />
+        <path d="M3 21.5h18" />
       </svg>
     ),
   },
@@ -38,8 +46,9 @@ const TABS = [
     to: "/ask",
     label: "Ask",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 11.5a7.5 7 0 0 1-7.5 7c-1 0-2-.16-2.9-.47L5 19.5l1.2-3.4A6.8 6.8 0 0 1 5 11.5a7.5 7 0 0 1 15 0z" />
+        <path d="M12.5 9.4l1 2.1 1-2.1-1-2.1z" fill="currentColor" stroke="none" transform="rotate(45 12.5 11.5) scale(.9)" />
       </svg>
     ),
   },
@@ -47,9 +56,10 @@ const TABS = [
     to: "/plan",
     label: "Plan",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M15.5 8.5l-2 5-5 2 2-5z" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M15.2 8.8l-1.8 4.6-4.6 1.8 1.8-4.6z" />
+        <circle cx="12" cy="12" r=".6" fill="currentColor" stroke="none" />
       </svg>
     ),
   },
@@ -57,9 +67,11 @@ const TABS = [
     to: "/settings",
     label: "Settings",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <circle cx="12" cy="12" r="3" />
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 7h16M4 12h16M4 17h16" opacity=".45" />
+        <circle cx="9" cy="7" r="2.1" fill="var(--card, #fbfaf5)" />
+        <circle cx="15" cy="12" r="2.1" fill="var(--card, #fbfaf5)" />
+        <circle cx="7" cy="17" r="2.1" fill="var(--card, #fbfaf5)" />
       </svg>
     ),
   },

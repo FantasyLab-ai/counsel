@@ -6,9 +6,11 @@ import { useEffect, useState } from "react";
 import { displayName } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getMetrics, type Metric, type Period } from "../api/counsel";
+import { anchorDate, periodMetrics, resolveWindow, type PeriodId } from "../engine/periodMetrics";
+import { dataMode } from "../engine/dataSource";
 import { drivers, type DriversOut, type DriversThin } from "../engine/drivers";
 import { money } from "../engine/tierMath";
-import { ConfidencePill, CountUp, Html, Receipt, Reveal, ShareCard } from "../components/ui";
+import { ActOn, ConfidencePill, CountUp, Html, Receipt, Reveal, ShareCard } from "../components/ui";
 import { MathView } from "../components/charts";
 
 // The "what changed" card — driver decomposition. Answers WHY revenue moved:
@@ -79,34 +81,81 @@ function DriversCard() {
       {out.customers && (
         <div className="il-row-sub"><b style={{ color: "var(--ink)" }}>Who bought:</b> {out.customers.returningShare}% returning · {out.customers.newShare}% new (was {out.customers.prevNewShare}% new).</div>
       )}
+      {/* THE SO-WHAT: the diagnosis picks the move. Only offered when the
+          move is real (beyond ±3%) — no busywork on noise. */}
+      {out.deltaPct < -3 && (() => {
+        const worst = [...out.parts].sort((a, b) => a.dollars - b.dollars)[0];
+        const MOVES: Record<string, { action: string; expected: string }> = {
+          traffic: { action: "Win-back the regulars + one spotlight post this week", expected: "traffic recovers vs weekday norms — judged against the drivers, not vibes" },
+          basket: { action: "Bundle the star with a slow mover", expected: "units per sale climb back toward the prior window" },
+          price: { action: "Audit discounts — realized price per unit slid", expected: "price recovers without a volume hit outside the CI" },
+        };
+        const mv = MOVES[worst.key];
+        return mv ? (
+          <ActOn source="Drivers · what changed" action={mv.action} expected={mv.expected}
+            impact={Math.abs(worst.dollars)} />
+        ) : null;
+      })()}
+      {out.deltaPct > 3 && (
+        <button className="acton" onClick={() => window.location.assign("/marketing")}>
+          → It's working — find WHICH lever in Marketing and repeat it
+        </button>
+      )}
       <div className="il-cite">{out.cite}</div>
     </article>
   );
 }
 
-const PERIODS: { id: Period; label: string }[] = [
+const PERIODS: { id: PeriodId; label: string }[] = [
   { id: "month", label: "This month" },
   { id: "lastMonth", label: "Last month" },
   { id: "quarter", label: "Quarter" },
+  { id: "custom", label: "Custom" },
 ];
 
 export default function Numbers() {
   const nav = useNavigate();
-  const [period, setPeriod] = useState<Period>("month");
+  const [period, setPeriod] = useState<PeriodId>("month");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [winLabel, setWinLabel] = useState("");
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [open, setOpen] = useState<Record<string, boolean>>({ revenue: true });
 
+  // "This month" in demo mode keeps the hand-set showcase cards (the story
+  // with its break-line and bands); every other window — and everything in
+  // live mode — is COMPUTED for the exact range against the window before.
+  const showcase = period === "month" && dataMode() === "demo";
+
   useEffect(() => {
     let on = true;
-    getMetrics(period).then((m) => on && setMetrics(m));
+    if (showcase) {
+      getMetrics("month" as Period).then((m) => { if (on) { setMetrics(m); } });
+      resolveWindow("month").then((w) => on && setWinLabel(w.label)).catch(() => undefined);
+      return () => { on = false; };
+    }
+    const custom = period === "custom" && customFrom && customTo ? { from: customFrom, to: customTo } : undefined;
+    if (period === "custom" && !custom) {
+      // seed sensible defaults for the pickers from the data's anchor
+      anchorDate().then((a) => {
+        if (!on) return;
+        const from = new Date(a + "T00:00:00"); from.setDate(from.getDate() - 29);
+        setCustomFrom(from.toISOString().slice(0, 10));
+        setCustomTo(a);
+      }).catch(() => undefined);
+      return () => { on = false; };
+    }
+    periodMetrics(period, custom)
+      .then(({ window: w, metrics: m }) => { if (on) { setWinLabel(w.label); setMetrics(m); } })
+      .catch(() => on && setMetrics([]));
     return () => { on = false; };
-  }, [period]);
+  }, [period, customFrom, customTo, showcase]);
 
   return (
     <div className="app">
       <div className="appbar">
         <div className="titleblock">
-          <div className="kicker">{displayName()} · March</div>
+          <div className="kicker">{displayName()} · {winLabel || "…"}</div>
           <h1>The numbers, read</h1>
         </div>
         <button className="export-btn" onClick={() => nav("/packet")}
@@ -130,6 +179,16 @@ export default function Numbers() {
         ))}
       </div>
 
+      {period === "custom" && (
+        <div className="custom-range">
+          <input className="dt-input" type="date" value={customFrom} aria-label="From"
+            max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} />
+          <span className="cr-sep">→</span>
+          <input className="dt-input" type="date" value={customTo} aria-label="To"
+            min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} />
+        </div>
+      )}
+
       <div className="reassure">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
@@ -141,7 +200,7 @@ export default function Numbers() {
       <Reveal i={0}><DriversCard /></Reveal>
 
       {metrics.map((m, i) => (
-        <Reveal i={i} key={m.id}>
+        <Reveal i={i} key={`${period}-${m.id}`}>
           <article className={`mcard ${open[m.id] ? "open" : ""}`}>
             <div className="mhead">
               <div>

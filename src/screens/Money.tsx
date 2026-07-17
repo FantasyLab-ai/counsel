@@ -70,6 +70,11 @@ function CashViewCard() {
         <b style={{ color: "var(--ink)" }}>Reading it:</b> tall bar = mid path, short bar = the cautious path.
         {cv.firstTight ? ` Amber = cautious case dips tight — move cash or chase AR before then.` : ` Both paths stay clear.`}
       </div>
+      {cv.firstTight && (
+        <ActOn source="13-week cash view" action={`Cover the week of ${cv.firstTight.label}`}
+          expected={`chase AR early, shift a bill, or park a buffer — done BEFORE the cautious case dips to ${money(cv.firstTight.cumLo)}`}
+          impact={Math.max(0, 2000 - cv.firstTight.cumLo)} />
+      )}
       <div className="il-cite">{cv.cite}</div>
     </article>
   );

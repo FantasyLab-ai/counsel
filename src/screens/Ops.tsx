@@ -11,7 +11,7 @@ import { staffingPlan, type StaffDay } from "../engine/money";
 import { money } from "../engine/tierMath";
 import { dataMode } from "../engine/dataSource";
 import { dayEconomics, setDayCost, type DayEconomics, type DayEconThin } from "../engine/dayEconomics";
-import { Awaiting, Html, Receipt, Reveal } from "../components/ui";
+import { ActOn, Awaiting, Html, Receipt, Reveal } from "../components/ui";
 
 // The working-day P&L — persona unit economics. Speaks the owner's unit
 // (service day / job day / selling day), shows the real-day band against
@@ -77,6 +77,11 @@ function DayEconCard() {
           )}
         </span>
       </div>
+      {de.pctClearing < 80 && (
+        <ActOn source="Day economics" action={`Protect ${de.bestDay}s; rethink the weakest day`}
+          expected={`clearing rate climbs toward 80% — add hours where days clear the bar, cut where they don't`}
+          impact={Math.max(0, de.threshold - de.p25) * 4} />
+      )}
       <div className="il-cite">{de.cite}</div>
     </article>
   );

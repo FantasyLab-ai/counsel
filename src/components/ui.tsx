@@ -60,10 +60,10 @@ export function CitePill({ text }: { text: string }) {
  *  of the string are preserved ("$61,200" / "34%" / "7 mo"). */
 export function CountUp({ value, className = "num" }: { value: string; className?: string }) {
   const [display, setDisplay] = useState(value);
-  const done = useRef(false);
   useEffect(() => {
-    if (done.current) return;
-    done.current = true;
+    // Re-run on every value change (period filters, fresh syncs) — a stale
+    // number wearing a fresh delta is the worst kind of wrong.
+    setDisplay(value);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const m = value.match(/([\d,]+(?:\.\d+)?)/);
     if (!m) return;

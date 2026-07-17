@@ -1027,3 +1027,13 @@ h1, .said, .big, .verdict, .analyzing-h, .rec-action { text-wrap: balance; }
 .tl-name { font-size: 13px; font-weight: 600; color: var(--ink); }
 .tl-method { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
 .tl-refuse { font-size: 11px; color: var(--faint); font-style: italic; margin-top: 3px; }
+
+/* ---- custom range pickers ---- */
+.custom-range { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.custom-range .dt-input { flex: 1; }
+.cr-sep { color: var(--brass); font-size: 13px; }
+
+/* ---- tab icons: finer, alive ---- */
+.tab svg { width: 22px; height: 22px; }
+.tab { transition: color var(--d-norm) var(--ease-out), transform var(--d-norm) var(--spring); }
+.tab.on { transform: translateY(-1px); }

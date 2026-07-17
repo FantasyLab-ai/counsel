@@ -17,7 +17,7 @@ import {
 } from "../engine/insights";
 import { listDecisions, logDecision, type Decision } from "../engine/decisions";
 import { clearGoal, getGoal, goalPace, setGoal, suggestTarget, type GoalPace } from "../engine/goals";
-import { Html, Receipt, Reveal, ShareCard } from "../components/ui";
+import { ActOn, Html, Receipt, Reveal, ShareCard } from "../components/ui";
 
 // Goal contract — the steering wheel. Set a monthly target; Counsel tracks
 // weekday-weighted pace with an honest variability band, and only calls
@@ -95,6 +95,11 @@ function GoalCard() {
         <span className="goal-exp" style={{ left: `${expPct}%` }} title="expected by now (weekday-weighted)" />
       </div>
       <div className="il-row-sub">▮ actual {money(pace.actualMTD)} · | expected-by-now marker · projection {money(pace.projected)}</div>
+      {pace.status === "behind" && (
+        <ActOn source="Goal contract" action={`Close the ${money(pace.expectedMTD - pace.actualMTD)} pace gap`}
+          expected="ONE lever this week — the price test, the win-back, or a spotlight post — judged against pace in 14 days"
+          impact={Math.max(0, pace.target - pace.projected)} />
+      )}
       <div className="dropin-row">
         <button className="dbtn" onClick={() => setEditing(true)}>Change target</button>
         <button className="dbtn" onClick={() => { clearGoal(); setPace(null); setEditing(true); }}>Drop the goal</button>

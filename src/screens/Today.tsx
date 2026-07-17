@@ -130,9 +130,14 @@ export default function Today() {
         <Reveal i={1}>
           <div className={`sentinel ${sent.status}`}>
             <span className="sentinel-dot" />
-            <div>
+            <div style={{ flex: 1 }}>
               <div className="sentinel-txt"><Html text={sent.headline} /></div>
               <div className="sentinel-sub">{sent.detail}{sent.todaySoFar ? ` · ${sent.todaySoFar}` : ""}</div>
+              {sent.status !== "quiet" && (
+                <button className="dt-btn" style={{ marginTop: 7 }} onClick={() => nav("/numbers")}>
+                  → see WHY in the drivers
+                </button>
+              )}
             </div>
           </div>
         </Reveal>
