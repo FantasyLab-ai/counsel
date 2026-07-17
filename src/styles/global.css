@@ -1037,3 +1037,17 @@ h1, .said, .big, .verdict, .analyzing-h, .rec-action { text-wrap: balance; }
 .tab svg { width: 22px; height: 22px; }
 .tab { transition: color var(--d-norm) var(--ease-out), transform var(--d-norm) var(--spring); }
 .tab.on { transform: translateY(-1px); }
+
+/* ---- the engine room: live check-ins + manifest ---- */
+.engine-room { display: flex; flex-direction: column; gap: 6px; }
+.checkin { display: flex; align-items: baseline; gap: 9px; font-family: var(--mono); font-size: 11px;
+  color: var(--muted); animation: inkIn 300ms var(--ease-out) both; }
+.ck-tick { color: var(--forest); font-weight: 700; }
+.ck-name { color: var(--ink); }
+.ck-ms { margin-left: auto; color: var(--brass); font-size: 10px; }
+.manifest .ck-ms { margin-left: 8px; }
+.manifest-strip { width: 100%; text-align: left; cursor: pointer; font: inherit; }
+.manifest-strip b { color: var(--forest); }
+.ped-box { border-left: 3px solid var(--brass); background: var(--card-2); border-radius: 8px;
+  padding: 4px 14px 12px; margin-top: 14px; }
+.ped-home { color: var(--muted); font-style: italic; margin-top: 6px; }

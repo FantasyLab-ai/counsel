@@ -164,8 +164,12 @@ export function Written({ text, mode = "letters", startDelay = 0 }: {
 // method card: what was computed, over what window, under what assumptions.
 // This is "show the math" as a physical gesture, app-wide.
 import type { MathBlock } from "../api/counsel";
+import { findPedigree } from "../engine/pedigree";
 
 export function MathSheet({ block, title, onClose }: { block: MathBlock; title?: string; onClose: () => void }) {
+  // The pedigree finds the method by its own name — where this math works
+  // when it isn't working for a small business.
+  const ped = findPedigree(`${block.citation.method} ${block.methodPlain} ${block.keyStatNotation}`);
   return (
     <div className="sheet-veil" role="dialog" aria-label="The math"
          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -186,6 +190,13 @@ export function MathSheet({ block, title, onClose }: { block: MathBlock; title?:
               {block.viz.lines.map((l, i) => (
                 <div className={`sa-line ${l.kind ?? ""}`} key={i}>{l.op && <span className="sa-op">{l.op}</span>}{l.text}</div>
               ))}
+            </div>
+          )}
+          {ped && (
+            <div className="ped-box">
+              <div className="sheet-lbl">where this math comes from</div>
+              <p className="sheet-p"><b>{ped.name}.</b> {ped.what}</p>
+              <p className="sheet-p ped-home">{ped.home}</p>
             </div>
           )}
           <div className="sheet-notation">{block.keyStatNotation}</div>

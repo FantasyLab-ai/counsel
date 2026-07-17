@@ -141,22 +141,48 @@ function CohortsCard() {
   );
 }
 
+// The engine roster — each method introduces itself as it checks in, with
+// its REAL timing. The caliber of the machinery, visible in real time.
+const ROSTER: Record<string, { title: string; home: string }> = {
+  elasticity: { title: "Natural-experiment elasticity", home: "economists' causal inference — your price change was the experiment" },
+  survival: { title: "Kaplan–Meier survival", home: "the method hospitals use to read outcomes" },
+  news: { title: "Newsvendor critical fractile", home: "airline & retail inventory science" },
+  cf: { title: "Counterfactual projection", home: "the month that would have been, AR(1)-banded" },
+  audit: { title: "Forensic charge audit", home: "duplicate, creep & drift scans — traceable to the row" },
+  bench: { title: "Reference benchmarks", home: "percentile placement against published ranges" },
+  credit: { title: "Credit-readiness scoring", home: "the stability measures lenders compute" },
+  mc: { title: "Monte Carlo runway", home: "how engineers stress-test before trusting" },
+  season: { title: "Seasonal decomposition", home: "the adjustment central banks apply first" },
+};
+
 export default function Insights() {
   const [out, setOut] = useState<AllOut | null>(null);
   // Live business without expenses: baseline-fed cards say so instead of
   // borrowing the demo's cash/burn/margin numbers.
   const needsExp = dataMode() === "live" && !userExpenses();
   const [err, setErr] = useState<string | null>(null);
+  const [checkins, setCheckins] = useState<{ key: string; ms: number }[]>([]);
+  const [manifest, setManifest] = useState(false);
+  const [aurora, setAurora] = useState(false);
 
   useEffect(() => {
     let on = true;
     const t0 = performance.now();
     (async () => {
       await expenses(); // warm both fetches
+      // Each engine checks in the moment IT finishes — real order, real ms.
+      const timed = <T,>(key: string, p: Promise<T>): Promise<T> =>
+        p.then((v) => {
+          if (on) setCheckins((c) => [...c, { key, ms: performance.now() - t0 }]);
+          return v;
+        });
       const [elasticity, survival, news, cf, audit, bench, credit, mc, season] =
         await Promise.all([
-          priceElasticity(), customerSurvival(), newsvendor(), counterfactual(),
-          feeAudit(), benchmarks(), creditReadiness(), monteCarloRunway(), seasonAdjust(),
+          timed("elasticity", priceElasticity()), timed("survival", customerSurvival()),
+          timed("news", newsvendor()), timed("cf", counterfactual()),
+          timed("audit", feeAudit()), timed("bench", benchmarks()),
+          timed("credit", creditReadiness()), timed("mc", monteCarloRunway()),
+          timed("season", seasonAdjust()),
         ]);
       if (on) setOut({ elasticity, survival, news, cf, audit, bench, credit, mc, season, ms: performance.now() - t0 });
     })().catch((e) => on && setErr(String(e)));
@@ -174,16 +200,71 @@ export default function Insights() {
       </div>
 
       {err && <div className="reassure">Engine unavailable: {err}</div>}
-      {!out && !err && <div className="il-loading">▶ running nine analyses on this device…</div>}
+      {!out && !err && (
+        <div className="engine-room">
+          <div className="il-loading">▶ nine engines running on this device…</div>
+          {checkins.map((c) => (
+            <div className="checkin" key={c.key}>
+              <span className="ck-tick">✓</span>
+              <span className="ck-name">{ROSTER[c.key]?.title ?? c.key}</span>
+              <span className="ck-ms">{c.ms.toFixed(0)} ms</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {out && (
         <>
-          <div className="reassure">
+          <button className="reassure manifest-strip" onClick={() => setManifest(!manifest)} aria-expanded={manifest}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-            All nine computed on this device in {(out.ms / 1000).toFixed(1)}s — elasticity, survival,
-            inventory, counterfactual, audit, benchmarks, credit, Monte Carlo, seasonality. Demo ledger;
-            the math is live.
-          </div>
+            <span>
+              <b>Nine engines · {(out.ms / 1000).toFixed(1)}s · on this device.</b> The same math that runs
+              in hospitals, trading desks and engineering labs — see the manifest {manifest ? "▴" : "▾"}
+            </span>
+          </button>
+          {manifest && (
+            <article className="mcard open il-card manifest">
+              {[...checkins].sort((a, b) => a.ms - b.ms).map((c) => (
+                <div className="tl-row" key={c.key}>
+                  <div className="tl-name">{ROSTER[c.key]?.title ?? c.key} <span className="ck-ms">{c.ms.toFixed(0)} ms</span></div>
+                  <div className="tl-refuse">{ROSTER[c.key]?.home}</div>
+                </div>
+              ))}
+              <div className="il-row-sub" style={{ marginTop: 10 }}>
+                <button className="dt-btn" onClick={() => setAurora(true)}>◆ what makes Aurora different →</button>
+              </div>
+            </article>
+          )}
+          {aurora && (
+            <div className="sheet-veil" role="dialog" aria-label="About Aurora"
+                 onClick={(e) => { if (e.target === e.currentTarget) setAurora(false); }}>
+              <div className="sheet">
+                <div className="sheet-grab" aria-hidden="true" />
+                <div className="digest-head">
+                  <span className="il-kick">◆ aurora — the glass-box engine</span>
+                  <button className="dt-btn" onClick={() => setAurora(false)}>close</button>
+                </div>
+                <div className="sheet-body">
+                  <div className="sheet-lbl">what it is</div>
+                  <p className="sheet-p">
+                    Aurora is the statistical engine inside Counsel — real methods (change-point detection,
+                    survival analysis, Monte Carlo, causal elasticity) compiled to run <b>on this device</b>,
+                    in milliseconds, on your actual ledger. A language model never computes a number here;
+                    it only narrates what the math already proved.
+                  </p>
+                  <div className="sheet-lbl">why you can trust it</div>
+                  <p className="sheet-p">
+                    <b>Parity-tested:</b> Aurora's core is verified against the scientific reference
+                    implementations — same inputs, same answers, checked automatically.{" "}
+                    <b>Glass-box:</b> every figure carries its method, window and assumptions — tap any ≡ mark.{" "}
+                    <b>Honest by contract:</b> each engine has a stated refusal condition; when your data can't
+                    support a claim, it says so instead of guessing. The full register lives in the Trust Ledger.
+                  </p>
+                  <div className="sheet-notation">aurora-core · Rust → WebAssembly · zero data leaves this device</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ============ TIER A ============ */}
           <div className="eyebrow">Tier A — only real math can say these</div>
