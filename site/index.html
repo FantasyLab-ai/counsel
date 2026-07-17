@@ -67,6 +67,8 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
 .nav-links{margin-left:auto;display:flex;gap:22px;align-items:center}
 .nav-links a{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--bone-dim);text-decoration:none;transition:color .2s}
 .nav-links a:hover{color:var(--bone)}
+.nav-gh{display:inline-flex;align-items:center;transform:translateY(2px)}
+@media(max-width:1020px){.nav-links a:not(.nav-cta):not(.nav-gh){display:none}}
 .nav-cta{background:var(--brass);color:#1b1508!important;border-radius:100px;padding:9px 18px;font-weight:500}
 .nav-cta:hover{background:var(--brass-hi)}
 @media(max-width:640px){.nav-links a:not(.nav-cta){display:none}}
@@ -198,6 +200,60 @@ section{padding:112px 0}
 .lg-total .lg-cell:last-child{font-weight:500}
 .lg-total .lg-cell:last-child em{font-style:italic;color:var(--brass)}
 @media(max-width:640px){.lg-cell{padding:14px 16px;font-size:12.5px}.lg-total .lg-cell{font-size:14px}}
+
+/* the field — six seats at the table, each respected, each with its gap */
+.field-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:48px}
+@media(max-width:920px){.field-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.field-grid{grid-template-columns:1fr}}
+.seat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 24px 22px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6);display:flex;flex-direction:column;
+  transition:transform .35s var(--spring),border-color .25s,box-shadow .35s var(--ease)}
+@media(hover:hover){.seat:hover{transform:translateY(-4px);border-color:var(--line-strong);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 26px 50px -26px rgba(31,42,35,.35)}}
+.seat .k{font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint)}
+.seat h3{font-family:var(--serif);font-weight:500;font-size:19.5px;margin:9px 0 8px;line-height:1.25}
+.seat .give{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:13px}
+.seat .gap{margin-top:auto;padding-top:13px;border-top:1px solid var(--line);
+  font-size:12.5px;line-height:1.55;color:var(--brass);font-style:italic}
+.seat.counsel{background:var(--inkcard);border-color:rgba(205,174,126,.3);color:var(--bone)}
+.seat.counsel .k{color:var(--brass-hi)}
+.seat.counsel .give{color:var(--bone-dim)}
+.seat.counsel .gap{border-top-color:var(--line-ink);color:var(--brass-soft);font-style:normal;font-weight:500}
+
+/* the instrument panel — capability replicas + the spec sheet */
+.inst-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:48px}
+@media(max-width:920px){.inst-grid{grid-template-columns:1fr;max-width:430px;margin-left:auto;margin-right:auto}}
+.inst{background:var(--inkcard2);border:1px solid var(--line-ink);border-radius:18px;overflow:hidden}
+.inst-shot{background:var(--paper);color:var(--ink);padding:16px 16px 12px;min-height:172px}
+.inst-copy{padding:16px 20px 20px}
+.inst-copy .k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass-hi)}
+.inst-copy p{font-size:12.5px;line-height:1.6;color:var(--bone-dim);margin-top:7px}
+/* fan replica */
+.fan-svg{width:100%;height:110px;display:block}
+/* ribbon replica */
+.rb{display:flex;gap:4px;align-items:flex-end;height:104px;margin-top:8px}
+.rb i{flex:1;display:flex;gap:2px;align-items:flex-end;font-style:normal}
+.rb b{flex:1;background:#CFDCD3;border-radius:3px 3px 0 0}
+.rb u{flex:1;background:var(--forest);border-radius:3px 3px 0 0;text-decoration:none}
+.rb u.t{background:#C8845A}
+.rb-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:7.5px;color:var(--faint);margin-top:5px}
+/* receipt sheet replica */
+.sheet-rep .lbl{font-family:var(--mono);font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);margin:9px 0 3px}
+.sheet-rep .lbl:first-child{margin-top:0}
+.sheet-rep p{font-size:10.5px;line-height:1.5;color:var(--muted)}
+.sheet-rep p b{color:var(--ink)}
+.sheet-rep .not{font-family:var(--mono);font-size:8px;color:var(--faint);margin-top:8px}
+/* the spec sheet */
+.spec{margin-top:52px;border:1px solid var(--line-ink);border-radius:18px;overflow:hidden;background:var(--inkcard2)}
+.spec-head{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass-hi);
+  padding:14px 24px;border-bottom:1px solid var(--line-ink)}
+.spec-row{display:grid;grid-template-columns:220px 1fr;border-bottom:1px solid var(--line-ink)}
+.spec-row:last-child{border-bottom:none}
+.spec-row dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--bone-dim);
+  padding:13px 24px;border-right:1px solid var(--line-ink)}
+.spec-row dd{font-size:13px;color:var(--bone);padding:12px 24px;line-height:1.6}
+.spec-row dd i{font-style:normal;color:var(--brass-soft)}
+@media(max-width:640px){.spec-row{grid-template-columns:1fr}.spec-row dt{border-right:none;padding-bottom:2px}.spec-row dd{padding-top:2px}}
 
 /* triptych */
 .trip{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:52px}
@@ -351,8 +407,13 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
     <a class="wordmark" href="#top"><span class="d">◆</span>Counsel <span>by Aurora</span></a>
     <div class="nav-links">
       <a href="#receipts">Receipts</a>
+      <a href="#field">The field</a>
       <a href="#math">The math</a>
       <a href="#privacy">Privacy</a>
+      <a href="https://aurora-demo-dl9.pages.dev" target="_blank" rel="noopener">Aurora · the engine</a>
+      <a href="https://github.com/FantasyLab-ai/aurora" target="_blank" rel="noopener" class="nav-gh" aria-label="Aurora on GitHub">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
       <a class="nav-cta" href="https://counsel-demo.pages.dev" target="_blank" rel="noopener">Open the live demo</a>
     </div>
   </div>
@@ -363,12 +424,14 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
   <div class="wm t3" data-depth="0.06" aria-hidden="true">◆</div>
   <div class="wrap hero-grid">
     <div>
-      <div class="eyebrow" data-reveal>The honest AI CFO</div>
+      <div class="eyebrow" data-reveal>The honest AI CFO · built for small &amp; medium business</div>
       <h1 data-write>The whole C-suite,<br /><em>in your pocket.</em></h1>
       <p class="lede" data-reveal>
         Runs the numbers like a CFO. Watches operations like a COO. Calls the plays like a CEO.
         <b>Honest like none of them.</b> Real statistical engines read your business and tell you
         what changed, why, and what to do — with the math attached to every claim.
+        Built for the businesses that actually run Main Street: <b>the food truck, the salon,
+        the twelve-person firm</b> — the owners who never got a finance department.
       </p>
       <div class="cta-row" data-reveal>
         <a class="btn brass" href="https://counsel-demo.pages.dev" target="_blank" rel="noopener">Open the live demo →</a>
@@ -466,6 +529,59 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
       <div class="lg-row"><div class="lg-cell">Insights you read</div><div class="lg-cell">Insights that become <b>tracked, graded decisions</b></div></div>
       <div class="lg-row"><div class="lg-cell">Your books on their cloud</div><div class="lg-cell">Analysis <b>on your device</b> — airplane mode works</div></div>
       <div class="lg-row lg-total"><div class="lg-cell">Sum of the difference</div><div class="lg-cell">An advisor you can <em>audit.</em></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="fleuron" aria-hidden="true">◆</div>
+
+<!-- ================= THE FIELD ================= -->
+<section id="field">
+  <div class="wrap">
+    <div class="eyebrow" data-reveal>The field, honestly</div>
+    <h2 class="sec-h" data-write>Everyone at this table does <em>one job well.</em></h2>
+    <p class="sec-p" data-reveal>
+      Fair is fair — these are serious tools, and most businesses run several of them. But look at the
+      seats: recorders, registers, analyst benches, enterprise plumbing, expensive humans, and a
+      spreadsheet holding it all together. Nobody is sitting in the advisor's chair.
+    </p>
+    <div class="field-grid">
+      <div class="seat" data-reveal>
+        <div class="k">QuickBooks · Xero</div>
+        <h3>The bookkeeper's ledger</h3>
+        <p class="give">Brilliant at recording what happened — invoices, payroll, taxes, compliance. The system of record, and rightly so.</p>
+        <p class="gap">A rearview mirror. It counts; it doesn't counsel.</p>
+      </div>
+      <div class="seat" data-reveal>
+        <div class="k">Square · Shopify · Toast</div>
+        <h3>The register's own reports</h3>
+        <p class="give">Built in, free, decent charts — every platform happily analyzes the slice of your business it processes.</p>
+        <p class="gap">Each sees one pipe. Your business is every pipe at once.</p>
+      </div>
+      <div class="seat" data-reveal>
+        <div class="k">Tableau · Power BI</div>
+        <h3>The analyst's bench</h3>
+        <p class="give">Genuinely limitless — in the hands of a data team with time to model, chart, and interpret.</p>
+        <p class="gap">Food trucks don't employ analysts. Power without a pilot.</p>
+      </div>
+      <div class="seat" data-reveal>
+        <div class="k">NetSuite · SAP</div>
+        <h3>The enterprise suite</h3>
+        <p class="give">Runs the Fortune 500's plumbing end to end — procurement to close, audited and airtight.</p>
+        <p class="gap">Six-figure implementations. Overkill, by design.</p>
+      </div>
+      <div class="seat" data-reveal>
+        <div class="k">Bench · Pilot · fractional CFOs</div>
+        <h3>The human experts</h3>
+        <p class="give">The gold standard: judgment, context, someone accountable. If you can afford one, hire one.</p>
+        <p class="gap">Hundreds to thousands a month — and they visit monthly, not hourly.</p>
+      </div>
+      <div class="seat counsel" data-reveal>
+        <div class="k">◆ Counsel</div>
+        <h3>The advisor's chair</h3>
+        <p class="give">Every pipe in one ledger. CFO-grade math with receipts on every number. Watching daily, grading its own advice.</p>
+        <p class="gap">The empty seat at the table — filled, at pocket-app price.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -575,6 +691,76 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
         <div class="home">The model airlines and major retailers run at scale.</div>
       </div>
     </div>
+
+    <div class="eyebrow" style="margin-top:76px" data-reveal>The instrument panel</div>
+    <h2 class="sec-h" data-write>Serious instruments, <em>pocket-sized.</em></h2>
+    <div class="inst-grid">
+      <div class="inst" data-reveal>
+        <div class="inst-shot" aria-hidden="true">
+          <svg class="fan-svg" viewBox="0 0 300 100" preserveAspectRatio="none">
+            <polyline points="0,55 25,48 50,58 75,44 100,52 125,40 150,46" fill="none" stroke="#9CA79B" stroke-width="2.5" stroke-linecap="round"/>
+            <polygon points="150,46 190,38 230,34 270,28 300,26 300,74 270,66 230,62 190,56 150,46" fill="rgba(28,75,58,.16)"/>
+            <polyline points="150,46 190,44 230,44 270,42 300,42" fill="none" stroke="#1C4B3A" stroke-width="2.5" stroke-dasharray="1 5" stroke-linecap="round"/>
+            <line x1="150" y1="12" x2="150" y2="88" stroke="#9C7A46" stroke-width="1.4" stroke-dasharray="3 3"/>
+          </svg>
+          <div class="rb-lbl"><span>28 days of history</span><span>the 14-day band ahead</span></div>
+        </div>
+        <div class="inst-copy">
+          <div class="k">AR(1) · 95% analytic intervals</div>
+          <p>The band ahead. The shaded fan <i>is</i> the honest answer — the middle line is just its center. Ranges, never point promises.</p>
+        </div>
+      </div>
+      <div class="inst" data-reveal>
+        <div class="inst-shot" aria-hidden="true">
+          <div class="rb">
+            <i><b style="height:88%"></b><u style="height:74%"></u></i>
+            <i><b style="height:84%"></b><u style="height:68%"></u></i>
+            <i><b style="height:80%"></b><u style="height:62%"></u></i>
+            <i><b style="height:78%"></b><u style="height:57%"></u></i>
+            <i><b style="height:74%"></b><u style="height:50%"></u></i>
+            <i><b style="height:72%"></b><u style="height:44%"></u></i>
+            <i><b style="height:70%"></b><u style="height:38%"></u></i>
+            <i><b style="height:68%"></b><u style="height:33%"></u></i>
+            <i><b style="height:66%"></b><u class="t" style="height:26%"></u></i>
+            <i><b style="height:66%"></b><u class="t" style="height:20%"></u></i>
+            <i><b style="height:64%"></b><u style="height:30%"></u></i>
+            <i><b style="height:66%"></b><u style="height:36%"></u></i>
+            <i><b style="height:68%"></b><u style="height:42%"></u></i>
+          </div>
+          <div class="rb-lbl"><span>Jul 19</span><span>amber = the tight weeks, called early</span><span>Oct 11</span></div>
+        </div>
+        <div class="inst-copy">
+          <div class="k">The 13-week cash view</div>
+          <p>The report fractional CFOs charge four figures for: banded cash-in vs your bill schedule, cumulated — tight weeks flagged months ahead.</p>
+        </div>
+      </div>
+      <div class="inst" data-reveal>
+        <div class="inst-shot sheet-rep" aria-hidden="true">
+          <div class="lbl">method, plainly</div>
+          <p>I compared two aligned 28-day windows and split the revenue change with an exact identity — the parts sum to the move to the penny.</p>
+          <div class="lbl">the key figure</div>
+          <p><b>Down 21% — mostly traffic: −$26,609. Price: −$22.</b> It's traffic, not pricing.</p>
+          <div class="lbl">where this math comes from</div>
+          <p style="font-style:italic">The decomposition discipline of national accounts — attribution with nothing left over.</p>
+          <div class="not">ΔRev = ΔT·U₁·P₁ + T₂·ΔU·P₁ + T₂·U₂·ΔP · exact identity</div>
+        </div>
+        <div class="inst-copy">
+          <div class="k">Tap any number · the receipt</div>
+          <p>Every figure opens its method card: plain English, the key stat, the notation, the pedigree. Trust you can audit, one tap deep.</p>
+        </div>
+      </div>
+    </div>
+
+    <dl class="spec" data-reveal>
+      <div class="spec-head">The spec sheet</div>
+      <div class="spec-row"><dt>Engine</dt><dd>Aurora core — Rust compiled to WebAssembly, <i>65 KB</i>, zero dependencies, running on your device</dd></div>
+      <div class="spec-row"><dt>Parity</dt><dd>Golden-tested against scientific reference implementations (SciPy, ruptures) — <i>same answers, to the decimal</i></dd></div>
+      <div class="spec-row"><dt>Instruments</dt><dd>PELT change-points · Welch tests · Kaplan–Meier survival · newsvendor fractile · AR(1) bands · Monte Carlo · weekday decomposition · event studies · exact identities</dd></div>
+      <div class="spec-row"><dt>Latency</dt><dd>The full nine-engine battery in <i>under a second</i>, on a phone — every run reports its real milliseconds</dd></div>
+      <div class="spec-row"><dt>Sources</dt><dd>Stripe · Square · Shopify · Plaid bank feeds · Etsy · CSV drop-in — merged into <i>one ledger</i>, cross-source echoes deduplicated</dd></div>
+      <div class="spec-row"><dt>Offline</dt><dd>Installable PWA with a service worker — <i>airplane mode works</i>, and that's a testable claim</dd></div>
+      <div class="spec-row"><dt>Honesty</dt><dd>Confidence on every claim · refusal over guessing · severity with visible thresholds · fabricated numbers: <i>0</i></dd></div>
+    </dl>
   </div>
 </section>
 
