@@ -9,7 +9,7 @@ import { clearUserData, hasUserData, storeUserData, userCharges, userExpenses, u
 import { addPostsBulk } from "../engine/socialMath";
 import { getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
 import {
-  clearHistory, cloudStatus, connectProvider, disconnectProvider, seedHistory, setPulse, syncNow,
+  clearHistory, cloudStatus, connectBank, connectProvider, disconnectProvider, seedHistory, setPulse, syncNow,
   type CloudProvider,
 } from "../engine/cloudSync";
 import { Reveal } from "../components/ui";
@@ -166,6 +166,11 @@ const LIVE_HELP: Record<CloudProvider, { hint: string; mint: string; url: string
     mint: "Admin → Settings → Apps → Develop apps → Create app → scope read_orders → install → reveal token",
     url: "https://admin.shopify.com",
   },
+  plaid: {
+    hint: "no key needed — you sign into your bank in Plaid's own window",
+    mint: "sandbox test bank: pick any bank, login user_good / pass_good",
+    url: "https://plaid.com/",
+  },
 };
 
 function LiveConnect() {
@@ -185,8 +190,26 @@ function LiveConnect() {
   }, []);
 
   async function doConnect() {
-    setBusy("validating with the provider…");
     setStatus(null);
+    if (provider === "plaid") {
+      setBusy("opening Plaid Link…");
+      try {
+        const ok = await connectBank();
+        if (ok) {
+          setConnected((await cloudStatus()).providers);
+          setStatus({ ok: true, msg: "bank connected via Plaid — pulling your transactions…" });
+          setTimeout(doSync, 800);
+        } else {
+          setStatus({ ok: true, msg: "bank picker closed — nothing connected." });
+        }
+      } catch (e) {
+        setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
+      } finally {
+        setBusy(null);
+      }
+      return;
+    }
+    setBusy("validating with the provider…");
     try {
       const creds = provider === "stripe" ? { key: key.trim() }
         : provider === "square" ? { token: key.trim(), env: sqEnv }
@@ -261,6 +284,7 @@ function LiveConnect() {
           <option value="stripe">Stripe</option>
           <option value="square">Square</option>
           <option value="shopify">Shopify</option>
+          <option value="plaid">Bank — expenses (Plaid)</option>
         </select>
         {provider === "shopify" && (
           <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
@@ -273,17 +297,22 @@ function LiveConnect() {
             <option value="sandbox">Sandbox (developer testing)</option>
           </select>
         )}
-        <input className="dt-input" type="password" placeholder={help.hint}
-          value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" />
+        {provider !== "plaid" && (
+          <input className="dt-input" type="password" placeholder={help.hint}
+            value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" />
+        )}
         <div className="lc-mint">
           <b>Where to mint it:</b> {help.mint}{" "}
           <a href={help.url} target="_blank" rel="noopener noreferrer">open ↗</a>
         </div>
       </div>
       <div className="dropin-row">
-        <button className="dbtn primary" disabled={!!busy || !key.trim() || (provider === "shopify" && !shop.trim())}
+        <button className="dbtn primary"
+          disabled={!!busy || (provider !== "plaid" && !key.trim()) || (provider === "shopify" && !shop.trim())}
           onClick={doConnect}>
-          {connected.includes(provider) ? "Reconnect" : "Connect"} {provider}
+          {provider === "plaid"
+            ? (connected.includes("plaid") ? "Reconnect a bank" : "Open the bank picker")
+            : `${connected.includes(provider) ? "Reconnect" : "Connect"} ${provider}`}
         </button>
         <button className="dbtn" disabled={!!busy || !connected.length} onClick={doSync}>Sync now</button>
         {connected.includes(provider) && (

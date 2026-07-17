@@ -23,7 +23,7 @@
 //
 // Auth: Authorization: Bearer <accountId>.<accountSecret>
 
-const PROVIDERS = ["stripe", "square", "shopify"];
+const PROVIDERS = ["stripe", "square", "shopify", "plaid"];
 const MAX_ROWS = 5000; // devices store ~4 MB; 5k canonical rows is plenty
 const DEFAULT_DAYS = 365;
 
@@ -391,6 +391,66 @@ function generateBackfill(days) {
   return { charges, expenses };
 }
 
+/* ------------------------------- Plaid ---------------------------------
+   Bank data via Plaid Link: the user authenticates with their bank in
+   Plaid's own UI (we never see credentials), we exchange the public_token
+   for an access_token, seal it in the vault, and each sync converts bank
+   outflows into canonical expense rows. Config: PLAID_CLIENT_ID +
+   PLAID_ENV (vars) + PLAID_SECRET (wrangler secret). */
+
+const PLAID_HOSTS = {
+  sandbox: "https://sandbox.plaid.com",
+  development: "https://development.plaid.com",
+  production: "https://production.plaid.com",
+};
+
+async function plaidCall(env, path, body) {
+  if (!env.PLAID_CLIENT_ID || !env.PLAID_SECRET) {
+    throw new Error("Plaid not configured — set PLAID_SECRET via `npx wrangler secret put PLAID_SECRET`");
+  }
+  const host = PLAID_HOSTS[env.PLAID_ENV || "sandbox"];
+  const r = await fetch(`${host}${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ client_id: env.PLAID_CLIENT_ID, secret: env.PLAID_SECRET, ...body }),
+  });
+  const j = await r.json();
+  if (!r.ok) {
+    const code = j?.error_code || `plaid_${r.status}`;
+    if (code === "PRODUCT_NOT_READY") throw new Error("bank data still preparing at Plaid — press Sync again in ~30s");
+    throw new Error(`${code}: ${String(j?.error_message || "").slice(0, 100)}`);
+  }
+  return j;
+}
+
+// Full stateless pull each sync (matches replace-the-store semantics):
+// walk /transactions/sync from an empty cursor, keep outflows as expenses.
+async function plaidExpenses(env, cred) {
+  const out = [];
+  let cursor = "";
+  for (let page = 0; page < 12; page++) {
+    const j = await plaidCall(env, "/transactions/sync", {
+      access_token: cred.access_token,
+      cursor,
+      count: 500,
+    });
+    for (const t of j.added ?? []) {
+      if (t.pending) continue;
+      if (typeof t.amount !== "number" || t.amount <= 0) continue; // Plaid: positive = money out
+      out.push({
+        d: t.date,
+        vendor: String(t.merchant_name || t.name || "unknown").slice(0, 60),
+        amount: Math.round(t.amount * 100) / 100,
+        cat: String(t.personal_finance_category?.primary || (t.category && t.category[0]) || "other").toLowerCase().replace(/_/g, " "),
+      });
+    }
+    cursor = j.next_cursor;
+    if (!j.has_more) break;
+  }
+  out.sort((a, b) => (a.d < b.d ? -1 : 1));
+  return out.slice(-3000);
+}
+
 async function hasLiveCredential(env, acct) {
   // Inspect the actual sealed credentials — same standard as the pulse gate.
   // Stripe: anything not sk_test_/rk_test_ is live. Square: production env.
@@ -401,6 +461,7 @@ async function hasLiveCredential(env, acct) {
       if (prov === "stripe" && !/^(sk|rk)_test_/.test(cred.key)) return true;
       if (prov === "square" && cred.env !== "sandbox") return true;
       if (prov === "shopify") return true;
+      if (prov === "plaid" && cred.env === "production") return true;
     } catch {
       return true; // unreadable credential -> refuse, err on the safe side
     }
@@ -513,6 +574,27 @@ export default {
         return json(req, 200, { ok: true });
       }
 
+      // -- Plaid Link: token to open the bank picker, then the exchange --
+      if (path === "/v1/plaid/link-token" && req.method === "POST") {
+        const j = await plaidCall(env, "/link/token/create", {
+          user: { client_user_id: id },
+          client_name: "Counsel",
+          products: ["transactions"],
+          country_codes: ["US"],
+          language: "en",
+        });
+        return json(req, 200, { link_token: j.link_token, env: env.PLAID_ENV || "sandbox" });
+      }
+      if (path === "/v1/plaid/exchange" && req.method === "POST") {
+        const body = await readBody(req);
+        if (!body?.public_token) return json(req, 400, { error: "public_token required" });
+        const j = await plaidCall(env, "/item/public_token/exchange", { public_token: body.public_token });
+        const cred = { access_token: j.access_token, item_id: j.item_id, env: env.PLAID_ENV || "sandbox" };
+        acct.providers.plaid = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
+        await saveAcct(env, id, acct);
+        return json(req, 200, { ok: true, provider: "plaid" });
+      }
+
       const connect = /^\/v1\/connect\/([a-z]+)$/.exec(path);
       if (connect) {
         const provider = connect[1];
@@ -525,6 +607,9 @@ export default {
         }
 
         if (req.method === "POST") {
+          if (provider === "plaid") {
+            return json(req, 400, { error: "banks connect via Plaid Link — use /v1/plaid/link-token" });
+          }
           const body = await readBody(req);
           if (!body) return json(req, 400, { error: "bad body" });
           let cred;
@@ -556,9 +641,16 @@ export default {
         const charges = [];
         const pulled = {};
         const errors = {};
+        const liveExpenses = [];
         for (const provider of Object.keys(acct.providers)) {
           try {
             const cred = JSON.parse(await openToken(env, acct.providers[provider].t));
+            if (provider === "plaid") {
+              const rows = await plaidExpenses(env, cred);
+              pulled.plaid = rows.length;
+              liveExpenses.push(...rows);
+              continue;
+            }
             const rows = await ADAPTERS[provider].pull(cred, sinceUnix);
             pulled[provider] = rows.length;
             charges.push(...rows);
@@ -580,6 +672,7 @@ export default {
           } catch { /* corrupt blob -> live rows only */ }
         }
         charges.sort((a, b) => (a.date < b.date ? -1 : 1));
+        expensesOut = [...expensesOut, ...liveExpenses].sort((a, b) => (a.d < b.d ? -1 : 1));
         return json(req, 200, {
           charges: charges.slice(-MAX_ROWS),
           expenses: expensesOut,

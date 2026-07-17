@@ -11,7 +11,7 @@ import type { Charge, Expense } from "./tierMath";
 const BASE = "https://counsel-cloud.fantasy-labai.workers.dev";
 const K_ACCOUNT = "counsel.cloud.account";
 
-export type CloudProvider = "stripe" | "square" | "shopify";
+export type CloudProvider = "stripe" | "square" | "shopify" | "plaid";
 
 interface CloudAccount { accountId: string; accountSecret: string }
 
@@ -57,6 +57,56 @@ export async function listCloudConnections(): Promise<CloudProvider[]> {
   if (!hasCloudAccount()) return [];
   const res = await api("/v1/connections");
   return (res.providers as CloudProvider[]) ?? [];
+}
+
+
+/* ------------------------------- Plaid Link -------------------------------
+   The bank flow: the worker mints a link_token; Plaid's own UI handles the
+   bank login (we never see credentials); the public_token comes back here
+   and is exchanged + sealed server-side. Script loads on demand from
+   Plaid's CDN. Sandbox test login: any bank, user_good / pass_good. */
+
+declare global {
+  interface Window {
+    Plaid?: { create(cfg: { token: string; onSuccess: (t: string) => void; onExit?: () => void }): { open(): void } };
+  }
+}
+
+export async function plaidLinkToken(): Promise<string> {
+  const res = await api("/v1/plaid/link-token", { method: "POST", body: "{}" });
+  return res.link_token as string;
+}
+
+export async function plaidExchange(publicToken: string): Promise<void> {
+  await api("/v1/plaid/exchange", { method: "POST", body: JSON.stringify({ public_token: publicToken }) });
+}
+
+function loadPlaidScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.Plaid) return resolve();
+    const s = document.createElement("script");
+    s.src = "https://cdn.plaid.com/link/v2/stable/link-initialize.js";
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("could not load Plaid Link"));
+    document.head.appendChild(s);
+  });
+}
+
+/** Open the bank picker; resolves true when a bank was connected. */
+export async function connectBank(): Promise<boolean> {
+  await ensureAccount();
+  const token = await plaidLinkToken();
+  await loadPlaidScript();
+  return new Promise((resolve, reject) => {
+    const handler = window.Plaid!.create({
+      token,
+      onSuccess: (publicToken: string) => {
+        plaidExchange(publicToken).then(() => resolve(true)).catch(reject);
+      },
+      onExit: () => resolve(false),
+    });
+    handler.open();
+  });
 }
 
 export interface CloudStatus { providers: CloudProvider[]; pulse: boolean; backfill: { c: number; e: number; days: number } | null }
