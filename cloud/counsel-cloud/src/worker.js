@@ -505,6 +505,122 @@ async function shopifyExchange(env, sub, code) {
   return { shop: sub, token: j.access_token };
 }
 
+/* ------------------------- signed execution ------------------------------
+   Counsel's hands, under contract law: the owner SIGNS a specific change,
+   the executor performs it via the provider's API with a before-snapshot,
+   and a watchdog cron evaluates a measured rollback trigger every tick —
+   auto-reverting and telling the owner if reality breaks the floor the
+   engines set. Prices and messages, never money. Every action lives in an
+   immutable-ish ledger under the account. */
+
+const shopifyApi = (cred) => `https://${cred.shop}.myshopify.com/admin/api/2026-07`;
+
+async function shopifyFindProduct(cred, query) {
+  // exact-title first, then a contains-match over the first 100
+  const h = { "X-Shopify-Access-Token": cred.token };
+  let r = await fetch(`${shopifyApi(cred)}/products.json?title=${encodeURIComponent(query)}&limit=5`, { headers: h });
+  let list = r.ok ? (await r.json()).products ?? [] : [];
+  if (!list.length) {
+    r = await fetch(`${shopifyApi(cred)}/products.json?limit=100`, { headers: h });
+    const all = r.ok ? (await r.json()).products ?? [] : [];
+    const q = query.toLowerCase();
+    list = all.filter((p2) => String(p2.title).toLowerCase().includes(q));
+  }
+  const p2 = list[0];
+  if (!p2 || !p2.variants?.length) return null;
+  return {
+    productId: String(p2.id),
+    variantId: String(p2.variants[0].id),
+    title: String(p2.title).slice(0, 80),
+    currentPrice: parseFloat(p2.variants[0].price),
+  };
+}
+
+async function shopifySetPrice(cred, variantId, price) {
+  const r = await fetch(`${shopifyApi(cred)}/variants/${variantId}.json`, {
+    method: "PUT",
+    headers: { "X-Shopify-Access-Token": cred.token, "content-type": "application/json" },
+    body: JSON.stringify({ variant: { id: Number(variantId), price: String(price) } }),
+  });
+  if (r.status === 403 || r.status === 401) {
+    throw new Error("Shopify refused the write — the connection needs the write_products scope. Add it to your app/custom-app, reconnect, and sign again.");
+  }
+  if (!r.ok) throw new Error(`shopify_${r.status}: ${(await r.text()).slice(0, 100)}`);
+  return true;
+}
+
+async function readActions(env, acctId) {
+  try { return JSON.parse((await env.ACCOUNTS.get(`act:${acctId}`)) ?? "[]"); } catch { return []; }
+}
+async function writeActions(env, acctId, list) {
+  await env.ACCOUNTS.put(`act:${acctId}`, JSON.stringify(list.slice(-50)));
+}
+
+/* the watchdog: evaluate every armed action's trigger against real sales */
+async function runWatchdog(env) {
+  const list = await env.ACCOUNTS.list({ prefix: "acct:", limit: 100 });
+  for (const k of list.keys) {
+    const acctId = k.name.slice(5);
+    const actions = await readActions(env, acctId);
+    const armed = actions.filter((a) => a.status === "armed");
+    if (!armed.length) continue;
+    const raw = await env.ACCOUNTS.get(k.name);
+    if (!raw) continue;
+    const acct = JSON.parse(raw);
+    if (!acct.providers?.shopify) continue;
+    let cred;
+    try { cred = JSON.parse(await openToken(env, acct.providers.shopify.t)); } catch { continue; }
+
+    // one pull covers every armed action's window
+    const maxDays = Math.max(...armed.map((a) => a.trigger.days)) + 2;
+    let rows = [];
+    try { rows = await shopifyAdapter.pull(cred, Math.floor(Date.now() / 1000) - maxDays * 86400); } catch { continue; }
+    const today = new Date().toISOString().slice(0, 10);
+
+    let changed = false;
+    for (const a of armed) {
+      const ageDays = (Date.now() - a.t) / 86400000;
+      if (ageDays >= (a.trigger.horizonDays ?? 30)) {
+        a.status = "held"; // the window closed with no trigger — the test PASSED
+        a.closedAt = new Date().toISOString();
+        changed = true;
+        continue;
+      }
+      // units/day for this product, completed days only, since execution
+      const startIso = new Date(a.t).toISOString().slice(0, 10);
+      const byDay = new Map();
+      for (const r2 of rows) {
+        if (r2.product !== a.title) continue;
+        if (r2.date <= startIso || r2.date >= today) continue;
+        byDay.set(r2.date, (byDay.get(r2.date) ?? 0) + r2.qty);
+      }
+      // walk the last `days` completed calendar days — zero-sale days count as 0
+      let consecutiveBelow = 0;
+      for (let d = 1; d <= a.trigger.days; d++) {
+        const iso = new Date(Date.now() - d * 86400000).toISOString().slice(0, 10);
+        if (iso <= startIso) break;
+        const units = byDay.get(iso) ?? 0;
+        if (units < a.trigger.minDaily) consecutiveBelow++;
+        else break;
+      }
+      const elapsedFull = Math.floor(ageDays) - 1;
+      if (consecutiveBelow >= a.trigger.days && elapsedFull >= a.trigger.days) {
+        try {
+          await shopifySetPrice(cred, a.variantId, a.from);
+          a.status = "reverted_auto";
+          a.closedAt = new Date().toISOString();
+          a.note = `volume ran below ${a.trigger.minDaily}/day for ${a.trigger.days} straight days — price restored to ${a.from}`;
+          changed = true;
+        } catch (e) {
+          a.note = `rollback attempt failed: ${String(e?.message || e).slice(0, 80)}`;
+          changed = true;
+        }
+      }
+    }
+    if (changed) await writeActions(env, acctId, actions);
+  }
+}
+
 const ADAPTERS = { stripe: stripeAdapter, square: squareAdapter, shopify: shopifyAdapter };
 
 /* ------------------------------ demo pulse -------------------------------
@@ -875,6 +991,7 @@ export default {
 
       if (path === "/v1/account" && req.method === "DELETE") {
         await env.ACCOUNTS.delete(`bf:${id}`);
+        await env.ACCOUNTS.delete(`act:${id}`);
         await env.ACCOUNTS.delete(`acct:${id}`);
         return json(req, 200, { ok: true, deleted: id });
       }
@@ -966,6 +1083,70 @@ export default {
         acct.providers.plaid = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
         await saveAcct(env, id, acct);
         return json(req, 200, { ok: true, provider: "plaid" });
+      }
+
+      // -- signed execution: preview -> sign -> execute -> ledger -> watchdog --
+      if (path === "/v1/actions/preview" && req.method === "POST") {
+        const body = (await readBody(req)) ?? {};
+        if (body.provider !== "shopify") return json(req, 400, { error: "price execution currently supports shopify" });
+        if (!acct.providers.shopify) return json(req, 400, { error: "connect shopify first" });
+        const cred = JSON.parse(await openToken(env, acct.providers.shopify.t));
+        const found = await shopifyFindProduct(cred, String(body.query ?? "").slice(0, 80));
+        if (!found) return json(req, 404, { error: "no product matched that name in your store" });
+        return json(req, 200, { ...found, newPrice: Number(body.newPrice) || null });
+      }
+      if (path === "/v1/actions/execute" && req.method === "POST") {
+        const b = (await readBody(req)) ?? {};
+        if (b.provider !== "shopify") return json(req, 400, { error: "price execution currently supports shopify" });
+        if (!acct.providers.shopify) return json(req, 400, { error: "connect shopify first" });
+        const toPrice = Number(b.toPrice), fromPrice = Number(b.fromPrice);
+        if (!(toPrice > 0) || !(fromPrice > 0) || !b.variantId) return json(req, 400, { error: "bad action body" });
+        const trigger = {
+          minDaily: Math.max(0, Number(b.trigger?.minDaily) || 0),
+          days: Math.min(14, Math.max(2, Number(b.trigger?.days) || 5)),
+          horizonDays: Math.min(60, Math.max(7, Number(b.trigger?.horizonDays) || 30)),
+        };
+        const cred = JSON.parse(await openToken(env, acct.providers.shopify.t));
+        try {
+          await shopifySetPrice(cred, String(b.variantId), toPrice);
+        } catch (e) {
+          return json(req, 400, { error: String(e?.message || e).slice(0, 180) });
+        }
+        const action = {
+          aid: `act_${randHex(8)}`,
+          t: Date.now(),
+          provider: "shopify",
+          title: String(b.title ?? "").slice(0, 80),
+          productId: String(b.productId ?? ""),
+          variantId: String(b.variantId),
+          from: fromPrice,
+          to: toPrice,
+          trigger,
+          status: "armed",
+        };
+        const actions = await readActions(env, id);
+        actions.push(action);
+        await writeActions(env, id, actions);
+        return json(req, 200, { ok: true, action });
+      }
+      if (path === "/v1/actions/revert" && req.method === "POST") {
+        const b = (await readBody(req)) ?? {};
+        const actions = await readActions(env, id);
+        const a = actions.find((x) => x.aid === b.aid && x.status === "armed");
+        if (!a) return json(req, 404, { error: "no armed action with that id" });
+        const cred = JSON.parse(await openToken(env, acct.providers.shopify.t));
+        try {
+          await shopifySetPrice(cred, a.variantId, a.from);
+        } catch (e) {
+          return json(req, 400, { error: String(e?.message || e).slice(0, 180) });
+        }
+        a.status = "reverted_manual";
+        a.closedAt = new Date().toISOString();
+        await writeActions(env, id, actions);
+        return json(req, 200, { ok: true, action: a });
+      }
+      if (path === "/v1/actions" && req.method === "GET") {
+        return json(req, 200, { actions: await readActions(env, id) });
       }
 
       const connect = /^\/v1\/connect\/([a-z]+)$/.exec(path);
@@ -1082,5 +1263,6 @@ export default {
 
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runPulse(env));
+    ctx.waitUntil(runWatchdog(env));
   },
 };

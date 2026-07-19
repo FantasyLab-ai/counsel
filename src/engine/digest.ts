@@ -44,6 +44,11 @@ export async function composeDigest(): Promise<string> {
     if (drv.ok) lines.push(`WHY: ${strip(drv.headline)}`, "");
   } catch { /* thin data — the digest stays honest by omission */ }
   try {
+    const { payYourself } = await import("./paySelf");
+    const pay = await payYourself();
+    if (pay.ok) lines.push(`PAY YOURSELF: ${strip(pay.headline)} ${strip(pay.sub).split(".")[0]}.`, "");
+  } catch { /* not computable yet — silence */ }
+  try {
     const { goalPace } = await import("./goals");
     const g = await goalPace();
     if (g.ok) lines.push(`GOAL: ${strip(g.headline)}`, "");

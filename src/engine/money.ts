@@ -20,6 +20,16 @@ export function setCashOnHand(v: number): void {
   try { localStorage.setItem(K_CASH, String(Math.max(0, Math.round(v)))); } catch { /* fine */ }
 }
 
+/** Total monthly outgoings — recorded bills in live mode, the demo schedule
+ * otherwise. The Pay Yourself floor is denominated in these. */
+export function monthlyOutgoings(): number {
+  if (dataMode() === "live") {
+    const lb = liveBills();
+    return lb ? lb.totalMonthly : 0;
+  }
+  return OUTGOINGS.reduce((s2, o) => s2 + o.amount, 0);
+}
+
 /* ---- bills derived from RECORDED expenses (live mode) -------------------
    Recurring detection, honestly simple: a vendor seen >=2 times with a
    ~monthly gap (25-35d) bills on its median day-of-month; ~weekly (5-9d)

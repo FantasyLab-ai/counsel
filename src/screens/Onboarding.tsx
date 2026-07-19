@@ -188,7 +188,7 @@ export default function Onboarding() {
               <div className="trust">
                 <div className="t">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><line x1="4" y1="4" x2="20" y2="20" /></svg>
-                  <span><b>Read-only.</b> Counsel can never move money or make changes.</span>
+                  <span><b>Your money is untouchable.</b> Changes happen only with your signature — each with an armed undo.</span>
                 </div>
                 <div className="t">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>

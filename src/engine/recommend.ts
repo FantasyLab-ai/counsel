@@ -168,6 +168,24 @@ export async function recommendations(): Promise<Recommendation[]> {
     } catch { /* thin history */ }
   }
 
+  // Pay Yourself — when the number exists and no draw contract is on the
+  // board, propose it. The most personal contract in the app.
+  try {
+    const { payYourself } = await import("./paySelf");
+    const pay = await payYourself();
+    if (pay.ok) {
+      out.push({
+        id: "rec-pay-yourself",
+        source: "Pay Yourself engine",
+        action: `Pay yourself ${money(pay.safeMonthly / 2)} on ${pay.payday}`,
+        expected: `${money(pay.safeMonthly)}/mo into YOUR pocket while the cautious path keeps cash above ${money(pay.floor)}`,
+        impact: pay.safeMonthly,
+        gradeInDays: 30,
+        cite: "the largest draw the 13-week cautious path carries — binary-searched over the Money simulator",
+      });
+    }
+  } catch { /* not computable yet */ }
+
   // The posture — when spending outruns revenue, stopping the bleed IS the
   // top proposal, ahead of every optimization.
   try {

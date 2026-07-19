@@ -9,6 +9,27 @@ confidence-scored**, and openly saying *"not enough data yet"* instead of
 guessing. Real statistical methods compute; a model only narrates cited
 results. The honesty is the product.
 
+## Pay Yourself — the number nobody computes
+
+The most personal number in any small business: **what can the owner safely
+pay themselves?** Counsel computes it — the largest monthly draw the 13-week
+cautious path can carry with cash *ending the quarter no lower than it
+started* (earned, never eaten from savings) and never dipping below the
+owner's floor. Found by binary search over the same simulator behind the
+Money screen, so the number's receipt is the ribbon itself. When the math
+can't support a salary yet, Counsel refuses — and names the lever that turns
+the number positive.
+
+## Signed execution — Counsel's hands, under contract
+
+Counsel can now *run* a decision contract, not just propose it: the owner
+previews the exact diff (e.g. a Shopify price change), signs it, the
+executor performs it with a before-snapshot, and a watchdog cron enforces a
+measured rollback trigger — if volume runs below the floor for N straight
+days, the price restores itself and the owner is told. Every action lives in
+the Trust Ledger: signed → executed → watched → graded. The principled line:
+**prices and messages, never money.**
+
 ## Receipts, not narratives
 
 The incumbents now ship AI that *summarizes* your books — fluent paragraphs

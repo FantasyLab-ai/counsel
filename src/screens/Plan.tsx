@@ -17,7 +17,78 @@ import {
 } from "../engine/insights";
 import { listDecisions, logDecision, type Decision } from "../engine/decisions";
 import { clearGoal, getGoal, goalPace, setGoal, suggestTarget, type GoalPace } from "../engine/goals";
+import { getPayFloor, payYourself, setPayFloor, type PayPlan, type PayRefusal } from "../engine/paySelf";
 import { ActOn, Html, Receipt, Reveal, ShareCard } from "../components/ui";
+
+// Pay Yourself — the number nobody computes. The safe draw is the largest
+// monthly salary the 13-week simulator carries on the cautious path without
+// breaching the floor; refusals are part of the feature.
+function PayCard() {
+  const [plan, setPlan] = useState<PayPlan | PayRefusal | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const load = () => { payYourself().then(setPlan).catch(() => setPlan(null)); };
+  useEffect(() => { load(); }, []);
+
+  if (!plan) return <article className="mcard open il-card"><div className="il-loading">▶ asking the 13-week view what it can carry…</div></article>;
+
+  if (!plan.ok) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="il-head"><span className="il-kick">pay yourself</span>
+          <span className="pill lite-fc"><span className="dot" />{plan.reason === "posture" ? "after the first move" : "awaiting"}</span></div>
+        <div className="mmean" style={{ fontFamily: "var(--serif)", fontSize: 17 }}><Html text={plan.headline} /></div>
+        <div className="il-row-sub">{plan.sub}</div>
+      </article>
+    );
+  }
+
+  const mathBlock = {
+    methodPlain: `I injected a salary into the same 13-week simulator behind the Money screen — half on the 1st, half on the 15th, tax set-aside included — and binary-searched for the largest draw where even the CAUTIOUS path (p15 revenue every single week) keeps cash above your floor.`,
+    keyStatPlain: `Safe: ${money(plan.safeMonthly)}/mo. If the mid path holds: ${money(plan.midMonthly)}. Floor: ${money(plan.floor)}.`,
+    keyStatNotation: `D* = max{D : min₁₃ᵥᵥ cumLo(D) ≥ floor} · split 1st & 15th`,
+    citation: { method: "13-week cautious-path capacity search", source: "your ledger + recorded bills + the tax pot" },
+  };
+
+  return (
+    <article className="mcard open il-card pay-card">
+      <div className="il-head"><span className="il-kick">pay yourself · the number nobody computes</span>
+        <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+          <ShareCard kicker="pay yourself" headline={plan.headline} sub={plan.sub} cite={plan.cite} business={displayName()} />
+          <span className="pill lite-hi"><span className="dot" />cautious-case safe</span>
+        </span></div>
+      <div className="mmean" style={{ fontFamily: "var(--serif)", fontSize: 22, lineHeight: 1.3 }}>
+        <Receipt math={mathBlock} title="pay yourself — the math"><Html text={plan.headline} /></Receipt>
+      </div>
+      <div className="il-row-sub" style={{ marginTop: 6 }}>{plan.sub}</div>
+      {plan.warChest && (
+        <div className="il-row-sub" style={{ marginTop: 8 }}><b style={{ color: "var(--ink)" }}>War chest:</b> {plan.warChest}</div>
+      )}
+      <div className="il-row-sub" style={{ marginTop: 8 }}>
+        <span className="de-cost">
+          <b style={{ color: "var(--ink)" }}>The floor</b> (cash never dips below):
+          {editing ? (
+            <>
+              <input type="number" inputMode="decimal" value={draft} autoFocus
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && draft.trim()) { setPayFloor(parseFloat(draft)); setEditing(false); load(); } }} />
+              <button className="dt-btn" onClick={() => { if (draft.trim()) { setPayFloor(parseFloat(draft)); load(); } setEditing(false); }}>save</button>
+            </>
+          ) : (
+            <button className="dt-btn" onClick={() => { setDraft(String(plan.floor)); setEditing(true); }}>
+              {money(plan.floor)}{plan.floorIsDefault ? " · two weeks of bills — set yours" : " · your number"}
+            </button>
+          )}
+        </span>
+      </div>
+      <ActOn source="Pay Yourself engine"
+        action={`Pay yourself ${money(plan.safeMonthly / 2)} on ${plan.payday}`}
+        expected={`cash stays above the ${money(plan.floor)} floor on the cautious path — revisit when the engines re-check`}
+        impact={plan.safeMonthly} />
+      <div className="il-cite">{plan.cite}</div>
+    </article>
+  );
+}
 
 // Goal contract — the steering wheel. Set a monthly target; Counsel tracks
 // weekday-weighted pace with an honest variability band, and only calls
@@ -166,6 +237,10 @@ export default function Plan() {
           )}
         </section>
       </Reveal>
+
+      {/* ---- pay yourself ---- */}
+      <div className="eyebrow">Pay yourself — what the business owes its owner</div>
+      <Reveal i={1}><PayCard /></Reveal>
 
       {/* ---- goal contract ---- */}
       <div className="eyebrow">The goal — a target with a steering wheel</div>

@@ -13,6 +13,10 @@ import {
   type CloudProvider,
 } from "../engine/cloudSync";
 import { BackBtn, Reveal } from "../components/ui";
+import {
+  executePrice, listActions, previewPrice, revertAction, suggestTrigger,
+  type ActionPreview, type ActionTrigger, type ExecutedAction,
+} from "../engine/actions";
 
 // A provider you can actually open right now. `url` is the stable sign-in /
 // dashboard root (deep links rot); `where` is the breadcrumb to the export.
@@ -572,6 +576,135 @@ function DropIn() {
   );
 }
 
+// Signed execution (beta) — Counsel's hands, under contract: preview the
+// exact diff, sign it, the executor performs it, and the watchdog cron
+// auto-reverts if volume breaks the floor. Prices and messages, never money.
+function ExecutionCard({ connected }: { connected: CloudProvider[] }) {
+  const [query, setQuery] = useState("");
+  const [price, setPrice] = useState("");
+  const [prev, setPrev] = useState<ActionPreview | null>(null);
+  const [trig, setTrig] = useState<ActionTrigger | null>(null);
+  const [signed, setSigned] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [actions, setActions] = useState<ExecutedAction[]>([]);
+
+  useEffect(() => { listActions().then(setActions).catch(() => undefined); }, []);
+
+  async function doPreview() {
+    setBusy("asking your store…"); setMsg(null); setPrev(null); setSigned(false);
+    try {
+      const p2 = await previewPrice(query.trim(), parseFloat(price));
+      setPrev(p2);
+      setTrig(suggestTrigger(p2.title));
+    } catch (e) {
+      setMsg({ ok: false, text: String(e instanceof Error ? e.message : e) });
+    } finally { setBusy(null); }
+  }
+
+  async function doExecute() {
+    if (!prev || !trig) return;
+    setBusy("executing with your signature…"); setMsg(null);
+    try {
+      const a = await executePrice(prev, parseFloat(price), trig);
+      setActions((x) => [...x, a]);
+      setPrev(null); setSigned(false); setQuery(""); setPrice("");
+      setMsg({ ok: true, text: `done — ${a.title} is now $${a.to}. The watchdog is armed: if volume runs below ${a.trigger.minDaily}/day for ${a.trigger.days} straight days, the price reverts itself and tells you.` });
+    } catch (e) {
+      setMsg({ ok: false, text: String(e instanceof Error ? e.message : e) });
+    } finally { setBusy(null); }
+  }
+
+  const STATUS: Record<string, string> = {
+    armed: "● armed — watchdog live", held: "✓ held — test passed",
+    reverted_auto: "↩ auto-reverted", reverted_manual: "↩ reverted by you",
+  };
+  void connected;
+
+  return (
+    <article className="mcard open il-card rec-card">
+      <div className="il-head">
+        <span className="il-kick">signed execution · beta</span>
+        <span className="pill lite-mod"><span className="dot" />prices &amp; messages — never money</span>
+      </div>
+      <div className="mmean">
+        Run a price change <b>with your signature</b>: preview the exact diff, sign it, and the
+        watchdog auto-reverts if volume breaks the floor. Needs the <b>write_products</b> scope on
+        your Shopify connection.
+      </div>
+      <div className="dropin-row">
+        <input className="dt-input" style={{ flex: 2 }} placeholder="product name (as it sells)"
+          value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Product name" />
+        <input className="dt-input" style={{ flex: 1 }} type="number" inputMode="decimal" placeholder="new price"
+          value={price} onChange={(e) => setPrice(e.target.value)} aria-label="New price" />
+        <button className="dbtn" disabled={!!busy || !query.trim() || !(parseFloat(price) > 0)} onClick={doPreview}>
+          Preview
+        </button>
+      </div>
+      {prev && trig && (
+        <div className="sign-box">
+          <div className="rec-action">{prev.title}: ${prev.currentPrice} → ${parseFloat(price).toFixed(2)}</div>
+          <div className="il-row-sub">
+            rollback trigger: fewer than{" "}
+            <input className="trig-in" type="number" inputMode="decimal" value={trig.minDaily} aria-label="Minimum units per day"
+              onChange={(e) => setTrig({ ...trig, minDaily: parseFloat(e.target.value) || 0 })} />
+            {" "}units/day for{" "}
+            <input className="trig-in" type="number" inputMode="numeric" value={trig.days} aria-label="Consecutive days"
+              onChange={(e) => setTrig({ ...trig, days: parseInt(e.target.value) || 5 })} />
+            {" "}straight days → price restores itself · test window {trig.horizonDays} days, then graded
+          </div>
+          <label className="sign-row">
+            <input type="checkbox" checked={signed} onChange={(e) => setSigned(e.target.checked)} />
+            <span>I authorize this exact change — and its armed undo.</span>
+          </label>
+          <div className="dropin-row">
+            <button className="dbtn primary" disabled={!signed || !!busy} onClick={doExecute}>
+              ✍ Sign &amp; execute
+            </button>
+            <button className="dbtn" disabled={!!busy} onClick={() => { setPrev(null); setSigned(false); }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {busy && <div className="dropin-status ok">{busy}</div>}
+      {msg && <div className={`dropin-status ${msg.ok ? "ok" : "err"}`}>{msg.text}</div>}
+      {actions.length > 0 && (
+        <div className="act-list">
+          {[...actions].reverse().map((a) => (
+            <div className="act-row" key={a.aid}>
+              <div className="act-main">
+                <b>{a.title}</b> ${a.from} → ${a.to}
+                <span className={`act-status ${a.status}`}>{STATUS[a.status]}</span>
+              </div>
+              <div className="il-row-sub">
+                {new Date(a.t).toLocaleDateString()} · floor {a.trigger.minDaily}/day × {a.trigger.days}d{a.note ? ` · ${a.note}` : ""}
+              </div>
+              {a.status === "armed" && (
+                <button className="dt-btn" onClick={async () => {
+                  try { await revertAction(a.aid); setActions(await listActions()); } catch (e) { setMsg({ ok: false, text: String(e instanceof Error ? e.message : e) }); }
+                }}>↩ revert now</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="il-cite">every action is signed, snapshotted, and watched by the same engines that proposed it · the full record lives in the Trust Ledger</div>
+    </article>
+  );
+}
+
+function ExecutionCardSlot() {
+  const [connected, setConnected] = useState<CloudProvider[]>([]);
+  useEffect(() => { cloudStatus().then((s2) => setConnected(s2.providers)).catch(() => undefined); }, []);
+  if (!connected.includes("shopify")) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="mmean">Execution unlocks when <b>Shopify</b> is connected (with the write_products scope) — Counsel then runs signed price changes with an armed, measured rollback. <b>Prices and messages — never money.</b></div>
+      </article>
+    );
+  }
+  return <ExecutionCard connected={connected} />;
+}
+
 export default function Power() {
   // Honest status: count only what's REALLY yours, never demo fixtures.
   const mine = [
@@ -630,6 +763,9 @@ export default function Power() {
 
       <div className="eyebrow">Go live — paste one read-only key</div>
       <Reveal i={2}><LiveConnect /></Reveal>
+
+      <div className="eyebrow">Signed execution — Counsel's hands, under contract</div>
+      <Reveal i={2}><ExecutionCardSlot /></Reveal>
 
       <div className="eyebrow">Or drop a file — computed on this device</div>
       <Reveal i={3}><DropIn /></Reveal>

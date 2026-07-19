@@ -1150,3 +1150,21 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
   .written .wr, .written .wr-word { animation: none !important; opacity: 1 !important; filter: none !important; transform: none !important; }
   .cw-lo.tight, .sentinel.fired .sentinel-dot { animation: none !important; }
 }
+
+
+/* ---- signed execution ---- */
+.sign-box{margin-top:12px;background:var(--card-2);border-radius:12px;padding:14px 16px}
+.trig-in{width:58px;font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--card);
+  border:1px solid var(--line);border-radius:7px;padding:3px 7px;text-align:center}
+.sign-row{display:flex;align-items:center;gap:10px;margin:12px 0 4px;font-size:13px;color:var(--ink);cursor:pointer}
+.sign-row input{width:17px;height:17px;accent-color:var(--forest)}
+.act-list{margin-top:14px;border-top:1px solid var(--line);padding-top:6px}
+.act-row{padding:10px 0;border-bottom:1px solid var(--line)}
+.act-row:last-child{border-bottom:none}
+.act-main{font-size:13px;color:var(--ink)}
+.act-status{font-family:var(--mono);font-size:9px;margin-left:9px;letter-spacing:.04em}
+.act-status.armed{color:var(--forest)}
+.act-status.held{color:var(--forest)}
+.act-status.reverted_auto{color:#a05c2c}
+.act-status.reverted_manual{color:var(--faint)}
+.pay-card{border-left:3px solid var(--forest)}

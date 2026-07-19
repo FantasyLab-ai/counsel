@@ -5,6 +5,8 @@
 
 import { useNavigate } from "react-router-dom";
 import { displayName } from "../engine/persona";
+import { listActions, type ExecutedAction } from "../engine/actions";
+import { useEffect, useState } from "react";
 import { BackBtn, Reveal } from "../components/ui";
 
 interface Entry {
@@ -31,6 +33,31 @@ const REGISTER: Entry[] = [
   { name: "Post lift", method: "event study — 48h windows vs weekday norms, MAD noise band", refuses: "under 3 logged posts it says \"not enough to call it\"" },
   { name: "Ask", method: "intent-routed to the engines above; open questions disclose the five figures a cloud call would carry", refuses: "answers only from computed results — never from a vibe" },
 ];
+
+function ActionLedger() {
+  const [actions, setActions] = useState<ExecutedAction[] | null>(null);
+  useEffect(() => { listActions().then(setActions).catch(() => setActions([])); }, []);
+  if (actions === null) return <article className="mcard open il-card"><div className="il-loading">▶ reading the ledger…</div></article>;
+  if (!actions.length) {
+    return (
+      <article className="mcard open il-card awaiting">
+        <div className="mmean"><b>No actions taken — and that's the record.</b> Counsel changes nothing without your signature; when it does, every change appears here with its snapshot and its watchdog verdict. Prices and messages — never money.</div>
+      </article>
+    );
+  }
+  return (
+    <article className="mcard open il-card">
+      {[...actions].reverse().map((a) => (
+        <div className="tl-row" key={a.aid}>
+          <div className="tl-name">{a.title} · ${a.from} → ${a.to}</div>
+          <div className="tl-method">{new Date(a.t).toLocaleString()} · {a.status.replace("_", " ")} · floor {a.trigger.minDaily}/day × {a.trigger.days}d</div>
+          {a.note && <div className="tl-refuse">{a.note}</div>}
+        </div>
+      ))}
+      <div className="il-cite">signed → executed → watched → graded · the watchdog is the same engine that proposed the change</div>
+    </article>
+  );
+}
 
 export default function Trust() {
   const nav = useNavigate();
@@ -61,6 +88,9 @@ export default function Trust() {
           </div>
         </section>
       </Reveal>
+
+      <div className="eyebrow">The action ledger — every change Counsel has made</div>
+      <Reveal i={1}><ActionLedger /></Reveal>
 
       <div className="eyebrow">The register — method &amp; refusal, per claim</div>
       <Reveal i={1}>

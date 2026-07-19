@@ -44,7 +44,13 @@ const pct = (xs: number[], p: number): number => {
 // AR payment probability by lateness bucket — visible, adjustable weights.
 const AR_WEIGHT: Record<string, number> = { current: 0.9, "1-30": 0.8, "31-60": 0.6, "61+": 0.4 };
 
-export async function cashView(): Promise<CashViewOut | CashViewThin> {
+export interface CashViewOpts {
+  /** Injected monthly outflows (e.g. the owner's draw on the 1st & 15th,
+   * the tax set-aside) — same treatment as any recorded bill. */
+  extraMonthly?: { day: number; label: string; amount: number }[];
+}
+
+export async function cashView(opts?: CashViewOpts): Promise<CashViewOut | CashViewThin> {
   const { dates, revenue } = await getDaily();
   if (dates.length < 28) return { ok: false, reason: `needs ~4 weeks of history (has ${dates.length} days)` };
 
@@ -94,6 +100,9 @@ export async function cashView(): Promise<CashViewOut | CashViewThin> {
     // bills: recorded schedule (live) or the demo schedule, day by day
     let out = 0; const billLabels: string[] = [];
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      for (const e of opts?.extraMonthly ?? []) {
+        if (e.day === d.getDate()) { out += e.amount; billLabels.push(e.label); }
+      }
       if (live && lb) {
         const hits = lb.monthly.filter((o) => o.day === d.getDate());
         const wk2 = lb.weekly.filter((o) => o.weekday === d.getDay());
