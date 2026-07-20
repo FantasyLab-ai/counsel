@@ -4,6 +4,7 @@ import Today from "./screens/Today";
 import Numbers from "./screens/Numbers";
 import Ask from "./screens/Ask";
 import PnL from "./screens/PnL";
+import Ledger from "./screens/Ledger";
 import Settings from "./screens/Settings";
 import Onboarding from "./screens/Onboarding";
 import Engine from "./screens/Engine";
@@ -56,6 +57,16 @@ const TABS = [
     ),
   },
   {
+    to: "/ledger",
+    label: "Ledger",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4.5 5.5h.01M4.5 12h.01M4.5 18.5h.01" strokeWidth="2.4" />
+        <path d="M8.5 5.5H20M8.5 12H20M8.5 18.5H20" />
+      </svg>
+    ),
+  },
+  {
     to: "/plan",
     label: "Plan",
     icon: (
@@ -102,7 +113,7 @@ function TabBar() {
 
 // Human names for the live-region route announcer (screen-reader "you are here").
 const ROUTE_NAMES: Record<string, string> = {
-  "/": "Today", "/numbers": "Numbers", "/pnl": "Profit and loss", "/ask": "Ask",
+  "/": "Today", "/numbers": "Numbers", "/pnl": "Profit and loss", "/ledger": "The ledger", "/ask": "Ask",
   "/plan": "Plan", "/settings": "Settings", "/money": "Money", "/ops": "Stock and shipments",
   "/insights": "Insights Lab", "/decisions": "Decisions", "/marketing": "Marketing",
   "/power": "Power Up", "/packet": "Banker's Packet", "/trust": "Trust Ledger",
@@ -181,6 +192,7 @@ export default function App() {
           <Route path="/numbers" element={<Numbers />} />
           <Route path="/ask" element={<Ask />} />
           <Route path="/pnl" element={<PnL />} />
+          <Route path="/ledger" element={<Ledger />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/engine" element={<Engine />} />
           <Route path="/plan" element={<Plan />} />

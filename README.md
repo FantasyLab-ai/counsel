@@ -56,6 +56,7 @@ can't support a claim, Counsel says so.
 - **Numbers** — every metric *shows its math* (a different shape per method)
 - **Money** — the cash calendar (every bill on its day vs your inflow rhythm), AR aging with a chase order + DSO, the tax pot
 - **The Banker's Packet** — a lender-ready statement of record, every figure cited
+- **The Ledger** — every consumed transaction listed with its source; outliers, duplicates and fee anomalies pinned by visible rules, each row expandable to its receipts
 
 **The COO desk** — operations, watched
 - **Stock & Shipments** — days-of-cover vs your real demand rate, reorder-by dates, overstock cash, stalled-shipment triage

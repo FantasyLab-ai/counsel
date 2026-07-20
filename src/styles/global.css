@@ -1183,3 +1183,38 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
 .basis-foot { font-family: var(--mono); font-size: 9px; color: var(--faint); text-align: center;
   margin-top: 10px; line-height: 1.6; }
 .basis-foot-flag { color: #a05c2c; }
+
+
+/* ---- the ledger: the ground truth, listed ---- */
+.lg-card { padding: 6px 4px; }
+.lg-line { border-bottom: 1px solid var(--line); }
+.lg-line:last-of-type { border-bottom: none; }
+.lg-line.pin { background: #f6efe2aa; border-radius: 10px; border-bottom: 1px solid #e8dcc4; margin: 2px 0; }
+.lg-row { display: grid; grid-template-columns: 44px 74px 1fr auto 14px; gap: 8px; align-items: center;
+  width: 100%; background: none; border: none; padding: 11px 10px; cursor: pointer; text-align: left; font: inherit; }
+.lg-date { font-family: var(--mono); font-size: 9.5px; color: var(--faint); }
+.lg-src { font-family: var(--mono); font-size: 8.5px; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--forest); background: var(--forest-tint); border-radius: 100px; padding: 3px 7px;
+  text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-src.expense { color: #7a5230; background: #f0e6d2; }
+.lg-label { font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-amt { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--forest); white-space: nowrap; }
+.lg-amt.expense { color: #a05c2c; }
+.lg-chev { color: var(--faint); transition: transform var(--d-fast) var(--ease-out); }
+.lg-chev.open { transform: rotate(90deg); }
+.lg-flag-teaser { font-size: 10.5px; color: #8a6a33; padding: 0 10px 9px 62px; font-style: italic; }
+.lg-detail { padding: 2px 12px 13px; }
+.lg-flag { font-size: 11.5px; line-height: 1.55; color: #8a6a33; background: #f6efe2;
+  border-left: 3px solid var(--brass); border-radius: 8px; padding: 8px 11px; margin-bottom: 8px; }
+.lg-grid { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 4px 12px;
+  background: var(--card-2); border-radius: 10px; padding: 10px 13px; }
+.lg-grid .k { font-family: var(--mono); font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--faint); align-self: center; }
+.lg-grid .v { font-size: 12px; color: var(--ink); }
+.lg-context { font-family: var(--mono); font-size: 9.5px; color: var(--faint); margin-top: 8px; }
+.lg-more { width: 100%; margin-top: 8px; }
+@media (max-width: 400px) { .lg-row { grid-template-columns: 40px 64px 1fr auto 12px; gap: 6px; } }
+
+/* six tabs still breathe on small phones */
+.tab { min-width: 0; padding: 0 2px; }
+.tab svg { flex-shrink: 0; }

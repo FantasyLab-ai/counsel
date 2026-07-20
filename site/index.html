@@ -114,19 +114,29 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
 .phone .screen{background:var(--paper);border-radius:34px;overflow:hidden;color:var(--ink)}
 .float-card{position:absolute;background:var(--card);border-radius:16px;padding:16px 18px;color:var(--ink);
   border:1px solid var(--line);box-shadow:0 40px 80px -24px rgba(0,0,0,.5);width:250px}
-.fc-receipt{right:-56px;top:44px}
-.fc-contract{left:-72px;bottom:52px}
-.fc-pay{left:-58px;top:-18px;width:196px}
+/* orbit anchor: one shared ring around the phone; the keyframes move the
+   cards, so base position is the ring's center. */
+.float-card{left:50%;top:42%;margin-left:-115px}
+.fc-pay{width:196px;margin-left:-98px}
 .fc-pay .fc-num{font-family:var(--serif);font-size:22px;color:var(--forest);margin:5px 0 2px}
 .fc-pay .fc-num i{font-style:normal;font-size:11px;color:var(--faint)}
-@media(max-width:1100px){.fc-receipt{right:-16px}.fc-contract{left:-20px}.fc-pay{left:-14px}}
-@media(max-width:640px){.phone{width:288px}.fc-receipt{right:-4px;top:16px;width:206px}.fc-contract{left:-6px;bottom:16px;width:218px}.fc-pay{display:none}}
+.phone{position:relative;z-index:3}
+@media(max-width:1100px){.float-card{margin-left:-105px}}
+@media(max-width:640px){
+  .phone{width:288px}
+  /* small screens: no room for the ring — back to composed corners */
+  .float-card{left:auto;top:auto;margin-left:0;animation:none}
+  .fc-receipt{right:-4px;top:16px;width:206px;position:absolute}
+  .fc-contract{left:-6px;bottom:16px;width:218px;position:absolute}
+  .fc-pay{display:none}
+}
 /* entrance: the desk gets set */
 @keyframes settle{from{opacity:0;transform:translate3d(0,42px,0) rotateX(6deg)}to{opacity:1;transform:translate3d(0,0,0) rotateX(0)}}
 .hero .phone{animation:settle 1.1s var(--ease) .15s backwards,heroFloat 7s ease-in-out 1.4s infinite alternate}
-.hero .fc-receipt{animation:settle 1.1s var(--ease) .5s backwards,driftA 9.5s ease-in-out 1.8s infinite}
-.hero .fc-contract{animation:settle 1.1s var(--ease) .72s backwards,driftB 12s ease-in-out 2.1s infinite}
-.hero .fc-pay{animation:settle 1.1s var(--ease) .92s backwards,driftC 10.5s ease-in-out 2.4s infinite}
+.hero .fc-receipt{animation:cardIn .9s var(--ease) .5s backwards,orbitRing 36s linear -0s infinite}
+.hero .fc-contract{animation:cardIn .9s var(--ease) .7s backwards,orbitRing 36s linear -12s infinite}
+.hero .fc-pay{animation:cardIn .9s var(--ease) .9s backwards,orbitRing 36s linear -24s infinite}
+@keyframes cardIn{from{opacity:0}}
 /* the levitation: gentle bob + a breath of rotation. translate/rotate are
    the standalone properties, so pointer tilt (transform on .t3) still
    composes on top. three-point loops keep the cards' paths organic. */
@@ -134,23 +144,22 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
   0%{translate:0 2px;rotate:-0.55deg}
   100%{translate:0 -14px;rotate:0.65deg}
 }
-@keyframes driftA{
-  0%{translate:0 0;rotate:0deg}
-  36%{translate:13px -16px;rotate:1.4deg}
-  70%{translate:-9px -6px;rotate:-1deg}
-  100%{translate:0 0;rotate:0deg}
-}
-@keyframes driftB{
-  0%{translate:0 0;rotate:0deg}
-  40%{translate:-14px 13px;rotate:-1.3deg}
-  74%{translate:9px -9px;rotate:0.9deg}
-  100%{translate:0 0;rotate:0deg}
-}
-@keyframes driftC{
-  0%{translate:0 0;rotate:0deg}
-  34%{translate:-10px -12px;rotate:-1.1deg}
-  68%{translate:12px 5px;rotate:0.8deg}
-  100%{translate:0 0;rotate:0deg}
+/* the orbit: one elliptical ring around the phone, cards evenly phased by
+   negative delays. Front arc rides above the phone (z 5), the far arc dips
+   behind it (z 1) with a gentle shrink + soften — depth you can feel.
+   translate/rotate/scale compose with the pointer tilt on transform. */
+@keyframes orbitRing{
+  0%   {translate:0px 150px;      scale:1;    opacity:1;   filter:blur(0);      z-index:5}
+  12.5%{translate:235px 106px;    scale:0.99; opacity:1;   filter:blur(0);      z-index:5}
+  24.9%{translate:330px 0px;      scale:0.96; opacity:.96; filter:blur(0);      z-index:5}
+  25%  {translate:330px 0px;      scale:0.96; opacity:.96; filter:blur(0);      z-index:1}
+  37.5%{translate:235px -106px;   scale:0.9;  opacity:.82; filter:blur(.8px);   z-index:1}
+  50%  {translate:0px -150px;     scale:0.84; opacity:.72; filter:blur(1.4px);  z-index:1}
+  62.5%{translate:-235px -106px;  scale:0.9;  opacity:.82; filter:blur(.8px);   z-index:1}
+  74.9%{translate:-330px 0px;     scale:0.96; opacity:.96; filter:blur(0);      z-index:1}
+  75%  {translate:-330px 0px;     scale:0.96; opacity:.96; filter:blur(0);      z-index:5}
+  87.5%{translate:-235px 106px;   scale:0.99; opacity:1;   filter:blur(0);      z-index:5}
+  100% {translate:0px 150px;      scale:1;    opacity:1;   filter:blur(0);      z-index:5}
 }
 
 /* ---- in-mock app components (faithful to the real screens) ---- */
@@ -423,6 +432,10 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
   .mq-track{animation:none}
   .m-sent .dot{animation:none}
   .hero .phone,.hero .float-card{animation:none}
+  .hero .float-card{left:auto;top:auto;margin-left:0}
+  .hero .fc-receipt{right:-56px;top:44px}
+  .hero .fc-contract{left:-72px;bottom:52px}
+  .hero .fc-pay{left:-58px;top:-18px}
   .t3{transform:none!important}
   html{scroll-behavior:auto}
 }
@@ -802,6 +815,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
       <div class="spec-row"><dt>Instruments</dt><dd>PELT change-points · Welch tests · Kaplan–Meier survival · newsvendor fractile · AR(1) bands · Monte Carlo · weekday decomposition · event studies · exact identities</dd></div>
       <div class="spec-row"><dt>Latency</dt><dd>The full nine-engine battery in <i>under a second</i>, on a phone. Every run reports its real milliseconds</dd></div>
       <div class="spec-row"><dt>Sources</dt><dd>Stripe · Square · Shopify · Plaid bank feeds · Etsy · CSV drop-in, merged into <i>one ledger</i> with cross-source echoes removed</dd></div>
+      <div class="spec-row"><dt>The ledger</dt><dd>Every consumed transaction listed with its source · outliers, duplicates and fee anomalies pinned by <i>visible rules</i> · each row expandable to its receipts</dd></div>
       <div class="spec-row"><dt>Offline</dt><dd>Installable PWA with a service worker. <i>Airplane mode works</i>, and that's a testable claim</dd></div>
       <div class="spec-row"><dt>Execution</dt><dd>Signed contracts only: you authorize the exact diff, every action is snapshotted, and the watchdog enforces an <i>armed rollback trigger</i> · prices &amp; messages, <i>never money</i></dd></div>
       <div class="spec-row"><dt>Honesty</dt><dd>Three labels on every claim: confidence, data freshness, completeness · refusal over guessing · severity with visible thresholds · fabricated numbers: <i>0</i></dd></div>
