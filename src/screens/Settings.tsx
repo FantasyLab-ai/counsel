@@ -382,6 +382,9 @@ export default function Settings() {
         <button className="v lk-b" style={{ textDecoration: "none" }} onClick={() => setShowNew(true)}>
           Counsel v0.4 · what's new ↗
         </button>
+        <a className="pb" href="https://github.com/FantasyLab-ai/counsel" target="_blank" rel="noopener noreferrer">
+          source on GitHub ↗
+        </a>
         <a className="pb" href="https://github.com/FantasyLab-ai/aurora" target="_blank" rel="noopener noreferrer">
           powered by Aurora ↗
         </a>
