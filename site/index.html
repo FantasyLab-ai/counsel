@@ -105,7 +105,7 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
 /* ---------- the 3D stage ----------
    One transform writer: CSS composes the pieces from custom properties, so
    parallax never stomps tilt · that's where the crispness lives. */
-.stage{perspective:1400px;position:relative;display:flex;justify-content:center}
+.stage{perspective:1400px;position:relative;display:flex;justify-content:center;--ox:330px;--oy:150px}
 .t3{transform:translate3d(0,var(--py,0px),0) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
   transform-style:preserve-3d;will-change:transform}
 .phone{width:330px;background:var(--inkcard2);border-radius:44px;padding:12px;
@@ -116,7 +116,7 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
   border:1px solid var(--line);box-shadow:0 40px 80px -24px rgba(0,0,0,.5);width:250px}
 /* orbit anchor: one shared ring around the phone; the keyframes move the
    cards, so base position is the ring's center. */
-.float-card{left:50%;top:42%;margin-left:-115px}
+.float-card{left:calc(50% - var(--cxs,0px));top:42%;margin-left:-115px}
 .fc-pay{width:196px;margin-left:-98px}
 .fc-pay .fc-num{font-family:var(--serif);font-size:22px;color:var(--forest);margin:5px 0 2px}
 .fc-pay .fc-num i{font-style:normal;font-size:11px;color:var(--faint)}
@@ -124,10 +124,8 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
 @media(max-width:1100px){.float-card{margin-left:-105px}}
 @media(max-width:640px){
   .phone{width:288px}
-  /* small screens: no room for the ring — back to composed corners */
-  .float-card{left:auto;top:auto;margin-left:0;animation:none}
-  .fc-receipt{right:-4px;top:16px;width:206px;position:absolute}
-  .fc-contract{left:-6px;bottom:16px;width:218px;position:absolute}
+  .fc-receipt{width:206px}
+  .fc-contract{width:218px}
   .fc-pay{display:none}
 }
 /* entrance: the desk gets set */
@@ -137,6 +135,18 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
 .hero .fc-contract{animation:cardIn .9s var(--ease) .7s backwards,orbitRing 36s linear -12s infinite}
 .hero .fc-pay{animation:cardIn .9s var(--ease) .9s backwards,orbitRing 36s linear -24s infinite}
 @keyframes cardIn{from{opacity:0}}
+/* when the ring can't breathe (measured, never guessed) the cards go home
+   to their corners — above the phone like the original composition */
+.stage.ring-off .float-card{left:auto;top:auto;margin-left:0;z-index:5}
+.stage.ring-off .fc-receipt{right:-8px;top:36px;animation:cardIn .9s var(--ease) .5s backwards}
+.stage.ring-off .fc-contract{left:-12px;bottom:44px;animation:cardIn .9s var(--ease) .7s backwards}
+.stage.ring-off .fc-pay{left:-8px;top:-20px;animation:cardIn .9s var(--ease) .9s backwards}
+/* no-JS phones get the same grounding without the class (this block must
+   sit AFTER the .hero .fc-* animation lists: equal specificity, later wins) */
+@media(max-width:640px){
+  .hero .fc-receipt{animation:cardIn .9s var(--ease) .5s backwards;left:auto;top:36px;right:-8px;margin-left:0;z-index:5}
+  .hero .fc-contract{animation:cardIn .9s var(--ease) .7s backwards;left:-12px;top:auto;bottom:44px;margin-left:0;z-index:5}
+}
 /* the levitation: gentle bob + a breath of rotation. translate/rotate are
    the standalone properties, so pointer tilt (transform on .t3) still
    composes on top. three-point loops keep the cards' paths organic. */
@@ -149,17 +159,17 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
    behind it (z 1) with a gentle shrink + soften — depth you can feel.
    translate/rotate/scale compose with the pointer tilt on transform. */
 @keyframes orbitRing{
-  0%   {translate:0px 150px;      scale:1;    opacity:1;   filter:blur(0);      z-index:5}
-  12.5%{translate:235px 106px;    scale:0.99; opacity:1;   filter:blur(0);      z-index:5}
-  24.9%{translate:330px 0px;      scale:0.96; opacity:.96; filter:blur(0);      z-index:5}
-  25%  {translate:330px 0px;      scale:0.96; opacity:.96; filter:blur(0);      z-index:1}
-  37.5%{translate:235px -106px;   scale:0.9;  opacity:.82; filter:blur(.8px);   z-index:1}
-  50%  {translate:0px -150px;     scale:0.84; opacity:.72; filter:blur(1.4px);  z-index:1}
-  62.5%{translate:-235px -106px;  scale:0.9;  opacity:.82; filter:blur(.8px);   z-index:1}
-  74.9%{translate:-330px 0px;     scale:0.96; opacity:.96; filter:blur(0);      z-index:1}
-  75%  {translate:-330px 0px;     scale:0.96; opacity:.96; filter:blur(0);      z-index:5}
-  87.5%{translate:-235px 106px;   scale:0.99; opacity:1;   filter:blur(0);      z-index:5}
-  100% {translate:0px 150px;      scale:1;    opacity:1;   filter:blur(0);      z-index:5}
+  0%   {translate:0px var(--oy);                                scale:1;    opacity:1;   filter:blur(0);      z-index:5}
+  12.5%{translate:calc(var(--ox)*.71) calc(var(--oy)*.71);      scale:0.99; opacity:1;   filter:blur(0);      z-index:5}
+  24.9%{translate:var(--ox) 0px;                                scale:0.96; opacity:.96; filter:blur(0);      z-index:5}
+  25%  {translate:var(--ox) 0px;                                scale:0.96; opacity:.96; filter:blur(0);      z-index:1}
+  37.5%{translate:calc(var(--ox)*.71) calc(var(--oy)*-.71);     scale:0.9;  opacity:.82; filter:blur(.8px);   z-index:1}
+  50%  {translate:0px calc(var(--oy)*-1);                       scale:0.84; opacity:.72; filter:blur(1.4px);  z-index:1}
+  62.5%{translate:calc(var(--ox)*-.71) calc(var(--oy)*-.71);    scale:0.9;  opacity:.82; filter:blur(.8px);   z-index:1}
+  74.9%{translate:calc(var(--ox)*-1) 0px;                       scale:0.96; opacity:.96; filter:blur(0);      z-index:1}
+  75%  {translate:calc(var(--ox)*-1) 0px;                       scale:0.96; opacity:.96; filter:blur(0);      z-index:5}
+  87.5%{translate:calc(var(--ox)*-.71) calc(var(--oy)*.71);     scale:0.99; opacity:1;   filter:blur(0);      z-index:5}
+  100% {translate:0px var(--oy);                                scale:1;    opacity:1;   filter:blur(0);      z-index:5}
 }
 
 /* ---- in-mock app components (faithful to the real screens) ---- */
@@ -432,7 +442,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
   .mq-track{animation:none}
   .m-sent .dot{animation:none}
   .hero .phone,.hero .float-card{animation:none}
-  .hero .float-card{left:auto;top:auto;margin-left:0}
+  .hero .float-card{left:auto;top:auto;margin-left:0;z-index:5}
   .hero .fc-receipt{right:-56px;top:44px}
   .hero .fc-contract{left:-72px;bottom:52px}
   .hero .fc-pay{left:-58px;top:-18px}
@@ -1015,6 +1025,29 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
 <script>
 (() => {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* the orbit breathes with the viewport: measure the room around the ring's
+     center and set the radius from it, so the wide arc can never clip the
+     screen edge. Too tight for a ring at all -> cards go home to corners. */
+  const stage = document.querySelector(".stage");
+  const ringFit = () => {
+    if (!stage || reduced) return;
+    const r = stage.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const roomR = innerWidth - cx - 150;
+    const roomL = cx - 135;
+    // the right edge is usually the tight one: shift the ring's center left
+    // (up to 60px, into the column gap) to balance the rooms before shrinking
+    const shift = Math.max(0, Math.min(60, (roomL - roomR) / 2));
+    const ox = Math.min(330, roomR + shift, roomL - shift);
+    stage.classList.toggle("ring-off", ox < 215 || innerWidth <= 640);
+    stage.style.setProperty("--cxs", `${shift}px`);
+    stage.style.setProperty("--ox", `${Math.max(215, ox)}px`);
+    stage.style.setProperty("--oy", `${ox < 280 ? 126 : 150}px`);
+  };
+  ringFit();
+  addEventListener("resize", ringFit, { passive: true });
+  addEventListener("load", ringFit); // fonts settle the stage a hair late
 
   /* nav state + the reading hairline */
   const nav = document.getElementById("nav");
