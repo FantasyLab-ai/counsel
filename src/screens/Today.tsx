@@ -11,6 +11,7 @@ import { composeDigest } from "../engine/digest";
 import { money, revenueBand, type RevenueBand } from "../engine/insights";
 import { overdueCount } from "../engine/decisions";
 import { sentinel, type SentinelOut } from "../engine/sentinel";
+import { dataBasis, type DataBasis } from "../engine/dataBasis";
 import { CitePill, ConfidencePill, CountUp, Html, Receipt, Reveal, Written } from "../components/ui";
 import { BreakSpark, VizView } from "../components/charts";
 
@@ -29,6 +30,7 @@ export default function Today() {
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState<SentinelOut | null>(null);
   const [band, setBand] = useState<RevenueBand | null>(null);
+  const [basis, setBasis] = useState<DataBasis | null>(null);
   const toGrade = overdueCount();
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function Today() {
     getMetrics("month").then((m) => on && setMetrics(m));
     sentinel().then((s) => on && setSent(s)).catch(() => undefined);
     revenueBand().then((b) => on && setBand(b)).catch(() => undefined);
+    dataBasis().then((b) => on && setBasis(b)).catch(() => undefined);
     return () => { on = false; };
   }, []);
 
@@ -304,6 +307,12 @@ export default function Today() {
         </div>
         <div className="privacy">{SHIELD} Private</div>
       </div>
+      {basis && (
+        <div className="basis-foot">
+          {basis.line}
+          {basis.flags.length > 0 && <span className="basis-foot-flag"> · △ {basis.flags[0]}</span>}
+        </div>
+      )}
     </div>
   );
 }

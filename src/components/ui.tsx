@@ -165,8 +165,17 @@ export function Written({ text, mode = "letters", startDelay = 0 }: {
 // This is "show the math" as a physical gesture, app-wide.
 import type { MathBlock } from "../api/counsel";
 import { findPedigree } from "../engine/pedigree";
+import { dataBasis, type DataBasis } from "../engine/dataBasis";
 
 export function MathSheet({ block, title, onClose }: { block: MathBlock; title?: string; onClose: () => void }) {
+  // The three labels on every claim: confidence lives on the card that
+  // opened this sheet; freshness + completeness get computed here.
+  const [basis, setBasis] = useState<DataBasis | null>(null);
+  useEffect(() => {
+    let on = true;
+    dataBasis().then((b) => on && setBasis(b)).catch(() => undefined);
+    return () => { on = false; };
+  }, []);
   // The pedigree finds the method by its own name — where this math works
   // when it isn't working for a small business.
   const ped = findPedigree(`${block.citation.method} ${block.methodPlain} ${block.keyStatNotation}`);
@@ -206,6 +215,15 @@ export function MathSheet({ block, title, onClose }: { block: MathBlock; title?:
               <div className="sheet-lbl">where this math comes from</div>
               <p className="sheet-p"><b>{ped.name}.</b> {ped.what}</p>
               <p className="sheet-p ped-home">{ped.home}</p>
+            </div>
+          )}
+          {basis && (
+            <div className="ped-box basis-box">
+              <div className="sheet-lbl">the data behind this</div>
+              <p className="sheet-p basis-line">{basis.line}</p>
+              {basis.flags.map((f) => (
+                <p className="sheet-p basis-flag" key={f}>△ {f}</p>
+              ))}
             </div>
           )}
           <div className="sheet-notation">{block.keyStatNotation}</div>

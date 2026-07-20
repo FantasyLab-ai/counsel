@@ -12,6 +12,7 @@ import {
 } from "../engine/decisions";
 import { trackFromInsight } from "../engine/decisions";
 import { dismissRecommendation, recommendations, type Recommendation } from "../engine/recommend";
+import { dataBasis, type DataBasis } from "../engine/dataBasis";
 import { money } from "../engine/tierMath";
 import { BackBtn, Reveal } from "../components/ui";
 import { useEffect } from "react";
@@ -22,9 +23,11 @@ import { useEffect } from "react";
 // enters the board with Counsel as the source; the grader closes the loop.
 function Proposals({ onChange }: { onChange: () => void }) {
   const [recs, setRecs] = useState<Recommendation[] | null>(null);
+  const [basis, setBasis] = useState<DataBasis | null>(null);
   useEffect(() => {
     let on = true;
     recommendations().then((r) => on && setRecs(r)).catch(() => on && setRecs([]));
+    dataBasis().then((b) => on && setBasis(b)).catch(() => undefined);
     return () => { on = false; };
   }, []);
 
@@ -41,6 +44,15 @@ function Proposals({ onChange }: { onChange: () => void }) {
   }
   return (
     <>
+      {basis && (
+        <div className="basis-strip">
+          <span className="basis-k">computed on</span>
+          <span className="basis-v">{basis.line}</span>
+          {basis.flags.length > 0 && (
+            <span className="basis-flags">{basis.flags.map((f) => `△ ${f}`).join("  ·  ")}</span>
+          )}
+        </div>
+      )}
       {recs.map((r) => (
         <article className="mcard open il-card rec-card" key={r.id}>
           <div className="il-head">

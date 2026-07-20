@@ -520,6 +520,9 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
       Fluent paragraphs with no error bars are a new kind of risk. Every claim Counsel makes carries the
       method that produced it, the confidence it deserves, and a tap-to-open receipt. When the math can't
       support a claim, it says so. Refusal over guessing, always.
+      And every claim now carries three labels: the confidence it deserves, the date the data runs
+      through, and how complete that data actually is. A perfect method on stale or partial inputs
+      can still mislead, so the inputs are part of the receipt too.
     </p>
     <div class="ledger" data-reveal>
       <div class="lg-row lg-head"><div class="lg-cell">Them · copilots, dashboards &amp; ledgers</div><div class="lg-cell">Counsel · receipts</div></div>
@@ -766,7 +769,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
       <div class="spec-row"><dt>Sources</dt><dd>Stripe · Square · Shopify · Plaid bank feeds · Etsy · CSV drop-in, merged into <i>one ledger</i> with cross-source echoes removed</dd></div>
       <div class="spec-row"><dt>Offline</dt><dd>Installable PWA with a service worker. <i>Airplane mode works</i>, and that's a testable claim</dd></div>
       <div class="spec-row"><dt>Execution</dt><dd>Signed contracts only: you authorize the exact diff, every action is snapshotted, and the watchdog enforces an <i>armed rollback trigger</i> · prices &amp; messages, <i>never money</i></dd></div>
-      <div class="spec-row"><dt>Honesty</dt><dd>Confidence on every claim · refusal over guessing · severity with visible thresholds · fabricated numbers: <i>0</i></dd></div>
+      <div class="spec-row"><dt>Honesty</dt><dd>Three labels on every claim: confidence, data freshness, completeness · refusal over guessing · severity with visible thresholds · fabricated numbers: <i>0</i></dd></div>
     </dl>
   </div>
 </section>
@@ -929,7 +932,9 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
   <div class="wrap">
     <div class="fleuron dark-fleuron" style="margin-bottom:44px" aria-hidden="true">◆</div>
     <h2 data-write>Meet your <em>Counsel.</em></h2>
-    <p data-reveal>The live demo runs the full engine battery in your browser. No install, no sign-up, and no data leaves your device. Bring a CSV if you want to see it read your business.</p>
+    <p data-reveal>The live demo runs the full engine battery in your browser. No install, no sign-up, and no data
+        leaves your device. Here is a fair test: find one claim you disagree with, open its receipt,
+        and trace it back to the rows. That is the standard we want to be held to. Bring a CSV if you want to see it read your business.</p>
     <div class="cta-row" style="justify-content:center" data-reveal>
       <a class="btn brass" href="https://counsel-demo.pages.dev" target="_blank" rel="noopener">Walk into the office →</a>
       <a class="btn ghost" href="https://counsel-demo.pages.dev/privacy" target="_blank" rel="noopener">Read the privacy promise</a>

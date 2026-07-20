@@ -45,7 +45,9 @@ the other way around:
 | Your books on their cloud | Analysis **on your device** — airplane mode works |
 
 Every card carries the method that produced it and the confidence it
-deserves. When the math can't support a claim, Counsel says so.
+deserves — plus, sharpened by early user feedback, two more labels: the
+date the data runs through and how complete that data is. When the math
+can't support a claim, Counsel says so.
 
 ## Your pocket C-suite
 

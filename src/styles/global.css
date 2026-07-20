@@ -1168,3 +1168,18 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
 .act-status.reverted_auto{color:#a05c2c}
 .act-status.reverted_manual{color:var(--faint)}
 .pay-card{border-left:3px solid var(--forest)}
+
+
+/* ---- the data basis: freshness + completeness labels ---- */
+.basis-box { margin-top: 12px; }
+.basis-line { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.basis-flag { font-size: 11.5px; color: #a05c2c; margin-top: 5px; }
+.basis-strip { background: var(--card-2); border: 1px solid var(--line); border-radius: 11px;
+  padding: 10px 14px; margin-bottom: 12px; }
+.basis-k { font-family: var(--mono); font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--brass); margin-right: 8px; }
+.basis-v { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.basis-flags { display: block; font-size: 11px; color: #a05c2c; margin-top: 6px; line-height: 1.5; }
+.basis-foot { font-family: var(--mono); font-size: 9px; color: var(--faint); text-align: center;
+  margin-top: 10px; line-height: 1.6; }
+.basis-foot-flag { color: #a05c2c; }
