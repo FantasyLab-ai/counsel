@@ -64,11 +64,13 @@ export function liveMoneyBasis(): { outgoings: number; margin: number | null; li
 export async function cashSentry(): Promise<CashSentry | null> {
   const led = await ledger();
   const t0 = performance.now();
-  const fc = ar1Forecast(led.revenue, 30, 0.05);
+  const wm = weekdayModel(led.dates, led.revenue);
+  if (!wm) return null;
+  const band = bandFromAdjusted(wm, 30);
+  if (!band) return null;
   const ms = performance.now() - t0;
-  if (!fc) return null;
-  const lo30 = fc.lo.reduce((s, v) => s + v, 0);
-  const hi30 = fc.hi.reduce((s, v) => s + v, 0);
+  const lo30 = band.totalLo;
+  const hi30 = band.totalHi;
   // Profit at the LOW band vs outgoings — the honest stress line. With real
   // expenses on file, BOTH sides come from the user's own data: margin from
   // the last 30 recorded days (rev vs exp), outgoings from recorded burn.
@@ -100,16 +102,147 @@ export interface RevenueBand {
   mid: number[]; hi: number[]; lo: number[];
   hi14: number; lo14: number; // summed 14-day band, for the receipt
 }
+/* --- weekday-aware banding ------------------------------------------------
+   Two fixes over naive AR(1)-on-raw-days, both adding rigor:
+   1. DESEASONALIZE: daily revenue is divided by its weekday factor before
+      fitting, so the Sat-vs-Mon rhythm is modeled as STRUCTURE instead of
+      inflating the residual noise (which blew the bands wide open).
+   2. HONEST TOTALS: an h-day total band must NOT be the sum of daily
+      extremes (that assumes every day bottoms out at once). We simulate
+      2,000 paths of the fitted AR(1), re-seasonalize each day, sum, and
+      read the total's own percentiles. */
+
+interface WdayModel {
+  adjusted: number[];      // series / weekday factor (partial today dropped)
+  factors: number[];       // Sun..Sat, clamped to [0.25, 3]
+  horizonFactors: (h: number) => number; // factor for forecast day h (0-based)
+}
+
+function weekdayModel(dates: string[], revenue: number[]): WdayModel | null {
+  // Drop today's partial day: it isn't a finished observation.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  let n = dates.length;
+  if (n && dates[n - 1] === todayIso) n -= 1;
+  if (n < 14) return null;
+
+  const byWd: number[][] = [[], [], [], [], [], [], []];
+  for (let i = 0; i < n; i++) byWd[new Date(dates[i] + "T00:00:00").getDay()].push(revenue[i]);
+  const overall = revenue.slice(0, n).reduce((a, b) => a + b, 0) / n;
+  if (!(overall > 0)) return null;
+  const factors = byWd.map((arr) => {
+    if (!arr.length) return 1;
+    const m = arr.reduce((a, b) => a + b, 0) / arr.length;
+    return Math.min(3, Math.max(0.25, m / overall));
+  });
+
+  const adjusted: number[] = [];
+  for (let i = 0; i < n; i++) {
+    adjusted.push(revenue[i] / factors[new Date(dates[i] + "T00:00:00").getDay()]);
+  }
+  const lastDate = new Date(dates[n - 1] + "T00:00:00");
+  return {
+    adjusted,
+    factors,
+    horizonFactors: (h: number) => {
+      const d = new Date(lastDate);
+      d.setDate(d.getDate() + h + 1);
+      return factors[d.getDay()];
+    },
+  };
+}
+
+/** AR(1) fit in plain JS (OLS on lag-1), with a stationarity clamp.
+ * NOTE: aurora-core's ac_ar1 also exports {a,b,residStd}, but those fields
+ * had never been consumed before this feature and direct iteration with
+ * them diverges — a parity gap flagged for the core's golden suite. Until
+ * that's settled, the band math uses this transparent local fit; the fan,
+ * totals and receipts describe exactly what runs. */
+function fitAr1(x: number[]): { a: number; b: number; sigma: number } | null {
+  const n = x.length;
+  if (n < 15) return null;
+  let sx = 0, sy = 0, sxx = 0, sxy = 0;
+  for (let t = 0; t < n - 1; t++) {
+    const u = x[t], v = x[t + 1];
+    if (!isFinite(u) || !isFinite(v)) return null;
+    sx += u; sy += v; sxx += u * u; sxy += u * v;
+  }
+  const m = n - 1;
+  const denom = sxx - (sx * sx) / m;
+  let b = denom > 1e-9 ? (sxy - (sx * sy) / m) / denom : 0;
+  b = Math.max(-0.95, Math.min(0.95, b)); // stationary by construction
+  const a = (sy - b * sx) / m;
+  let ss = 0;
+  for (let t = 0; t < n - 1; t++) {
+    const e = x[t + 1] - (a + b * x[t]);
+    ss += e * e;
+  }
+  const sigma = Math.sqrt(ss / Math.max(1, m - 2));
+  if (!isFinite(a) || !isFinite(sigma)) return null;
+  return { a, b, sigma };
+}
+
+/** Mean path + marginal 95% bands + simulated TOTAL band, re-seasonalized.
+ * The total comes from 2,000 simulated paths (never from summing daily
+ * extremes, which pretends every day bottoms out at once). */
+function bandFromAdjusted(
+  wm: WdayModel, horizon: number,
+): { mid: number[]; lo: number[]; hi: number[]; totalLo: number; totalHi: number } | null {
+  const fit = fitAr1(wm.adjusted);
+  if (!fit) return null;
+  const { a, b, sigma } = fit;
+  const last = wm.adjusted[wm.adjusted.length - 1];
+
+  // analytic mean path + marginal sd on the adjusted scale
+  const mid: number[] = [], lo: number[] = [], hi: number[] = [];
+  let mean = last, varAcc = 0;
+  for (let h = 0; h < horizon; h++) {
+    mean = a + b * mean;
+    varAcc = varAcc * b * b + sigma * sigma;
+    const sd = Math.sqrt(varAcc);
+    const f = wm.horizonFactors(h);
+    mid.push(Math.max(0, mean * f));
+    lo.push(Math.max(0, (mean - 1.96 * sd) * f));
+    hi.push(Math.max(0, (mean + 1.96 * sd) * f));
+  }
+
+  // simulated total band
+  const SIMS = 2000;
+  const sums = new Float64Array(SIMS);
+  let spare: number | null = null;
+  const gauss = () => {
+    if (spare !== null) { const v = spare; spare = null; return v; }
+    let u = 0, v = 0, s2 = 0;
+    do { u = Math.random() * 2 - 1; v = Math.random() * 2 - 1; s2 = u * u + v * v; } while (s2 >= 1 || s2 === 0);
+    const mul = Math.sqrt(-2 * Math.log(s2) / s2);
+    spare = v * mul;
+    return u * mul;
+  };
+  for (let k = 0; k < SIMS; k++) {
+    let x = last, total = 0;
+    for (let h = 0; h < horizon; h++) {
+      x = a + b * x + sigma * gauss();
+      total += Math.max(0, x) * wm.horizonFactors(h);
+    }
+    sums[k] = total;
+  }
+  const sorted = [...sums].sort((p2, q) => p2 - q);
+  const totalLo = Math.max(0, sorted[Math.floor(SIMS * 0.025)]);
+  const totalHi = sorted[Math.ceil(SIMS * 0.975) - 1];
+  if (!isFinite(totalLo) || !isFinite(totalHi)) return null;
+  return { mid, lo, hi, totalLo, totalHi };
+}
+
 export async function revenueBand(): Promise<RevenueBand | null> {
   const led = await ledger();
-  if (led.revenue.length < 14) return null;
-  const fc = ar1Forecast(led.revenue, 14, 0.05);
-  if (!fc) return null;
+  const wm = weekdayModel(led.dates, led.revenue);
+  if (!wm) return null;
+  const band = bandFromAdjusted(wm, 14);
+  if (!band) return null;
   return {
     history: led.revenue.slice(-28),
-    mid: [...fc.forecast], hi: [...fc.hi], lo: [...fc.lo],
-    hi14: fc.hi.reduce((s2, v) => s2 + v, 0),
-    lo14: fc.lo.reduce((s2, v) => s2 + v, 0),
+    mid: band.mid, hi: band.hi, lo: band.lo,
+    hi14: band.totalHi,
+    lo14: band.totalLo,
   };
 }
 

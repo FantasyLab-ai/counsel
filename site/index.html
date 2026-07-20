@@ -116,30 +116,40 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
   border:1px solid var(--line);box-shadow:0 40px 80px -24px rgba(0,0,0,.5);width:250px}
 .fc-receipt{right:-56px;top:44px}
 .fc-contract{left:-72px;bottom:52px}
-@media(max-width:1100px){.fc-receipt{right:-16px}.fc-contract{left:-20px}}
-@media(max-width:640px){.phone{width:288px}.fc-receipt{right:-4px;top:16px;width:206px}.fc-contract{left:-6px;bottom:16px;width:218px}}
+.fc-pay{left:-58px;top:-18px;width:196px}
+.fc-pay .fc-num{font-family:var(--serif);font-size:22px;color:var(--forest);margin:5px 0 2px}
+.fc-pay .fc-num i{font-style:normal;font-size:11px;color:var(--faint)}
+@media(max-width:1100px){.fc-receipt{right:-16px}.fc-contract{left:-20px}.fc-pay{left:-14px}}
+@media(max-width:640px){.phone{width:288px}.fc-receipt{right:-4px;top:16px;width:206px}.fc-contract{left:-6px;bottom:16px;width:218px}.fc-pay{display:none}}
 /* entrance: the desk gets set */
 @keyframes settle{from{opacity:0;transform:translate3d(0,42px,0) rotateX(6deg)}to{opacity:1;transform:translate3d(0,0,0) rotateX(0)}}
-.hero .phone{animation:settle 1.1s var(--ease) .15s backwards,heroFloat 8.5s ease-in-out 1.4s infinite alternate}
-.hero .fc-receipt{animation:settle 1.1s var(--ease) .5s backwards,driftA 11s ease-in-out 1.8s infinite}
-.hero .fc-contract{animation:settle 1.1s var(--ease) .72s backwards,driftB 13.5s ease-in-out 2.1s infinite}
+.hero .phone{animation:settle 1.1s var(--ease) .15s backwards,heroFloat 7s ease-in-out 1.4s infinite alternate}
+.hero .fc-receipt{animation:settle 1.1s var(--ease) .5s backwards,driftA 9.5s ease-in-out 1.8s infinite}
+.hero .fc-contract{animation:settle 1.1s var(--ease) .72s backwards,driftB 12s ease-in-out 2.1s infinite}
+.hero .fc-pay{animation:settle 1.1s var(--ease) .92s backwards,driftC 10.5s ease-in-out 2.4s infinite}
 /* the levitation: gentle bob + a breath of rotation. translate/rotate are
    the standalone properties, so pointer tilt (transform on .t3) still
    composes on top. three-point loops keep the cards' paths organic. */
 @keyframes heroFloat{
-  0%{translate:0 0;rotate:-0.35deg}
-  100%{translate:0 -9px;rotate:0.4deg}
+  0%{translate:0 2px;rotate:-0.55deg}
+  100%{translate:0 -14px;rotate:0.65deg}
 }
 @keyframes driftA{
   0%{translate:0 0;rotate:0deg}
-  38%{translate:7px -11px;rotate:0.9deg}
-  72%{translate:-5px -4px;rotate:-0.6deg}
+  36%{translate:13px -16px;rotate:1.4deg}
+  70%{translate:-9px -6px;rotate:-1deg}
   100%{translate:0 0;rotate:0deg}
 }
 @keyframes driftB{
   0%{translate:0 0;rotate:0deg}
-  42%{translate:-8px 9px;rotate:-0.8deg}
-  76%{translate:5px -6px;rotate:0.5deg}
+  40%{translate:-14px 13px;rotate:-1.3deg}
+  74%{translate:9px -9px;rotate:0.9deg}
+  100%{translate:0 0;rotate:0deg}
+}
+@keyframes driftC{
+  0%{translate:0 0;rotate:0deg}
+  34%{translate:-10px -12px;rotate:-1.1deg}
+  68%{translate:12px 5px;rotate:0.8deg}
   100%{translate:0 0;rotate:0deg}
 }
 
@@ -503,6 +513,12 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
         </div>
       </div>
 
+      <div class="float-card fc-pay t3 tilt" data-tilt="15" data-depth="0.045">
+        <div class="fc-kick">pay yourself · the flagship</div>
+        <div class="fc-num">$3,200<i>/mo, safe</i></div>
+        <p class="fc-p">The biggest draw the <b>cautious path</b> can carry. Cash ends the quarter no lower than it started, floor never breached.</p>
+        <div class="fc-cite">found by search over the 13-week simulation · refuses when the math can't support a salary</div>
+      </div>
       <div class="float-card fc-receipt t3 tilt" data-tilt="14" data-depth="-0.03">
         <div class="fc-kick">the math · tap any number</div>
         <div class="fc-h">where this math comes from</div>
@@ -734,7 +750,7 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
           <div class="rb-lbl"><span>28 days of history</span><span>the 14-day band ahead</span></div>
         </div>
         <div class="inst-copy">
-          <div class="k">AR(1) · 95% analytic intervals</div>
+          <div class="k">weekday-adjusted AR(1) · simulated totals</div>
           <p>The band ahead. The shaded fan <i>is</i> the honest answer; the middle line is just its center. Ranges, never point promises.</p>
         </div>
       </div>

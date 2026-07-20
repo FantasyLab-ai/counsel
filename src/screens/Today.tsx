@@ -241,10 +241,10 @@ export default function Today() {
               }} />
               <div className="il-row-sub" style={{ marginTop: 8 }}>
                 <Receipt title="the band ahead — the math" math={{
-                  methodPlain: "Your last 28 trading days flow into a 14-day AR(1) forecast with 95% analytic intervals — the shaded fan IS the honest answer; the middle line is just its center.",
-                  keyStatPlain: `Next 14 days: ${money(band.lo14)}–${money(band.hi14)} of revenue.`,
-                  keyStatNotation: "AR(1) · 95% analytic prediction intervals · aurora-core (parity-tested)",
-                  citation: { method: "AR(1) banded forecast", source: "your daily revenue" },
+                  methodPlain: "Each day is first divided by its weekday factor, so your weekly rhythm is modeled as structure rather than noise; an AR(1) fit on that adjusted series produces the fan, re-seasonalized day by day. The 14-day total's band comes from 2,000 simulated paths of the fitted model — never from summing daily extremes, which would pretend every day bottoms out at once.",
+                  keyStatPlain: `Next 14 days: ${money(band.lo14)}–${money(band.hi14)} of revenue (95% of simulated paths land inside).`,
+                  keyStatNotation: "weekday-adjusted AR(1) · 2,000-path total band · stationarity-clamped fit",
+                  citation: { method: "AR(1) banded forecast, weekday-adjusted", source: "your daily revenue" },
                 }}>
                   <span>Next 14 days: <b>{money(band.lo14)}–{money(band.hi14)}</b> — a range, because ranges are the honest answer.</span>
                 </Receipt>
