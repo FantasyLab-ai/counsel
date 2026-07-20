@@ -117,3 +117,18 @@ when it *shows* (paper cards), JetBrains Mono for figures and citations. The
 brass **break line** marks statistically real change — the hero device.
 Confidence pills are calm, never alarm-red. All motion respects
 `prefers-reduced-motion`.
+
+## License
+
+Two layers, honestly labeled:
+
+- **The math is open source.** [Aurora](https://github.com/FantasyLab-ai/aurora),
+  the statistical engine every claim runs on, is **Apache-2.0** — read it, test
+  it, use it anywhere.
+- **The product is source-available.** Counsel itself is under the
+  [Elastic License 2.0](LICENSE): read every line, verify every claim, run it
+  and modify it for your own business. What you can't do is resell it or offer
+  it to others as a hosted service.
+
+If you think the math is wrong somewhere, open an issue with the receipt — that
+is exactly the standard this codebase asks to be held to.
