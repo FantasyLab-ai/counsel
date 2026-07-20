@@ -529,7 +529,9 @@ function DropIn() {
       setActive(true);
       setStatus({
         ok: true,
-        msg: `${res.rows.length} rows from ${file.name}${res.skipped ? ` (${res.skipped} skipped)` : ""} — reloading on your data…`,
+        // the parser says exactly how it read the file — same receipt
+        // discipline as every claim upstream of it
+        msg: `${res.rows.length} rows from ${file.name}${res.note ? ` · ${res.note}` : ""} — reloading on your data…`,
       });
       setTimeout(() => window.location.assign("/insights"), 900);
     } catch (e) {

@@ -101,6 +101,53 @@ async function readBody(req) {
   }
 }
 
+/* ------------------------------ rate limits ------------------------------
+   Three tiers (bindings in wrangler.jsonc): STRICT for the abusable writes
+   (account mint, telemetry, backfill/pulse, signed execution), SYNC for the
+   provider fan-out, NORM for the rest. Keyed by account id when we have one
+   (stable behind NAT), by IP before auth. Fails OPEN: if a binding is
+   missing the request proceeds — a config slip must never take the API down. */
+
+function clientKey(req) {
+  return req.headers.get("CF-Connecting-IP") || "unknown";
+}
+
+// In-memory bucket, per isolate. The platform binding is open beta and can
+// no-op (observed: counters never trip), so this is the working brake: a
+// client hammering in a tight loop rides the same isolate and hits it.
+const RL_LOCAL = new Map(); // key -> { n, reset }
+function localLimited(key, limit, periodSec = 60) {
+  const now = Date.now();
+  let b = RL_LOCAL.get(key);
+  if (!b || now >= b.reset) {
+    b = { n: 0, reset: now + periodSec * 1000 };
+    RL_LOCAL.set(key, b);
+  }
+  b.n++;
+  if (RL_LOCAL.size > 2000) {
+    for (const [k, v] of RL_LOCAL) if (now >= v.reset) RL_LOCAL.delete(k);
+  }
+  return b.n > limit;
+}
+
+async function limited(binding, key, limit) {
+  if (localLimited(key, limit)) return true;
+  if (!binding?.limit) return false;
+  try {
+    const { success } = await binding.limit({ key });
+    return !success;
+  } catch {
+    return false;
+  }
+}
+
+function tooMany(req) {
+  return new Response(JSON.stringify({ error: "rate limited — give it a minute and try again" }), {
+    status: 429,
+    headers: { "content-type": "application/json", "Retry-After": "60", ...corsHeaders(req) },
+  });
+}
+
 /* ------------------------------- accounts ------------------------------- */
 
 async function requireAuth(req, env) {
@@ -877,6 +924,7 @@ export default {
 
       // -- create account (no auth) --
       if (path === "/v1/account" && req.method === "POST") {
+        if (await limited(env.RL_STRICT, `mint:${clientKey(req)}`, 10)) return tooMany(req);
         const accountId = `ca_${randHex(9)}`;
         const accountSecret = `cs_${randHex(18)}`;
         await saveAcct(env, accountId, {
@@ -890,6 +938,7 @@ export default {
       // -- crash telemetry: error name + message ONLY, never data (no auth:
       //    a crashed client may have none; body hard-capped) --
       if (path === "/v1/telemetry" && req.method === "POST") {
+        if (await limited(env.RL_STRICT, `tel:${clientKey(req)}`, 10)) return tooMany(req);
         const body = (await readBody(req)) ?? {};
         const entry = {
           t: new Date().toISOString(),
@@ -903,6 +952,12 @@ export default {
           await env.ACCOUNTS.put("telemetry:recent", JSON.stringify(cur.slice(0, 50)));
         } catch { /* best effort */ }
         return json(req, 200, { ok: true });
+      }
+
+      // -- OAuth callbacks arrive unauthenticated (browser redirects) — an IP
+      //    gate keeps state-token guessing glacial --
+      if (path.startsWith("/v1/oauth/") && req.method === "GET") {
+        if (await limited(env.RL_NORM, `oauth:${clientKey(req)}`, 60)) return tooMany(req);
       }
 
       // -- Square OAuth callback: browser redirect from Square, no auth header;
@@ -985,9 +1040,18 @@ export default {
       }
 
       // -- everything below requires auth --
+      // (failed auth attempts burn the caller's IP budget — brute force stalls)
+      if (await limited(env.RL_NORM, `ip:${clientKey(req)}`, 60)) return tooMany(req);
       const auth = await requireAuth(req, env);
       if (!auth) return json(req, 401, { error: "invalid or missing credentials" });
       const { id, acct } = auth;
+
+      // per-account tiers on top of the IP gate
+      if (path === "/v1/sync") {
+        if (await limited(env.RL_SYNC, `sync:${id}`, 15)) return tooMany(req);
+      } else if (path.startsWith("/v1/actions") || path === "/v1/backfill" || path === "/v1/pulse") {
+        if (await limited(env.RL_STRICT, `acct:${id}`, 10)) return tooMany(req);
+      }
 
       if (path === "/v1/account" && req.method === "DELETE") {
         await env.ACCOUNTS.delete(`bf:${id}`);
