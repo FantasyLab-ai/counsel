@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Counsel</string>
+    <string name="title_activity_main">Counsel</string>
+    <string name="package_name">ai.fantasylab.counsel</string>
+    <string name="custom_url_scheme">ai.fantasylab.counsel</string>
+</resources>

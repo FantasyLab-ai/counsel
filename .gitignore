@@ -14,3 +14,7 @@ android/app/build/
 android/.gradle/
 tsconfig.tsbuildinfo
 .wrangler/
+
+mobile/node_modules/
+mobile/www/
+public/counsel.apk

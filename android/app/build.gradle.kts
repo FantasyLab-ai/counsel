@@ -8,7 +8,9 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "ai.fantasylab.counsel"
+        // .engine suffix: this is the aurora-core spike APK — the REAL app
+        // (Capacitor shell in mobile/) owns the canonical ai.fantasylab.counsel
+        applicationId = "ai.fantasylab.counsel.engine"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

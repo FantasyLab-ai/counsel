@@ -1,0 +1,11 @@
+{
+  "appId": "ai.fantasylab.counsel",
+  "appName": "Counsel",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#faf8f3"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
