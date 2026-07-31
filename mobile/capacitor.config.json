@@ -5,7 +5,14 @@
   "android": {
     "backgroundColor": "#faf8f3"
   },
+  "ios": {
+    "backgroundColor": "#faf8f3",
+    "contentInset": "always",
+    "scrollEnabled": true,
+    "preferredContentMode": "mobile"
+  },
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "iosScheme": "capacitor"
   }
 }
