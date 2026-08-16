@@ -1,0 +1,103 @@
+# Counsel — iOS build + TestFlight upload, entirely on GitHub's macOS
+# runners. No Mac is ever needed: signing certificates and provisioning
+# profiles are created server-side through the App Store Connect API key.
+#
+# Trigger: push an ios-v* tag (e.g. ios-v0.5.0) or run manually.
+#
+# Required repo secrets (set with `gh secret set`, never committed):
+#   ASC_KEY_ID       App Store Connect API key ID
+#   ASC_ISSUER_ID    App Store Connect issuer ID
+#   ASC_API_KEY_P8   contents of the AuthKey_*.p8 file
+#
+# First run also needs the app record to exist in App Store Connect
+# (bundle id ai.fantasylab.counsel) — see docs/STORE_LISTING.md.
+
+name: iOS TestFlight
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["ios-v*"]
+
+jobs:
+  build-upload:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Build web app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Sync Capacitor iOS
+        working-directory: mobile
+        run: |
+          npm ci
+          rm -rf www && cp -R ../dist www
+          npx cap sync ios
+
+      - name: Write API key
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s' "$ASC_API_KEY_P8" > ~/private_keys/asc_key.p8
+
+      - name: Write Fastfile
+        working-directory: mobile/ios/App
+        run: |
+          mkdir -p fastlane
+          cat > fastlane/Fastfile <<'FASTFILE'
+          default_platform(:ios)
+          platform :ios do
+            lane :beta do
+              api_key = app_store_connect_api_key(
+                key_id: ENV["ASC_KEY_ID"],
+                issuer_id: ENV["ASC_ISSUER_ID"],
+                key_filepath: File.expand_path("~/private_keys/asc_key.p8"),
+              )
+              setup_ci
+              # Create (or fetch) the distribution cert + profile through
+              # the API — this is the no-Mac signing path.
+              cert(api_key: api_key)
+              sigh(api_key: api_key, app_identifier: "ai.fantasylab.counsel")
+              update_code_signing_settings(
+                use_automatic_signing: false,
+                path: "App.xcodeproj",
+                profile_name: lane_context[SharedValues::SIGH_NAME],
+                code_sign_identity: "iPhone Distribution",
+              )
+              build_app(
+                project: "App.xcodeproj",
+                scheme: "App",
+                export_method: "app-store",
+              )
+              upload_to_testflight(
+                api_key: api_key,
+                skip_waiting_for_build_processing: true,
+              )
+            end
+          end
+          FASTFILE
+
+      - name: Build + upload
+        working-directory: mobile/ios/App
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: fastlane beta
+
+      - name: Keep the IPA as a run artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: counsel-ios-ipa
+          path: mobile/ios/App/*.ipa
+          retention-days: 30
