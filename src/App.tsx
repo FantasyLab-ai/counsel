@@ -17,6 +17,7 @@ import Marketing from "./screens/Marketing";
 import Decisions from "./screens/Decisions";
 import Money from "./screens/Money";
 import Trust from "./screens/Trust";
+import Pro from "./screens/Pro";
 
 // The tab set — drawn as a set, not picked from a sheet: 1.5px strokes,
 // round caps, one idea each. Today is the morning sun over the horizon;
@@ -116,7 +117,7 @@ const ROUTE_NAMES: Record<string, string> = {
   "/": "Today", "/numbers": "Numbers", "/pnl": "Profit and loss", "/ledger": "The ledger", "/ask": "Ask",
   "/plan": "Plan", "/settings": "Settings", "/money": "Money", "/ops": "Stock and shipments",
   "/insights": "Insights Lab", "/decisions": "Decisions", "/marketing": "Marketing",
-  "/power": "Power Up", "/packet": "Banker's Packet", "/trust": "Trust Ledger",
+  "/power": "Power Up", "/packet": "Banker's Packet", "/trust": "Trust Ledger", "/pro": "Counsel Pro",
   "/engine": "Engine", "/welcome": "Welcome",
 };
 const routeName = (p: string) => ROUTE_NAMES[p] ?? "Counsel";
@@ -204,6 +205,7 @@ export default function App() {
           <Route path="/decisions" element={<Decisions />} />
           <Route path="/money" element={<Money />} />
           <Route path="/trust" element={<Trust />} />
+          <Route path="/pro" element={<Pro />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </ErrorBoundary>

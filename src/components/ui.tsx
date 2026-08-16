@@ -291,6 +291,29 @@ export function tapFeedback(): void {
   try { navigator.vibrate?.(8); } catch { /* not available */ }
 }
 
+// ProGate — the honest paywall boundary. Pro members see the feature;
+// everyone else sees a quiet locked card that says exactly what lives
+// behind it and what Pro is. Never wraps receipts/math — the honesty
+// is free by construction (see engine/entitlement.ts).
+import { isPro } from "../engine/entitlement";
+
+export function ProGate({ feature, line, children }: {
+  feature: string; line: string; children: ReactNode;
+}) {
+  if (isPro()) return <>{children}</>;
+  return (
+    <article className="mcard open il-card progate">
+      <div className="il-kick">counsel pro</div>
+      <div className="mmean" style={{ marginTop: 6 }}>
+        <b>{feature}</b> lives in Pro — {line}
+      </div>
+      <button className="acton" onClick={() => { tapFeedback(); window.location.assign("/pro"); }}>
+        → what Pro pays for (and what stays free)
+      </button>
+    </article>
+  );
+}
+
 /** Back chevron for deep screens — every room needs a door out. */
 export function BackBtn() {
   return (

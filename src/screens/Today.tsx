@@ -70,6 +70,14 @@ export default function Today() {
     const { composeWeekReview } = await import("../engine/weekReview");
     setDigest(await composeWeekReview());
   }
+  async function openBoard() {
+    const { isPro } = await import("../engine/entitlement");
+    if (!isPro()) { nav("/pro"); return; }
+    setArtifactTitle("the board meeting");
+    setDigest("composing…");
+    const { composeBoardMeeting } = await import("../engine/boardMeeting");
+    setDigest(await composeBoardMeeting());
+  }
   async function copyDigest() {
     if (!digest) return;
     try {
@@ -112,6 +120,10 @@ export default function Today() {
           <button className="digest-btn" onClick={openWeek} title="Week in review — the Sunday read">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></svg>
             week
+          </button>
+          <button className="digest-btn board-btn" onClick={openBoard} title="The Board Meeting — the Pro Sunday packet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3l9 5-9 5-9-5z" /><path d="M5 12v5c0 1.5 3 3 7 3s7-1.5 7-3v-5" /></svg>
+            board
           </button>
         </div>
       </div>

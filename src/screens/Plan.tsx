@@ -18,7 +18,7 @@ import {
 import { listDecisions, logDecision, type Decision } from "../engine/decisions";
 import { clearGoal, getGoal, goalPace, setGoal, suggestTarget, type GoalPace } from "../engine/goals";
 import { getPayFloor, payYourself, setPayFloor, type PayPlan, type PayRefusal } from "../engine/paySelf";
-import { ActOn, Html, Receipt, Reveal, ShareCard } from "../components/ui";
+import { ActOn, Html, Receipt, Reveal, ShareCard, ProGate } from "../components/ui";
 
 // Pay Yourself — the number nobody computes. The safe draw is the largest
 // monthly salary the 13-week simulator carries on the cautious path without
@@ -240,7 +240,7 @@ export default function Plan() {
 
       {/* ---- pay yourself ---- */}
       <div className="eyebrow">Pay yourself — what the business owes its owner</div>
-      <Reveal i={1}><PayCard /></Reveal>
+      <Reveal i={1}><ProGate feature="Pay Yourself" line="the largest owner draw your cash floor can support, computed from your own 13-week outlook."><PayCard /></ProGate></Reveal>
 
       {/* ---- goal contract ---- */}
       <div className="eyebrow">The goal — a target with a steering wheel</div>

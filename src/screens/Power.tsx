@@ -12,7 +12,7 @@ import {
   clearHistory, cloudStatus, connectBank, connectProvider, disconnectProvider, seedHistory, setPulse, oauthConnectUrl, syncNow,
   type CloudProvider,
 } from "../engine/cloudSync";
-import { BackBtn, Reveal } from "../components/ui";
+import { BackBtn, Reveal, ProGate } from "../components/ui";
 import {
   executePrice, listActions, previewPrice, revertAction, suggestTrigger,
   type ActionPreview, type ActionTrigger, type ExecutedAction,
@@ -767,7 +767,7 @@ export default function Power() {
       <Reveal i={2}><LiveConnect /></Reveal>
 
       <div className="eyebrow">Signed execution — Counsel's hands, under contract</div>
-      <Reveal i={2}><ExecutionCardSlot /></Reveal>
+      <Reveal i={2}><ProGate feature="Execution rails" line="price changes with your signature, watched and auto-reverted if reality disagrees."><ExecutionCardSlot /></ProGate></Reveal>
 
       <div className="eyebrow">Or drop a file — computed on this device</div>
       <Reveal i={3}><DropIn /></Reveal>

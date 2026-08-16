@@ -3,6 +3,7 @@
 // restrained briefings, and the honest Privacy & data section.
 
 import { useEffect, useState } from "react";
+import { tierLabel } from "../engine/entitlement";
 import { displayName, getPersona } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getConnections, type Source } from "../api/counsel";
@@ -119,8 +120,26 @@ export default function Settings() {
             <div className="pn">{displayName()}</div>
             <div className="pm">{getPersona()?.label ?? "your business"} · tap to edit</div>
           </div>
-          <div className="plan">Pro</div>
+          <div className="plan" role="button" tabIndex={0} style={{cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();nav("/pro");}} onKeyDown={(e)=>{if(e.key==="Enter")nav("/pro");}}>{tierLabel()}</div>
         </div>
+      </Reveal>
+
+      <Reveal i={1}>
+        <section className="sec">
+          <div className="sec-h">Counsel Pro</div>
+          <div className="group">
+            <div className="srow tap" role="button" tabIndex={0}
+                 onClick={() => nav("/pro")}
+                 onKeyDown={(e) => { if (e.key === "Enter") nav("/pro"); }}>
+              <div className="ico">◆</div>
+              <div className="rl">
+                <div className="rt">{tierLabel()}</div>
+                <div className="rs">what Pro pays for, and what stays free forever</div>
+              </div>
+              <div className="rr">{CHEV}</div>
+            </div>
+          </div>
+        </section>
       </Reveal>
 
       <Reveal i={1}>
