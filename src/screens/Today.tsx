@@ -24,6 +24,15 @@ const SHIELD = (
 export default function Today() {
   const nav = useNavigate();
   const [brief, setBrief] = useState<Brief | null>(null);
+  // First-run coach: teach the reading model ONCE, then get out of the
+  // way forever. Progressive disclosure needs a key to the layers.
+  const [coach, setCoach] = useState<boolean>(() => {
+    try { return !localStorage.getItem("counsel.coach.today"); } catch { return false; }
+  });
+  const dismissCoach = () => {
+    setCoach(false);
+    try { localStorage.setItem("counsel.coach.today", "1"); } catch { /* fine */ }
+  };
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [digest, setDigest] = useState<string | null>(null);
   const [artifactTitle, setArtifactTitle] = useState("morning digest");
@@ -127,6 +136,18 @@ export default function Today() {
         </div>
       )}
 
+      {coach && (
+        <Reveal i={0}>
+          <div className="coach-card" role="note">
+            <div className="coach-title">How to read this page</div>
+            <div className="coach-line"><b>Plain words first.</b> Counsel tells you what's happening in sentences — you never need the math to act.</div>
+            <div className="coach-line"><b>Every number opens.</b> The ≡ mark means tap it — the receipt shows how it was computed, from your data.</div>
+            <div className="coach-line"><b>Pills say how sure.</b> High, moderate, or "not ready to call" — Counsel says which, and refuses to bluff.</div>
+            <button className="dt-btn coach-got" onClick={dismissCoach}>got it</button>
+          </div>
+        </Reveal>
+      )}
+
       <Reveal i={0}>
         <section className="voice">
           <div className="eyebrow on-dark">{brief.state.eyebrow}</div>
@@ -185,6 +206,7 @@ export default function Today() {
       </Reveal>
 
       <div className="eyebrow">Needs your attention</div>
+      <div className="eyebrow-sub">the few things worth a minute today, ranked</div>
       <div className="rows">
         {brief.attention.map((a, i) => (
           <Reveal i={i + 1} key={a.id}>
@@ -204,6 +226,7 @@ export default function Today() {
       </div>
 
       <div className="eyebrow">The numbers, read</div>
+      <div className="eyebrow-sub">tap any number to see exactly how it was computed</div>
       <div className="grid2">
         {dash.map((m, i) => (
           <Reveal i={i + 3} key={m.id} className={m.wide ? "tile wide" : "tile"}>
@@ -231,6 +254,7 @@ export default function Today() {
       {band && (
         <>
           <div className="eyebrow">The band ahead — two weeks, honestly ranged</div>
+          <div className="eyebrow-sub">where your revenue most likely lands — a range, on purpose</div>
           <Reveal i={6}>
             <article className="mcard open il-card">
               <VizView viz={{
@@ -255,6 +279,7 @@ export default function Today() {
       )}
 
       <div className="eyebrow">Watching · not ready to call</div>
+      <div className="eyebrow-sub">signals forming — named early, judged only when the data is enough</div>
       <Reveal i={7}>
         <div className="watch">
           {brief.watching.map((w) => (

@@ -32,7 +32,8 @@ export interface CalibrationRead {
   ciHi: number;
   trials: number;
   distancePhi: number;     // |phiHat - cellPhi| — always disclosed
-  line: string;            // the sentence the UI shows
+  line: string;            // owner-first sentence: the plain meaning
+  detail: string;          // the precise measured line (all the numbers)
   corpusVersion: string;
   corpusSha256: string;
 }
@@ -80,9 +81,12 @@ export function calibrationRead(series: number[]): CalibrationRead | null {
       method: "", cellPhi: 0, cellN: 0, fdr: 0, ciLo: 0, ciHi: 0, trials: 0,
       distancePhi: 0,
       line:
-        `Your series (φ̂=${p.toFixed(2)}, n=${n}) sits outside the measured ` +
-        `calibration envelope — no false-fire rate is quoted because none ` +
-        `was measured for data of this shape.`,
+        "Your sales pattern is outside the range we've stress-tested, so " +
+        "no error rate is quoted here — we don't guess at numbers we " +
+        "haven't measured.",
+      detail:
+        `Series fingerprint φ̂=${p.toFixed(2)}, n=${n} — outside the ` +
+        `measured calibration envelope of corpus ${CORPUS_VERSION}.`,
     };
   }
 
@@ -103,18 +107,30 @@ export function calibrationRead(series: number[]): CalibrationRead | null {
   const [method, cellN, cellPhi, fdr, ciLo, ciHi, trials] = cell;
 
   const pct = (v: number) => `${(v * 100).toFixed(v < 0.02 ? 1 : 0)}%`;
-  const line =
+  // Owner-first: what it MEANS, in words. The precise measurement, with
+  // every number, sits right under it — nothing is removed, only ordered.
+  const line = fdr > 0.25
+    ? `Sales patterns like yours fool this kind of detector often — on ` +
+      `lookalike data with no real change, it still fires ${pct(fdr)} of ` +
+      `the time. So we treat a single detected break as provisional until ` +
+      `it repeats.`
+    : fdr > 0.05
+    ? `On lookalike data with no real change, this kind of detector fires ` +
+      `${pct(fdr)} of the time — worth knowing, not alarming.`
+    : `Patterns like yours rarely fool this detector — it fires on only ` +
+      `${pct(fdr)} of lookalike data with no real change.`;
+  const detail =
     `Measured on ${trials.toLocaleString()} seeded null series shaped like ` +
-    `yours (φ≈${cellPhi}, n=${cellN}): ${method.toUpperCase()}-family detectors ` +
-    `fire on ${pct(fdr)} of series containing no real change ` +
-    `(95% CI ${pct(ciLo)}–${pct(ciHi)}). Your series: φ̂=${p.toFixed(2)}, n=${n}.`;
+    `yours (φ≈${cellPhi}, n=${cellN}): ${method.toUpperCase()}-family rate ` +
+    `${pct(fdr)}, 95% CI ${pct(ciLo)}–${pct(ciHi)}. Your series: ` +
+    `φ̂=${p.toFixed(2)}, n=${n}.`;
 
   return {
     ...base,
     status: "measured", method, cellPhi, cellN,
     fdr, ciLo, ciHi, trials,
     distancePhi: Math.round(Math.abs(p - cellPhi) * 100) / 100,
-    line,
+    line, detail,
   };
 }
 

@@ -240,13 +240,7 @@ export function MathSheet({ block, title, onClose }: { block: MathBlock; title?:
             <div className="ped-box cal-box">
               <div className="sheet-lbl">how often this kind of claim is wrong</div>
               <p className="sheet-p">{cal.line}</p>
-              {cal.status === "measured" && cal.fdr > 0.25 && (
-                <p className="sheet-p basis-flag">
-                  △ at this autocorrelation, uncalibrated detectors phantom-fire
-                  often — treat a single detection as provisional until it
-                  repeats on fresh data.
-                </p>
-              )}
+              <p className="sheet-p cal-detail">{cal.detail}</p>
               <p className="sheet-p cal-cite">
                 aurora calibration corpus {cal.corpusVersion} ·
                 sha256:{cal.corpusSha256.slice(0, 12)}… · seeded synthetic
