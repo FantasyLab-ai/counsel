@@ -100,7 +100,9 @@ export async function cashSentry(): Promise<CashSentry | null> {
 export interface RevenueBand {
   history: number[];
   mid: number[]; hi: number[]; lo: number[];
-  hi14: number; lo14: number; // summed 14-day band, for the receipt
+  hi14: number; lo14: number;       // 80% planning band on the 14-day total
+  hi14w: number; lo14w: number;     // 95% band — wider, still disclosed
+  sigmaMethod: "robust" | "ols";    // which residual scale the fit used
 }
 /* --- weekday-aware banding ------------------------------------------------
    Two fixes over naive AR(1)-on-raw-days, both adding rigor:
@@ -157,7 +159,9 @@ function weekdayModel(dates: string[], revenue: number[]): WdayModel | null {
  * them diverges — a parity gap flagged for the core's golden suite. Until
  * that's settled, the band math uses this transparent local fit; the fan,
  * totals and receipts describe exactly what runs. */
-function fitAr1(x: number[]): { a: number; b: number; sigma: number } | null {
+function fitAr1(x: number[]): {
+  a: number; b: number; sigma: number; sigmaMethod: "robust" | "ols";
+} | null {
   const n = x.length;
   if (n < 15) return null;
   let sx = 0, sy = 0, sxx = 0, sxy = 0;
@@ -171,14 +175,33 @@ function fitAr1(x: number[]): { a: number; b: number; sigma: number } | null {
   let b = denom > 1e-9 ? (sxy - (sx * sy) / m) / denom : 0;
   b = Math.max(-0.95, Math.min(0.95, b)); // stationary by construction
   const a = (sy - b * sx) / m;
+  const resid: number[] = [];
   let ss = 0;
   for (let t = 0; t < n - 1; t++) {
     const e = x[t + 1] - (a + b * x[t]);
+    resid.push(e);
     ss += e * e;
   }
-  const sigma = Math.sqrt(ss / Math.max(1, m - 2));
+  const sigmaOls = Math.sqrt(ss / Math.max(1, m - 2));
+  // Robust scale: MAD x 1.4826. One promo spike or refund day should not
+  // widen every forecast day's band — the OLS sd lets outliers do exactly
+  // that. When the robust estimate is degenerate we fall back and say so.
+  const sortedAbs = resid
+    .map((e) => Math.abs(e - median(resid)))
+    .sort((p2, q) => p2 - q);
+  const mad = median(sortedAbs);
+  const sigmaRobust = mad * 1.4826;
+  const useRobust = isFinite(sigmaRobust) && sigmaRobust > 1e-9;
+  const sigma = useRobust ? sigmaRobust : sigmaOls;
   if (!isFinite(a) || !isFinite(sigma)) return null;
-  return { a, b, sigma };
+  return { a, b, sigma, sigmaMethod: (useRobust ? "robust" : "ols") as "robust" | "ols" };
+}
+
+function median(xs: number[]): number {
+  if (!xs.length) return NaN;
+  const s = [...xs].sort((p2, q) => p2 - q);
+  const mid = s.length >> 1;
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
 /** Mean path + marginal 95% bands + simulated TOTAL band, re-seasonalized.
@@ -186,13 +209,22 @@ function fitAr1(x: number[]): { a: number; b: number; sigma: number } | null {
  * extremes, which pretends every day bottoms out at once). */
 function bandFromAdjusted(
   wm: WdayModel, horizon: number,
-): { mid: number[]; lo: number[]; hi: number[]; totalLo: number; totalHi: number } | null {
+): {
+  mid: number[]; lo: number[]; hi: number[];
+  totalLo: number; totalHi: number;       // 80% (p10-p90) — the planning band
+  totalLoW: number; totalHiW: number;     // 95% — disclosed alongside
+  sigmaMethod: "robust" | "ols";
+} | null {
   const fit = fitAr1(wm.adjusted);
   if (!fit) return null;
-  const { a, b, sigma } = fit;
+  const { a, b, sigma, sigmaMethod } = fit;
   const last = wm.adjusted[wm.adjusted.length - 1];
 
-  // analytic mean path + marginal sd on the adjusted scale
+  // Analytic mean path + marginal 80% band on the adjusted scale.
+  // 80% (z=1.282) is the PLANNING band: 8 in 10 simulated paths land
+  // inside. The 95% totals are computed too and shown in the receipt —
+  // coverage is a labeled choice here, never a hidden one.
+  const Z80 = 1.282;
   const mid: number[] = [], lo: number[] = [], hi: number[] = [];
   let mean = last, varAcc = 0;
   for (let h = 0; h < horizon; h++) {
@@ -201,18 +233,29 @@ function bandFromAdjusted(
     const sd = Math.sqrt(varAcc);
     const f = wm.horizonFactors(h);
     mid.push(Math.max(0, mean * f));
-    lo.push(Math.max(0, (mean - 1.96 * sd) * f));
-    hi.push(Math.max(0, (mean + 1.96 * sd) * f));
+    lo.push(Math.max(0, (mean - Z80 * sd) * f));
+    hi.push(Math.max(0, (mean + Z80 * sd) * f));
   }
 
-  // simulated total band
+  // Simulated total band — DETERMINISTIC seed derived from the data, so
+  // the same ledger always draws the same band (a forecast that wobbles
+  // between app-opens reads as guesswork, and would be).
   const SIMS = 2000;
+  let seed = (wm.adjusted.length * 2654435761 ^ Math.round(last * 1000)) >>> 0;
+  const rand = () => {
+    // mulberry32 — small, seedable, plenty for band quantiles
+    seed = (seed + 0x6D2B79F5) >>> 0;
+    let t = seed;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
   const sums = new Float64Array(SIMS);
   let spare: number | null = null;
   const gauss = () => {
     if (spare !== null) { const v = spare; spare = null; return v; }
     let u = 0, v = 0, s2 = 0;
-    do { u = Math.random() * 2 - 1; v = Math.random() * 2 - 1; s2 = u * u + v * v; } while (s2 >= 1 || s2 === 0);
+    do { u = rand() * 2 - 1; v = rand() * 2 - 1; s2 = u * u + v * v; } while (s2 >= 1 || s2 === 0);
     const mul = Math.sqrt(-2 * Math.log(s2) / s2);
     spare = v * mul;
     return u * mul;
@@ -226,10 +269,11 @@ function bandFromAdjusted(
     sums[k] = total;
   }
   const sorted = [...sums].sort((p2, q) => p2 - q);
-  const totalLo = Math.max(0, sorted[Math.floor(SIMS * 0.025)]);
-  const totalHi = sorted[Math.ceil(SIMS * 0.975) - 1];
+  const q = (frac: number) => Math.max(0, sorted[Math.min(SIMS - 1, Math.floor(SIMS * frac))]);
+  const totalLo = q(0.10), totalHi = q(0.90);
+  const totalLoW = q(0.025), totalHiW = q(0.975);
   if (!isFinite(totalLo) || !isFinite(totalHi)) return null;
-  return { mid, lo, hi, totalLo, totalHi };
+  return { mid, lo, hi, totalLo, totalHi, totalLoW, totalHiW, sigmaMethod };
 }
 
 export async function revenueBand(): Promise<RevenueBand | null> {
@@ -243,6 +287,9 @@ export async function revenueBand(): Promise<RevenueBand | null> {
     mid: band.mid, hi: band.hi, lo: band.lo,
     hi14: band.totalHi,
     lo14: band.totalLo,
+    hi14w: band.totalHiW,
+    lo14w: band.totalLoW,
+    sigmaMethod: band.sigmaMethod,
   };
 }
 

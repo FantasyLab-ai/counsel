@@ -42,9 +42,9 @@ export function BreakSpark({ viz, height = 40 }: { viz: BreaklineViz; height?: n
   return (
     <svg className="tspark" viewBox={`0 0 ${W} ${height + 8}`} preserveAspectRatio="none" aria-hidden="true">
       <path className="draw" style={{ ["--len" as string]: 400 }} d={bPath} fill="none" stroke="#8B978D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1={mid} y1="4" x2={mid} y2={height + 3} stroke="#9C7A46" strokeWidth="1.4" strokeDasharray="3 3" className="reveal" style={{ ["--rd" as string]: "500ms" }} />
-      <circle cx={mid} cy={lastB} r="3.6" fill="#9C7A46" className="pop" style={{ ["--rd" as string]: "620ms" }} />
-      <path className="draw" style={{ ["--len" as string]: 400, ["--rd" as string]: "560ms" }} d={aPath} fill="none" stroke="#1C4B3A" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1={mid} y1="4" x2={mid} y2={height + 3} stroke="#cdae7e" strokeWidth="1.4" strokeDasharray="3 3" className="reveal" style={{ ["--rd" as string]: "500ms" }} />
+      <circle cx={mid} cy={lastB} r="3.6" fill="#cdae7e" className="pop" style={{ ["--rd" as string]: "620ms" }} />
+      <path className="draw" style={{ ["--len" as string]: 400, ["--rd" as string]: "560ms" }} d={aPath} fill="none" stroke="#61a029" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -59,14 +59,14 @@ function BreakChart({ viz }: { viz: BreaklineViz }) {
     viz.after.map((v, i) => `L${(mid + ((i + 1) * (W - mid)) / viz.after.length).toFixed(1)},${v}`).join(" ");
   return (
     <svg className="breakchart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
-      <line x1="0" y1="26" x2={mid} y2="26" stroke="#C7CFC8" strokeOpacity=".4" strokeWidth="1" strokeDasharray="2 4" />
-      <line x1={mid} y1="52" x2={W} y2="52" stroke="#C7CFC8" strokeOpacity=".4" strokeWidth="1" strokeDasharray="2 4" />
-      <path className="draw" style={{ ["--len" as string]: 360 }} d={bPath} fill="none" stroke="#9CA79B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="0" y1="26" x2={mid} y2="26" stroke="#3a453c" strokeOpacity=".4" strokeWidth="1" strokeDasharray="2 4" />
+      <line x1={mid} y1="52" x2={W} y2="52" stroke="#3a453c" strokeOpacity=".4" strokeWidth="1" strokeDasharray="2 4" />
+      <path className="draw" style={{ ["--len" as string]: 360 }} d={bPath} fill="none" stroke="#75827a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <line x1={mid} y1="6" x2={mid} y2="74" stroke="#cdae7e" strokeWidth="1.5" strokeDasharray="4 3" className="reveal" style={{ ["--rd" as string]: "420ms" }} />
       <circle cx={mid} cy={lastB} r="3.6" fill="#cdae7e" className="pop" style={{ ["--rd" as string]: "540ms" }} />
-      <path className="draw" style={{ ["--len" as string]: 360, ["--rd" as string]: "480ms" }} d={aPath} fill="none" stroke="#7fce9f" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      <text x="8" y="18" fontFamily="'JetBrains Mono',monospace" fontSize="7" fill="#9CA79B">{viz.beforeLabel}</text>
-      <text x="200" y="70" fontFamily="'JetBrains Mono',monospace" fontSize="7" fill="#7fce9f">{viz.afterLabel}</text>
+      <path className="draw" style={{ ["--len" as string]: 360, ["--rd" as string]: "480ms" }} d={aPath} fill="none" stroke="#61a029" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <text x="8" y="18" fontFamily="'JetBrains Mono',monospace" fontSize="7" fill="#93a095">{viz.beforeLabel}</text>
+      <text x="200" y="70" fontFamily="'JetBrains Mono',monospace" fontSize="7" fill="#8fd3ac">{viz.afterLabel}</text>
     </svg>
   );
 }
@@ -145,17 +145,17 @@ export function Fan({ viz }: { viz: FanViz }) {
     <svg className="fan" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
       <defs>
         <linearGradient id="fanband" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#7fce9f" stopOpacity=".22" />
-          <stop offset="1" stopColor="#7fce9f" stopOpacity=".05" />
+          <stop offset="0" stopColor="#61a029" stopOpacity=".22" />
+          <stop offset="1" stopColor="#61a029" stopOpacity=".05" />
         </linearGradient>
       </defs>
-      <path className="draw" style={{ ["--len" as string]: 300 }} d={hist} fill="none" stroke="#9CA79B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path className="draw" style={{ ["--len" as string]: 300 }} d={hist} fill="none" stroke="#75827a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <line x1={nowX} y1="10" x2={nowX} y2="86" stroke="#cdae7e" strokeWidth="1.2" strokeDasharray="3 3" className="reveal" style={{ ["--rd" as string]: "350ms" }} />
       <text x={nowX - 10} y="8" fontFamily="'JetBrains Mono',monospace" fontSize="7" fill="#cdae7e" textAnchor="end">now</text>
       <polygon points={[...hiPts, ...loPts].join(" ")} fill="url(#fanband)" className="reveal" style={{ ["--rd" as string]: "430ms" }} />
-      <path className="draw" style={{ ["--len" as string]: 220, ["--rd" as string]: "430ms" }} d={midPath} fill="none" stroke="#7fce9f" strokeWidth="2.4" strokeDasharray="5 4" strokeLinecap="round" />
-      <text x={W - 4} y="24" fontFamily="'JetBrains Mono',monospace" fontSize="7" fill="#7fce9f" textAnchor="end">{viz.hiLabel}</text>
-      <text x={W - 4} y="70" fontFamily="'JetBrains Mono',monospace" fontSize="7" fill="#9CA79B" textAnchor="end">{viz.loLabel}</text>
+      <path className="draw" style={{ ["--len" as string]: 220, ["--rd" as string]: "430ms" }} d={midPath} fill="none" stroke="#61a029" strokeWidth="2.4" strokeDasharray="5 4" strokeLinecap="round" />
+      <text x={W - 4} y="24" fontFamily="'JetBrains Mono',monospace" fontSize="7" fill="#8fd3ac" textAnchor="end">{viz.hiLabel}</text>
+      <text x={W - 4} y="70" fontFamily="'JetBrains Mono',monospace" fontSize="7" fill="#93a095" textAnchor="end">{viz.loLabel}</text>
     </svg>
   );
 }

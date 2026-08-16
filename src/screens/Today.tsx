@@ -241,12 +241,12 @@ export default function Today() {
               }} />
               <div className="il-row-sub" style={{ marginTop: 8 }}>
                 <Receipt title="the band ahead — the math" math={{
-                  methodPlain: "Each day is first divided by its weekday factor, so your weekly rhythm is modeled as structure rather than noise; an AR(1) fit on that adjusted series produces the fan, re-seasonalized day by day. The 14-day total's band comes from 2,000 simulated paths of the fitted model — never from summing daily extremes, which would pretend every day bottoms out at once.",
-                  keyStatPlain: `Next 14 days: ${money(band.lo14)}–${money(band.hi14)} of revenue (95% of simulated paths land inside).`,
-                  keyStatNotation: "weekday-adjusted AR(1) · 2,000-path total band · stationarity-clamped fit",
+                  methodPlain: "Each day is first divided by its weekday factor, so your weekly rhythm is modeled as structure rather than noise; an AR(1) fit on that adjusted series produces the fan, re-seasonalized day by day. The residual scale uses a robust estimator (median-based), so one promo spike or refund day cannot widen every future day's band. The 14-day total's band comes from 2,000 seeded simulated paths — never from summing daily extremes, and the same ledger always draws the same band.",
+                  keyStatPlain: `Next 14 days: ${money(band.lo14)}–${money(band.hi14)} is the planning band — 8 in 10 simulated paths land inside. The wider 95% range is ${money(band.lo14w)}–${money(band.hi14w)}; tail weeks are real, so it is shown, not hidden.`,
+                  keyStatNotation: `weekday-adjusted AR(1) · ${band.sigmaMethod === "robust" ? "robust (MAD) residual scale" : "OLS residual scale"} · seeded 2,000-path totals · 80% planning / 95% disclosed`,
                   citation: { method: "AR(1) banded forecast, weekday-adjusted", source: "your daily revenue" },
                 }}>
-                  <span>Next 14 days: <b>{money(band.lo14)}–{money(band.hi14)}</b> — a range, because ranges are the honest answer.</span>
+                  <span>Next 14 days: <b>{money(band.lo14)}–{money(band.hi14)}</b> — 8 in 10 paths land here; the tails live in the receipt.</span>
                 </Receipt>
               </div>
             </article>

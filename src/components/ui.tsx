@@ -166,16 +166,26 @@ export function Written({ text, mode = "letters", startDelay = 0 }: {
 import type { MathBlock } from "../api/counsel";
 import { findPedigree } from "../engine/pedigree";
 import { dataBasis, type DataBasis } from "../engine/dataBasis";
+import { calibrationRead, isChangepointMethod, type CalibrationRead } from "../engine/calibration";
 
 export function MathSheet({ block, title, onClose }: { block: MathBlock; title?: string; onClose: () => void }) {
   // The three labels on every claim: confidence lives on the card that
   // opened this sheet; freshness + completeness get computed here.
   const [basis, setBasis] = useState<DataBasis | null>(null);
+  // Changepoint-family claims additionally carry the measured false-fire
+  // context: your series' fingerprint against aurora's calibration corpus.
+  const [cal, setCal] = useState<CalibrationRead | null>(null);
   useEffect(() => {
     let on = true;
     dataBasis().then((b) => on && setBasis(b)).catch(() => undefined);
+    if (isChangepointMethod(`${block.citation.method} ${block.methodPlain}`)) {
+      import("../engine/insights")
+        .then(({ ledger }) => ledger())
+        .then((led) => on && setCal(calibrationRead(led.revenue)))
+        .catch(() => undefined);
+    }
     return () => { on = false; };
-  }, []);
+  }, [block]);
   // The pedigree finds the method by its own name — where this math works
   // when it isn't working for a small business.
   const ped = findPedigree(`${block.citation.method} ${block.methodPlain} ${block.keyStatNotation}`);
@@ -224,6 +234,24 @@ export function MathSheet({ block, title, onClose }: { block: MathBlock; title?:
               {basis.flags.map((f) => (
                 <p className="sheet-p basis-flag" key={f}>△ {f}</p>
               ))}
+            </div>
+          )}
+          {cal && (
+            <div className="ped-box cal-box">
+              <div className="sheet-lbl">how often this kind of claim is wrong</div>
+              <p className="sheet-p">{cal.line}</p>
+              {cal.status === "measured" && cal.fdr > 0.25 && (
+                <p className="sheet-p basis-flag">
+                  △ at this autocorrelation, uncalibrated detectors phantom-fire
+                  often — treat a single detection as provisional until it
+                  repeats on fresh data.
+                </p>
+              )}
+              <p className="sheet-p cal-cite">
+                aurora calibration corpus {cal.corpusVersion} ·
+                sha256:{cal.corpusSha256.slice(0, 12)}… · seeded synthetic
+                nulls, production detector paths
+              </p>
             </div>
           )}
           <div className="sheet-notation">{block.keyStatNotation}</div>

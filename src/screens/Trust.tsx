@@ -20,6 +20,7 @@ const REGISTER: Entry[] = [
   { name: "What changed (drivers)", method: "exact identity — Rev = sales × units/sale × $/unit, parts telescope to the move", refuses: "under ~15 sales per 28-day window" },
   { name: "Daily sentinel", method: "weekday median ± 2.5·MAD, US-holiday-aware", refuses: "won't judge a partial day, a holiday, or a weekday with fewer than 3 priors" },
   { name: "Change-points", method: "PELT (rbf cost) + Welch's t-test · parity-tested against the Python reference", refuses: "no break is claimed without p < 0.05" },
+  { name: "Change-point calibration", method: "measured false-fire rates from Aurora corpus v1 — 4,000 seeded null trials per regime cell, production detector paths; your series' autocorrelation is fingerprinted and scored against the matching measured cell in every break receipt", refuses: "outside the measured envelope it says \"outside\" — a rate that was never measured is never quoted" },
   { name: "Price power (A1)", method: "natural experiment around YOUR price change · bootstrap CI", refuses: "no clean price change in the data → no elasticity claim, ever" },
   { name: "Customers at risk (A2)", method: "Kaplan–Meier survival, censored at today", refuses: "guest-heavy data gets an honest gap, not a guess" },
   { name: "Restock math (A3)", method: "newsvendor critical fractile on real demand distribution", refuses: "thin product history → no quantity" },

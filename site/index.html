@@ -10,7 +10,7 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://counsel-site.pages.dev" />
 <meta name="twitter:card" content="summary" />
-<meta name="theme-color" content="#152019" />
+<meta name="theme-color" content="#0f1511" />
 <link rel="icon" href="https://counsel-demo.pages.dev/icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,13 +22,14 @@
    quiet · the advisor writes, the paper tilts, nothing shouts.
    ============================================================ */
 :root{
-  --paper:#F4F1E9; --card:#FBFAF5; --card2:#EFEBDF; --ink:#1F2A23;
-  --muted:#3D4A42; --faint:#75827A; --line:#D9D4C5; --line-strong:#C9C3B2;
-  --forest:#1C4B3A; --forest-tint:#E2EBE5; --brass:#9C7A46; --brass-hi:#CDAE7E;
-  --brass-soft:#D8C19A; --inkcard:#152019; --inkcard2:#1B2820; --bone:#E9E8E2;
-  --bone-dim:#B8BDB4; --line-ink:rgba(233,232,226,.14); --rust:#A05C2C;
+  --paper:#0f1511; --card:#171f19; --card2:#121a14; --ink:#ecf1e8;
+  --muted:#b7c2b8; --faint:#75827a; --line:#232d25; --line-strong:#2e3a30;
+  --forest:#1C4B3A; --forest-tint:rgba(201,243,106,.1); --brass:#cdae7e; --brass-hi:#CDAE7E;
+  --brass-soft:#D8C19A; --inkcard:#131b15; --inkcard2:#1b2820; --bone:#E9E8E2;
+  --bone-dim:#B8BDB4; --line-ink:rgba(233,232,226,.14); --rust:#d89a6a;
   --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,monospace;
+  --accent:#c9f36a; --accent-ink:#17240a; --accent-dim:rgba(201,243,106,.14);
   --ease:cubic-bezier(.22,.9,.24,1); --spring:cubic-bezier(.34,1.46,.44,1);
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -70,7 +71,7 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
 .nav-gh{display:inline-flex;align-items:center;gap:5px;transform:translateY(1px)}
 .nav-gh i{font-style:normal;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase}
 @media(max-width:1020px){.nav-links a:not(.nav-cta):not(.nav-gh){display:none}}
-.nav-cta{background:var(--brass);color:#1b1508!important;border-radius:100px;padding:9px 18px;font-weight:500}
+.nav-cta{background:var(--accent);color:var(--accent-ink)!important;border-radius:100px;padding:9px 18px;font-weight:500}
 .nav-cta:hover{background:var(--brass-hi)}
 @media(max-width:640px){.nav-links a:not(.nav-cta){display:none}}
 
@@ -92,7 +93,7 @@ nav.scrolled{background:rgba(21,32,25,.88);backdrop-filter:blur(14px);box-shadow
 .cta-row{display:flex;gap:14px;margin-top:34px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:10px;border-radius:100px;padding:15px 26px;
   font:600 15px var(--sans);text-decoration:none;transition:transform .25s var(--spring),box-shadow .25s var(--ease),background .2s;cursor:pointer;border:none}
-.btn.brass{background:var(--brass);color:#1b1508;box-shadow:0 12px 30px -10px rgba(156,122,70,.55)}
+.btn.brass{background:var(--accent);color:var(--accent-ink);box-shadow:0 12px 30px -10px rgba(201,243,106,.35)}
 .btn.ghost{background:transparent;color:var(--bone);border:1px solid var(--line-ink)}
 @media(hover:hover){
   .btn.brass:hover{transform:translateY(-2px);background:var(--brass-hi)}
@@ -282,7 +283,7 @@ section{padding:112px 0}
 /* ribbon replica */
 .rb{display:flex;gap:4px;align-items:flex-end;height:104px;margin-top:8px}
 .rb i{flex:1;height:100%;display:flex;gap:2px;align-items:flex-end;font-style:normal}
-.rb b{flex:1;background:#CFDCD3;border-radius:3px 3px 0 0}
+.rb b{flex:1;background:#3a453c;border-radius:3px 3px 0 0}
 .rb u{flex:1;background:var(--forest);border-radius:3px 3px 0 0;text-decoration:none}
 .rb u.t{background:#C8845A}
 .rb-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:7.5px;color:var(--faint);margin-top:5px}
@@ -324,7 +325,7 @@ section{padding:112px 0}
 .pl-name{flex:1;color:var(--ink);text-transform:capitalize}
 .pl-d{font-family:var(--mono);font-size:7px;border-radius:100px;padding:2px 6px}
 .pl-d.up{color:var(--forest);background:var(--forest-tint)}
-.pl-d.dn{color:var(--rust);background:#F3E4D8}
+.pl-d.dn{color:var(--rust);background:rgba(216,154,106,.14)}
 .pl-amt{font-family:var(--mono);font-size:10px;font-weight:600;font-feature-settings:"tnum" 1}
 .pl-total{display:flex;gap:7px;border-top:3px double var(--ink);margin-top:5px;padding:8px 2px 10px;font-size:11px;font-weight:600}
 .pl-total span{flex:1}
@@ -767,8 +768,8 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
           <svg class="fan-svg" viewBox="0 0 300 100" preserveAspectRatio="none">
             <polyline points="0,55 25,48 50,58 75,44 100,52 125,40 150,46" fill="none" stroke="#9CA79B" stroke-width="2.5" stroke-linecap="round"/>
             <polygon points="150,46 190,38 230,34 270,28 300,26 300,74 270,66 230,62 190,56 150,46" fill="rgba(28,75,58,.16)"/>
-            <polyline points="150,46 190,44 230,44 270,42 300,42" fill="none" stroke="#1C4B3A" stroke-width="2.5" stroke-dasharray="1 5" stroke-linecap="round"/>
-            <line x1="150" y1="12" x2="150" y2="88" stroke="#9C7A46" stroke-width="1.4" stroke-dasharray="3 3"/>
+            <polyline points="150,46 190,44 230,44 270,42 300,42" fill="none" stroke="#61a029" stroke-width="2.5" stroke-dasharray="1 5" stroke-linecap="round"/>
+            <line x1="150" y1="12" x2="150" y2="88" stroke="#cdae7e" stroke-width="1.4" stroke-dasharray="3 3"/>
           </svg>
           <div class="rb-lbl"><span>28 days of history</span><span>the 14-day band ahead</span></div>
         </div>
@@ -1015,10 +1016,10 @@ footer{background:var(--inkcard);color:var(--bone-dim);border-top:1px solid var(
     </div>
     <div class="colophon">
       Colophon: set in Fraunces, Inter &amp; JetBrains Mono on hand-grained paper.
-      <span class="sw" style="background:#F4F1E9;border:1px solid rgba(233,232,226,.2)"></span>paper №F4F1E9
-      <span class="sw" style="background:#1C4B3A"></span>forest №1C4B3A
-      <span class="sw" style="background:#9C7A46"></span>brass №9C7A46
-      <span class="sw" style="background:#152019;border:1px solid rgba(233,232,226,.2)"></span>ink №152019
+      <span class="sw" style="background:#0f1511;border:1px solid rgba(233,232,226,.2)"></span>surface №0F1511
+      <span class="sw" style="background:#c9f36a"></span>lime №C9F36A
+      <span class="sw" style="background:#cdae7e"></span>brass №CDAE7E
+      <span class="sw" style="background:#171f19;border:1px solid rgba(233,232,226,.2)"></span>card №171F19
       · no trackers, no cookies, no analytics · this page is one file · made by FantasyLab
     </div>
   </div>
