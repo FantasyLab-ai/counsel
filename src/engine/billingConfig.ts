@@ -6,10 +6,10 @@
 //
 // Fill these from RevenueCat -> Project -> API keys after the account
 // exists (see docs/STORE_LISTING.md release-tracks section).
-// CURRENTLY THE TEST STORE KEY: purchases are SIMULATED (no money, no
-// Apple). Validates the full buy->unlock->lapse->lock loop in TestFlight.
-// BEFORE PUBLIC RELEASE swap to the production key (RC dashboard, Apps):
-//   appl_YaUxMjQjYjkZrAduhrNVlAYCqrC
-export const RC_IOS_KEY = "test_gQjPRVsUGUsyXvnPTDzRcDvpCXU";
+// PRODUCTION App Store key. In TestFlight this still means SANDBOX
+// purchases (no real charges) — real money begins only at public App
+// Store release. Test Store key (test_gQjPRVsUGUsyXvnPTDzRcDvpCXU)
+// retired 2026-08-17 after validating the purchase loop.
+export const RC_IOS_KEY = "appl_YaUxMjQjYjkZrAduhrNVlAYCqrC";
 export const RC_ANDROID_KEY = "";
 export const RC_ENTITLEMENT = "Counsel Pro"; // matches the RC dashboard identifier exactly
