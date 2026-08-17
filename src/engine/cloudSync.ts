@@ -84,6 +84,29 @@ export async function plaidExchange(publicToken: string): Promise<void> {
   await api("/v1/plaid/exchange", { method: "POST", body: JSON.stringify({ public_token: publicToken }) });
 }
 
+/* ------------------------------- cloud Ask --------------------------------
+   The privacy boundary lives in router.ts: the ONLY thing this call may
+   carry is the DerivedSummary the user just approved on the disclosure
+   card — aggregates and the question. followupMenu constrains the model's
+   suggested follow-ups to questions the on-device router can answer. */
+export interface CloudAskReply { verdict: string; body: string; followups: string[] }
+export async function cloudAsk(
+  question: string,
+  figures: { label: string; value: string }[],
+  followupMenu: string[],
+): Promise<CloudAskReply> {
+  await ensureAccount();
+  const res = await api("/v1/ask", {
+    method: "POST",
+    body: JSON.stringify({ question, figures, followupMenu }),
+  });
+  return {
+    verdict: String(res.verdict || ""),
+    body: String(res.body || ""),
+    followups: Array.isArray(res.followups) ? res.followups.map(String) : [],
+  };
+}
+
 function loadPlaidScript(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.Plaid) return resolve();

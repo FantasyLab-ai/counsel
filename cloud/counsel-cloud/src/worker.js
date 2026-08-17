@@ -1370,6 +1370,71 @@ export default {
       }
 
       // -- Plaid Link: token to open the bank picker, then the exchange --
+      // -- Cloud Ask: the ONLY payload is derived aggregates + the question.
+      //    Claude Haiku answers under a hard contract: reference supplied
+      //    figures only, never invent a number, follow-ups only from the
+      //    menu of questions the on-device router can actually answer. --
+      if (path === "/v1/ask" && req.method === "POST") {
+        if (!env.ANTHROPIC_API_KEY) return json(req, 400, { error: "cloud Ask not configured — set ANTHROPIC_API_KEY" });
+        const askBody = await readBody(req);
+        const question = String(askBody?.question || "").slice(0, 400).trim();
+        if (!question) return json(req, 400, { error: "question required" });
+        const figures = (Array.isArray(askBody?.figures) ? askBody.figures.slice(0, 8) : [])
+          .map((f) => ({ label: String(f?.label || "").slice(0, 48), value: String(f?.value || "").slice(0, 48) }))
+          .filter((f) => f.label && f.value);
+        const menu = (Array.isArray(askBody?.followupMenu) ? askBody.followupMenu.slice(0, 8) : [])
+          .map((s) => String(s).slice(0, 80));
+        // cost guard: 40 cloud answers per account per day
+        const day = new Date().toISOString().slice(0, 10);
+        const quotaKey = `askquota:${id}:${day}`;
+        const used = parseInt((await env.ACCOUNTS.get(quotaKey)) || "0", 10);
+        if (used >= 40) return json(req, 429, { error: "cloud Ask daily limit reached — on-device answers still work" });
+        await env.ACCOUNTS.put(quotaKey, String(used + 1), { expirationTtl: 172800 });
+        const sys =
+          "You are Counsel, an honest AI CFO for a small business owner. You receive a few derived aggregate figures and one question. " +
+          "HARD RULES: use ONLY the figures provided — never invent, estimate, or recall any other number, and no industry averages dressed up as their data. " +
+          "If the figures cannot answer the question, say so plainly and name what is missing. " +
+          "Voice: plain English, warm but direct, zero jargon, at most 120 words total. " +
+          'Respond with ONLY a JSON object, no code fences: {"verdict": "one sentence, 14 words max", "body": "2-4 short sentences; \\n\\n between paragraphs", "followups": []}. ' +
+          "followups: 0-2 strings copied EXACTLY from the FOLLOWUP MENU — never write your own.";
+        const userMsg =
+          `FIGURES (everything you know about this business):\n${figures.map((f) => `- ${f.label}: ${f.value}`).join("\n") || "- none provided"}\n\n` +
+          `FOLLOWUP MENU:\n${menu.map((s) => `- ${s}`).join("\n") || "- (empty)"}\n\nQUESTION: ${question}`;
+        let reply;
+        try {
+          const r = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "x-api-key": env.ANTHROPIC_API_KEY,
+              "anthropic-version": "2023-06-01",
+              "content-type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "claude-haiku-4-5-20251001",
+              max_tokens: 400,
+              system: sys,
+              messages: [{ role: "user", content: userMsg }],
+            }),
+          });
+          reply = await r.json();
+          if (!r.ok) {
+            return json(req, 502, { error: `cloud model unavailable (${String(reply?.error?.type || r.status).slice(0, 60)}) — on-device answers still work` });
+          }
+        } catch {
+          return json(req, 502, { error: "cloud model unreachable — on-device answers still work" });
+        }
+        const text = (reply.content || []).map((c) => c.text || "").join("").trim();
+        let parsed = null;
+        try { parsed = JSON.parse(text.replace(/^```json?\s*/i, "").replace(/\s*```$/, "")); } catch { /* plain text fallback */ }
+        const fu = (Array.isArray(parsed?.followups) ? parsed.followups : [])
+          .map((s) => String(s)).filter((s) => menu.includes(s)).slice(0, 2);
+        return json(req, 200, {
+          verdict: String(parsed?.verdict || "Here's the honest read.").slice(0, 220),
+          body: String(parsed?.body || (parsed ? "" : text) || "The cloud model returned nothing readable.").slice(0, 1600),
+          followups: fu,
+        });
+      }
+
       if (path === "/v1/plaid/link-token" && req.method === "POST") {
         const j = await plaidCall(env, "/link/token/create", {
           user: { client_user_id: id },

@@ -24,7 +24,7 @@ function Disclosure({ d, onSend, onLocal }: { d: DerivedSummary; onSend: () => v
       <div className="checked"><span className="cl">Before I go online</span></div>
       <div className="verdict">This one's better answered by the <em>cloud model.</em></div>
       <div className="abody">
-        To do that, I'd send <b>these five figures and your question — nothing else.</b> No
+        To do that, I'd send <b>these figures and your question — nothing else.</b> No
         transactions, no customers, no account names. You decide.
       </div>
       <div className="disclose-box">
@@ -37,7 +37,7 @@ function Disclosure({ d, onSend, onLocal }: { d: DerivedSummary; onSend: () => v
         <div className="dline dq"><span className="dl">your question</span><span className="dv">“{d.question}”</span></div>
       </div>
       <div className="disclose-actions">
-        <button className="dbtn primary" onClick={onSend}>Send those five figures</button>
+        <button className="dbtn primary" onClick={onSend}>Send those figures</button>
         <button className="dbtn" onClick={onLocal}>Keep it on this device</button>
       </div>
     </div>
@@ -49,7 +49,7 @@ function RouteBadge({ decision }: { decision?: RouteDecision }) {
   const onDevice = decision.runWhere !== "cloud";
   return (
     <div className={`route-badge ${onDevice ? "device" : "cloud"}`} title={decision.reason}>
-      {onDevice ? "● answered on this device" : "◌ answered via cloud · 5 figures shared"}
+      {onDevice ? "● answered on this device" : "◌ answered via cloud · approved figures only"}
     </div>
   );
 }
@@ -57,6 +57,14 @@ function RouteBadge({ decision }: { decision?: RouteDecision }) {
 const SEED_QUESTIONS = [
   "Can I afford to hire a part-time helper at $1,400/mo?",
   "So will next month bounce back?",
+];
+// Follow-ups the cloud model may suggest — every one verified answerable
+// by the on-device router, so a suggested chip never dead-ends.
+const CLOUD_FOLLOWUP_MENU = [
+  "Can I afford a helper at $1,400/mo?",
+  "What's my slowest day?",
+  "What should I staff each day?",
+  "Should I raise prices?",
 ];
 const PROMPTS = ["Which product should I restock first?", "Is my pricing too low?", "What's my slowest day?"];
 
@@ -129,17 +137,35 @@ export default function Ask() {
     setTurns((t) => [...t.filter((x) => x.kind !== "thinking"), { kind: "a", a, decision }]);
   }
 
-  async function runCloud(question: string, decision: RouteDecision) {
+  async function runCloud(question: string, decision: RouteDecision, d: DerivedSummary) {
     setTurns((t) => [...t.filter((x) => x.kind !== "disclosure"), { kind: "thinking" }]);
-    // PHASE 2: POST the DerivedSummary (and ONLY that) to the cloud Ask
-    // endpoint. Until that exists, we answer locally and say so honestly.
-    const a = await ask(question);
-    const honest: AskAnswer = {
-      ...a,
-      honestNote:
-        "Cloud path stub: in production this goes to the cloud model with only the five figures you approved. For now the on-device answer stands in.",
-    };
-    setTurns((t) => [...t.filter((x) => x.kind !== "thinking"), { kind: "a", a: honest, decision }]);
+    try {
+      const { cloudAsk } = await import("../engine/cloudSync");
+      const r = await cloudAsk(question, d.figures, CLOUD_FOLLOWUP_MENU);
+      const a: AskAnswer = {
+        id: `cloud-${Date.now()}`,
+        headline: question,
+        confidence: "moderate",
+        confidenceLabel: "Cloud model · aggregates only",
+        checked: d.figures.map((f) => f.label),
+        verdict: r.verdict,
+        body: r.body,
+        honestNote: "Answered by the cloud model from the figures you approved — nothing else left this device.",
+        followups: r.followups,
+      };
+      setTurns((t) => [...t.filter((x) => x.kind !== "thinking"), { kind: "a", a, decision }]);
+    } catch (e) {
+      // The honest fallback: cloud failed, so answer locally and say so.
+      const a = await ask(question);
+      const honest: AskAnswer = {
+        ...a,
+        honestNote: `Cloud call didn't go through (${String(e instanceof Error ? e.message : e).slice(0, 90)}) — this is the on-device answer instead.`,
+      };
+      setTurns((t) => [
+        ...t.filter((x) => x.kind !== "thinking"),
+        { kind: "a", a: honest, decision: { ...decision, runWhere: "device-limited", reason: "cloud unavailable — answered on-device" } },
+      ]);
+    }
   }
 
   async function submit(q: string) {
@@ -160,7 +186,7 @@ export default function Ask() {
     }
     setTurns((t) => t.filter((x) => x.kind !== "thinking"));
 
-    const decision = route(question);
+    const decision = await route(question);
     if (decision.runWhere === "cloud" && decision.disclosure) {
       // The transparency step: show what would be sent, let the user choose.
       setTurns((t) => [...t, { kind: "disclosure", d: decision.disclosure!, decision }]);
@@ -197,7 +223,7 @@ export default function Ask() {
             <Disclosure
               key={i}
               d={t.d}
-              onSend={() => runCloud(t.d.question, t.decision)}
+              onSend={() => runCloud(t.d.question, t.decision, t.d)}
               onLocal={() =>
                 runLocal(t.d.question, { ...t.decision, runWhere: "device-limited", reason: "user chose to keep it on-device" })
               }

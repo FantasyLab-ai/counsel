@@ -85,24 +85,31 @@ export function classify(question: string): { task: TaskType; match?: string } {
   return { task: "ask-open" };
 }
 
-// --- the derived summary (what a cloud call WOULD carry) ---------------------
-// Built from the same aggregates the dashboard shows — nothing else exists in
-// this module to send. In the native app this comes from aurora-core locally.
-export function buildDerivedSummary(question: string): DerivedSummary {
-  return {
-    figures: [
-      { label: "3-mo avg profit", value: "$3,050/mo" },
-      { label: "revenue variance", value: "±30%" },
-      { label: "gross margin", value: "34%" },
-      { label: "cash runway", value: "7.0 months" },
-      { label: "revenue break", value: "Mar 6 · −28%" },
-    ],
-    question,
-  };
+// --- the derived summary (what a cloud call carries) -------------------------
+// Built live from the same engines the dashboard reads — aggregates only,
+// nothing row-shaped exists in this module to send. Engines that can't
+// compute yet simply contribute no figure; the disclosure shows what's real.
+export async function buildDerivedSummary(question: string): Promise<DerivedSummary> {
+  const figures: { label: string; value: string }[] = [];
+  try {
+    const { BASELINE, cashSentry, money, seasonality } = await import("./insights");
+    figures.push({ label: "cash on hand", value: money(BASELINE.cash) });
+    figures.push({ label: "monthly burn", value: money(BASELINE.burn) });
+    figures.push({ label: "runway", value: `${(BASELINE.cash / BASELINE.burn).toFixed(1)} months` });
+    try {
+      const s = await cashSentry();
+      if (s) figures.push({ label: "next 30d revenue band", value: `${money(s.lo30)}–${money(s.hi30)}` });
+    } catch { /* band not computable yet */ }
+    try {
+      const se = await seasonality();
+      figures.push({ label: "weekly rhythm", value: `${se.strongest} run ${se.ratio.toFixed(1)}× ${se.weakest}` });
+    } catch { /* rhythm not visible yet */ }
+  } catch { /* engines unavailable — question goes alone, honestly */ }
+  return { figures: figures.slice(0, 5), question };
 }
 
 // --- the routing policy (the brief's table, verbatim) ------------------------
-export function route(question: string): RouteDecision {
+export async function route(question: string): Promise<RouteDecision> {
   const { task, match } = classify(question);
   const offline = typeof navigator !== "undefined" && navigator.onLine === false;
 
@@ -134,7 +141,7 @@ export function route(question: string): RouteDecision {
     task,
     runWhere: "cloud",
     reason: "open-ended reasoning — better answered by the cloud model",
-    disclosure: buildDerivedSummary(question),
+    disclosure: await buildDerivedSummary(question),
   };
 }
 
