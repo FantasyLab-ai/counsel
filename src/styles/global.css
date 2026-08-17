@@ -1311,3 +1311,19 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
   .tab.on::before { animation: none; }
   .ask-fab { animation: none; }
 }
+
+/* guided connect walk */
+.guide-card { background: var(--card); border: 1px solid rgba(201, 243, 106, 0.22); border-radius: 20px; padding: 18px; margin-bottom: 12px; box-shadow: 0 12px 28px -20px rgba(0,0,0,.6); }
+.guide-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.guide-count { font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.guide-name { font-family: var(--serif); font-size: 21px; font-weight: 500; }
+.guide-what { font-size: 13.5px; line-height: 1.55; color: var(--ink-2); margin-top: 5px; }
+.guide-note { font-size: 12px; line-height: 1.5; color: var(--muted); margin-top: 7px; font-style: italic; }
+.guide-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.guide-dots { display: flex; gap: 6px; margin-top: 14px; }
+.gd { width: 7px; height: 7px; border-radius: 50%; background: #2c362e; }
+.gd.on { background: var(--accent); }
+.gd.done { background: #5a6b4a; }
+.classic-connect { margin-top: 4px; }
+.classic-connect summary { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); cursor: pointer; padding: 8px 2px; }
+.classic-connect summary:hover { color: var(--ink-2); }

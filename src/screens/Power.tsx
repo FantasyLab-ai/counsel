@@ -229,8 +229,45 @@ const LIVE_HELP: Record<CloudProvider, { hint: string; mint: string; url: string
   },
 };
 
+// The guided connect walk: one connector at a time, in the order that
+// pays off fastest, each skippable, each honest about its state.
+// "soon" connectors are fully wired server-side and flip to "ready"
+// the day their platform review clears — update ONLY this table.
+const GUIDE_STEPS: {
+  id: CloudProvider | "csv"; name: string; what: string;
+  status: "ready" | "soon"; note?: string;
+}[] = [
+  { id: "square", name: "Square", status: "ready",
+    what: "your register — sales sync automatically after one sign-in" },
+  { id: "shopify", name: "Shopify", status: "ready",
+    what: "your online store — orders flow in after you sign in",
+    note: "pilot stores: we connect this together — have your your-shop.myshopify.com name handy" },
+  { id: "plaid", name: "Bank account", status: "soon",
+    what: "your expenses, straight from the bank",
+    note: "bank connections are in final review — days away" },
+  { id: "stripe", name: "Stripe", status: "soon",
+    what: "online payments and invoices",
+    note: "under Stripe's platform review — almost there" },
+  { id: "quickbooks", name: "QuickBooks", status: "soon",
+    what: "your books — expenses feed the money map and cash view",
+    note: "Intuit verification underway" },
+  { id: "etsy", name: "Etsy", status: "soon",
+    what: "maker sales from your shop",
+    note: "reapplying under Etsy's new API program" },
+  { id: "csv", name: "A simple file", status: "ready",
+    what: "export a CSV from anywhere — sales or expenses — and drop it in. Always works, nothing to sign into" },
+];
+
 function LiveConnect() {
   const [provider, setProvider] = useState<CloudProvider>("stripe");
+  // Guided walk position — persists so a half-done setup resumes.
+  const [gStep, setGStep] = useState<number>(() => {
+    try { return Math.min(GUIDE_STEPS.length, Number(localStorage.getItem("counsel.connectGuide") || 0)); } catch { return 0; }
+  });
+  const gGo = (i: number) => {
+    setGStep(i);
+    try { localStorage.setItem("counsel.connectGuide", String(i)); } catch { /* fine */ }
+  };
   const [key, setKey] = useState("");
   const [shop, setShop] = useState("");
   const [sqEnv, setSqEnv] = useState<"production" | "sandbox">("production");
@@ -414,6 +451,64 @@ function LiveConnect() {
         </div>
       )}
       <div className="pw-csv-lbl" style={{ marginTop: connected.length ? 14 : 0 }}>add a source</div>
+      {gStep < GUIDE_STEPS.length ? (() => {
+        const g = GUIDE_STEPS[gStep];
+        const isConn = g.id !== "csv" && connected.includes(g.id as CloudProvider);
+        return (
+          <div className="guide-card">
+            <div className="guide-top">
+              <span className="guide-count">{gStep + 1} of {GUIDE_STEPS.length}</span>
+              <span className={`pill ${g.status === "ready" ? "lite-hi" : "lite-fc"}`}>
+                <span className="dot" />{isConn ? "connected" : g.status === "ready" ? "ready to connect" : "coming soon"}
+              </span>
+            </div>
+            <div className="guide-name">{g.name}</div>
+            <div className="guide-what">{g.what}</div>
+            {g.note && <div className="guide-note">{g.note}</div>}
+            {g.id === "shopify" && g.status === "ready" && !isConn && (
+              <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
+                value={shop} onChange={(e) => setShop(e.target.value)} autoComplete="off"
+                aria-label="Shopify shop name" style={{ marginTop: 10 }} />
+            )}
+            <div className="guide-btns">
+              {g.status === "ready" && g.id === "csv" && (
+                <button className="dbtn primary" onClick={() => {
+                  document.getElementById("csv-dropin")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}>Drop in a file below</button>
+              )}
+              {g.status === "ready" && g.id !== "csv" && !isConn && (
+                <button className="dbtn primary" disabled={!!busy || (g.id === "shopify" && !shop.trim())}
+                  onClick={() => doOAuth(g.id as "stripe" | "square" | "etsy" | "shopify" | "quickbooks")}>
+                  Connect {g.name} — sign in
+                </button>
+              )}
+              <button className="dbtn" onClick={() => gGo(gStep + 1)}>
+                {isConn || g.status === "soon" ? "Next" : "I don't have this — skip"}
+              </button>
+              {gStep > 0 && <button className="dbtn" onClick={() => gGo(gStep - 1)}>Back</button>}
+            </div>
+            <div className="guide-dots" aria-hidden="true">
+              {GUIDE_STEPS.map((st, i) => (
+                <span key={st.id} className={`gd ${i === gStep ? "on" : i < gStep ? "done" : ""}`} />
+              ))}
+            </div>
+          </div>
+        );
+      })() : (
+        <div className="guide-card">
+          <div className="guide-name">That's the tour.</div>
+          <div className="guide-what">
+            {connected.length
+              ? `${connected.length} source${connected.length > 1 ? "s" : ""} connected — your numbers are flowing.`
+              : "Nothing connected yet — the file drop below always works, and the walk is here whenever."}
+          </div>
+          <div className="guide-btns">
+            <button className="dbtn" onClick={() => gGo(0)}>Walk through again</button>
+          </div>
+        </div>
+      )}
+      <details className="classic-connect">
+        <summary>all connection options (the full list)</summary>
       <div className="lc-form">
         <select className="ps-select" value={provider} aria-label="Provider"
           onChange={(e) => { setProvider(e.target.value as CloudProvider); setStatus(null); }}>
@@ -505,6 +600,7 @@ function LiveConnect() {
           </button>
         )}
       </div>
+      </details>
       {connected.length > 0 && (
         <div className="pulse-row">
           <div className="pulse-txt">
@@ -593,7 +689,7 @@ function DropIn() {
   }
 
   return (
-    <article className="mcard open il-card dropin">
+    <article className="mcard open il-card dropin" id="csv-dropin">
       <div className="il-head">
         <span className="il-kick">Use YOUR data — right now</span>
         <span className={`pill ${active ? "lite-hi" : "lite-fc"}`}><span className="dot" />
