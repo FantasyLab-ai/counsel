@@ -68,6 +68,9 @@ export function hasUserData(): boolean {
 
 export function storeUserData(charges: Charge[] | null, expenses: Expense[] | null, name: string): void {
   try {
+    // Real data arriving always exits the showroom: one connection or
+    // import means the user came for THEIR numbers. Demo never mixes in.
+    localStorage.removeItem(K_DEMO_VIEW);
     if (charges) localStorage.setItem(K_CHARGES, JSON.stringify(charges));
     if (expenses) localStorage.setItem(K_EXPENSES, JSON.stringify(expenses));
     localStorage.setItem(K_META, JSON.stringify({
@@ -103,6 +106,9 @@ export async function getDaily(): Promise<DailySeries> {
     const dates = [...byDay.keys()].sort();
     return { dates, revenue: dates.map((d) => Math.round(byDay.get(d)! * 100) / 100) };
   }
+  // Live mode NEVER falls back to the demo file — a connected business
+  // with no revenue rows yet sees honest emptiness, not Kiln & Co.
+  if (dataMode() === "live") return { dates: [], revenue: [] };
   return (await fetch("/kiln_daily.json")).json();
 }
 
@@ -147,6 +153,9 @@ export async function getEnriched(demoLoader: () => Promise<EnrichedLedger>): Pr
     });
     return { products, priceChange: pc, charges: uc };
   }
+  if (dataMode() === "live") {
+    return { products: [], priceChange: { product: "", date: "", from: 0, to: 0 }, charges: [] };
+  }
   return demoLoader();
 }
 
@@ -154,5 +163,8 @@ export async function getEnriched(demoLoader: () => Promise<EnrichedLedger>): Pr
 export async function getExpenses(demoLoader: () => Promise<Expense[]>): Promise<Expense[]> {
   const ue = userExpenses();
   if (ue && ue.length) return ue;
+  // Same rule: a live business without expenses connected gets an empty
+  // list (screens show their awaiting cards) — never demo spending.
+  if (dataMode() === "live") return [];
   return demoLoader();
 }

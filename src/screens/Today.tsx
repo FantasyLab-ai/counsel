@@ -128,7 +128,13 @@ export default function Today() {
         </div>
       </div>
       <div className="greet">
-        {brief.greeting.date} · <b>{displayName()}</b>
+        {(() => {
+          const now = new Date();
+          const day = now.toLocaleDateString("en-US", { weekday: "long" });
+          const h = now.getHours();
+          const part = h < 5 ? "night" : h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+          return `${day} ${part}`;
+        })()} · <b>{displayName()}</b>
       </div>
 
       {digest && (

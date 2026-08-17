@@ -1277,3 +1277,37 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
 .coach-got { margin-top: 4px; }
 .eyebrow-sub { font-size: 12px; color: var(--muted); margin: -8px 0 12px; line-height: 1.5; }
 .cal-detail { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 7px; line-height: 1.6; }
+
+/* ===========================================================================
+   Orchestration pass (2026-08): the app answers your fingers. Every card
+   presses, the dock's active tab sits in a lit pill, the Ask diamond
+   breathes while idle. All gated by prefers-reduced-motion below.
+   ========================================================================== */
+.mcard, .tile, .row-card, .hub-card, .srow.tap, .setup-banner, .post, .coach-card {
+  transition: transform var(--d-fast) var(--spring),
+              box-shadow var(--d-norm) var(--ease-out),
+              border-color var(--d-norm) var(--ease-out);
+}
+.mcard:active, .tile:active, .row-card:active, .hub-card:active,
+.srow.tap:active, .setup-banner:active, .coach-card:active {
+  transform: scale(0.985);
+}
+.tab { position: relative; }
+.tab.on::before {
+  content: ""; position: absolute; inset: -2px -6px;
+  background: var(--accent-dim); border-radius: 14px; z-index: -1;
+  animation: tabglow var(--d-norm) var(--ease-out);
+}
+@keyframes tabglow { from { opacity: 0; transform: scale(.85); } }
+.ask-fab { animation: fabbreathe 4.5s ease-in-out infinite; }
+@keyframes fabbreathe {
+  0%, 100% { box-shadow: 0 14px 30px -12px rgba(201, 243, 106, 0.25); }
+  50% { box-shadow: 0 14px 38px -10px rgba(201, 243, 106, 0.45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mcard, .tile, .row-card, .hub-card, .srow.tap, .setup-banner, .post, .coach-card { transition: none; }
+  .mcard:active, .tile:active, .row-card:active, .hub-card:active,
+  .srow.tap:active, .setup-banner:active, .coach-card:active { transform: none; }
+  .tab.on::before { animation: none; }
+  .ask-fab { animation: none; }
+}
