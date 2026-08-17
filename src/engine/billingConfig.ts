@@ -8,4 +8,4 @@
 // exists (see docs/STORE_LISTING.md release-tracks section).
 export const RC_IOS_KEY = "";
 export const RC_ANDROID_KEY = "";
-export const RC_ENTITLEMENT = "pro";
+export const RC_ENTITLEMENT = "Counsel Pro"; // matches the RC dashboard identifier exactly
