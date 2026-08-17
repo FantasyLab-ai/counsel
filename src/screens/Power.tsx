@@ -222,6 +222,11 @@ const LIVE_HELP: Record<CloudProvider, { hint: string; mint: string; url: string
     mint: "one tap: sign in on Etsy, approve transactions + shop read access",
     url: "",
   },
+  quickbooks: {
+    hint: "no key needed — you sign in with Intuit and approve read access",
+    mint: "one tap: sign in with Intuit, approve accounting read access — your expenses flow in",
+    url: "",
+  },
 };
 
 function LiveConnect() {
@@ -255,7 +260,7 @@ function LiveConnect() {
     }
   }, []);
 
-  async function doOAuth(prov: "stripe" | "square" | "etsy" | "shopify") {
+  async function doOAuth(prov: "stripe" | "square" | "etsy" | "shopify" | "quickbooks") {
     setBusy(`opening ${prov} sign-in…`);
     setStatus(null);
     try {
@@ -417,6 +422,7 @@ function LiveConnect() {
           <option value="shopify">Shopify</option>
           <option value="plaid">Bank — expenses (Plaid)</option>
           <option value="etsy">Etsy — maker sales</option>
+          <option value="quickbooks">QuickBooks — expenses</option>
         </select>
         {provider === "shopify" && (
           <>
@@ -455,7 +461,17 @@ function LiveConnect() {
             Connect with Etsy — sign in
           </button>
         )}
-        {provider !== "plaid" && provider !== "etsy" && (
+        {provider === "quickbooks" && (
+          <>
+            <button className="dbtn primary" disabled={!!busy} onClick={() => doOAuth("quickbooks")}>
+              Connect with QuickBooks — sign in
+            </button>
+            <div className="lc-mint">
+              <b>One tap:</b> sign in with Intuit and approve read access to your books — expenses flow into the money map, audit, and cash view.
+            </div>
+          </>
+        )}
+        {provider !== "plaid" && provider !== "etsy" && provider !== "quickbooks" && (
           <input className="dt-input" type="password" placeholder={provider === "square" ? "or paste an access token instead" : help.hint}
             value={key} onChange={(e) => setKey(e.target.value)} autoComplete="off" aria-label={`${provider} access key`} />
         )}

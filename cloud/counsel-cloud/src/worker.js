@@ -467,6 +467,83 @@ async function etsyGetShopId(env, cred) {
   if (!shopId) throw new Error("no Etsy shop found for this account");
   return shopId;
 }
+/* ---------------------- QuickBooks (Intuit) OAuth ---------------------- */
+// Expenses from QBO Purchase records. Dev keys reach sandbox companies
+// only; production keys (after Intuit's app assessment) reach real ones.
+const QBO_REDIRECT = "https://counsel-cloud.fantasy-labai.workers.dev/v1/oauth/quickbooks/callback";
+const QBO_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";
+function qboApiBase(cred) {
+  return cred.env === "production"
+    ? "https://quickbooks.api.intuit.com"
+    : "https://sandbox-quickbooks.api.intuit.com";
+}
+function qboAuthorizeUrl(env, state) {
+  const u = new URL("https://appcenter.intuit.com/connect/oauth2");
+  u.searchParams.set("client_id", env.QBO_CLIENT_ID || "");
+  u.searchParams.set("response_type", "code");
+  u.searchParams.set("scope", "com.intuit.quickbooks.accounting");
+  u.searchParams.set("redirect_uri", QBO_REDIRECT);
+  u.searchParams.set("state", state);
+  return u.toString();
+}
+async function qboTokenCall(env, params) {
+  const basic = btoa(`${env.QBO_CLIENT_ID}:${env.QBO_CLIENT_SECRET}`);
+  const r = await fetch(QBO_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basic}`,
+      "content-type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body: new URLSearchParams(params),
+  });
+  const j = await r.json();
+  if (!r.ok || !j.access_token) {
+    throw new Error(String(j.error_description || j.error || "quickbooks token exchange failed").slice(0, 120));
+  }
+  return j;
+}
+// Returns { rows, cred } — refresh token rotates; caller persists cred.
+async function qboExpenses(env, cred0, sinceUnix) {
+  const fresh = await qboTokenCall(env, {
+    grant_type: "refresh_token",
+    refresh_token: cred0.refresh,
+  });
+  const cred = { ...cred0, refresh: fresh.refresh_token || cred0.refresh };
+  const access = fresh.access_token;
+  const since = new Date(sinceUnix * 1000).toISOString().slice(0, 10);
+  const rows = [];
+  for (let page = 0; page < 10 && rows.length < 3000; page++) {
+    const q = `select * from Purchase where TxnDate >= '${since}' orderby TxnDate startposition ${page * 100 + 1} maxresults 100`;
+    const r = await fetch(
+      `${qboApiBase(cred)}/v3/company/${cred.realm}/query?query=${encodeURIComponent(q)}&minorversion=75`,
+      { headers: { Authorization: `Bearer ${access}`, Accept: "application/json" } },
+    );
+    if (!r.ok) {
+      if (page === 0) throw new Error(`quickbooks query failed (${r.status})`);
+      break;
+    }
+    const data = await r.json();
+    const purchases = data.QueryResponse?.Purchase ?? [];
+    for (const pu of purchases) {
+      if (pu.Credit === true) continue; // refunds are not spend
+      const amount = Math.round(Number(pu.TotalAmt || 0) * 100) / 100;
+      if (!(amount > 0)) continue;
+      const line = (pu.Line || []).find((l) => l.AccountBasedExpenseLineDetail?.AccountRef?.name);
+      rows.push({
+        d: String(pu.TxnDate || "").slice(0, 10),
+        vendor: String(pu.EntityRef?.name || pu.PaymentType || "unknown").slice(0, 60),
+        amount,
+        cat: String(line?.AccountBasedExpenseLineDetail?.AccountRef?.name || "other")
+          .toLowerCase().slice(0, 40),
+      });
+    }
+    if (purchases.length < 100) break;
+  }
+  rows.sort((a, b) => (a.d < b.d ? -1 : 1));
+  return { rows, cred };
+}
+
 // Returns { rows, cred } — cred carries the rotated refresh token + shop_id to persist.
 async function etsyPull(env, cred0, sinceUnix) {
   // refresh first (tokens expire hourly; refresh rotates)
@@ -888,6 +965,7 @@ async function hasLiveCredential(env, acct) {
       if (prov === "square" && cred.env !== "sandbox") return true;
       if (prov === "shopify") return true;
       if (prov === "plaid" && cred.env === "production") return true;
+      if (prov === "quickbooks" && cred.env === "production") return true;
     } catch {
       return true; // unreadable credential -> refuse, err on the safe side
     }
@@ -1013,6 +1091,36 @@ export default {
           acct.providers.square = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
           await saveAcct(env, acctId, acct);
           return finish(true, "connected=square");
+        } catch (e) {
+          return finish(false, `error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
+        }
+      }
+
+      // -- QuickBooks OAuth callback: code + realmId -> rotating refresh cred --
+      if (path === "/v1/oauth/quickbooks/callback" && req.method === "GET") {
+        const code = url.searchParams.get("code");
+        const state = url.searchParams.get("state");
+        const realm = url.searchParams.get("realmId");
+        const back = (q) => new Response(null, { status: 302, headers: { Location: `${APP_REDIRECT}?${q}` } });
+        if (!code || !state || !realm) return back("error=quickbooks");
+        const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
+        if (!st) return back("error=quickbooks_expired");
+        const acctId = st.id;
+        const finish = (ok, q) => st.native ? nativeDone(ok, "QuickBooks") : back(q);
+        await env.ACCOUNTS.delete(`oauthstate:${state}`);
+        try {
+          const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
+          if (!raw) return finish(false, "error=quickbooks_account");
+          const acct = JSON.parse(raw);
+          const j = await qboTokenCall(env, {
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: QBO_REDIRECT,
+          });
+          const cred = { refresh: j.refresh_token, realm, env: env.QBO_ENV || "sandbox" };
+          acct.providers.quickbooks = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
+          await saveAcct(env, acctId, acct);
+          return finish(true, "connected=quickbooks");
         } catch (e) {
           return finish(false, `error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
         }
@@ -1174,6 +1282,15 @@ export default {
         return json(req, 200, { ok: true });
       }
 
+      // -- QuickBooks OAuth start: mint state -> account, return URL --
+      if (path === "/v1/oauth/quickbooks/start" && req.method === "POST") {
+        if (!env.QBO_CLIENT_ID) return json(req, 400, { error: "QuickBooks not configured — set QBO_CLIENT_ID (var) + QBO_CLIENT_SECRET (secret)" });
+        const qbBody = (await readBody(req)) ?? {};
+        const state = `qb_${randHex(16)}`;
+        await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, native: !!qbBody.native }), { expirationTtl: 600 });
+        return json(req, 200, { url: qboAuthorizeUrl(env, state) });
+      }
+
       // -- Etsy OAuth start (PKCE): mint state+verifier, return authorize URL --
       if (path === "/v1/oauth/etsy/start" && req.method === "POST") {
         if (!env.ETSY_CLIENT_ID) return json(req, 400, { error: "Etsy not configured — set ETSY_CLIENT_ID (var)" });
@@ -1316,6 +1433,8 @@ export default {
           }
           if (provider === "etsy") {
             return json(req, 400, { error: "Etsy connects via sign-in — use /v1/oauth/etsy/start" });
+          } else if (provider === "quickbooks") {
+            return json(req, 400, { error: "QuickBooks connects via sign-in — use /v1/oauth/quickbooks/start" });
           }
           const body = await readBody(req);
           if (!body) return json(req, 400, { error: "bad body" });
@@ -1356,6 +1475,14 @@ export default {
               const rows = await plaidExpenses(env, cred);
               pulled.plaid = rows.length;
               liveExpenses.push(...rows);
+              continue;
+            }
+            if (provider === "quickbooks") {
+              const { rows, cred: fresh } = await qboExpenses(env, cred, sinceUnix);
+              pulled.quickbooks = rows.length;
+              liveExpenses.push(...rows);
+              acct.providers.quickbooks.t = await sealToken(env, JSON.stringify(fresh));
+              await saveAcct(env, id, acct);
               continue;
             }
             if (provider === "etsy") {

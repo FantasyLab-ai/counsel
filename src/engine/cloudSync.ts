@@ -11,7 +11,7 @@ import type { Charge, Expense } from "./tierMath";
 const BASE = "https://counsel-cloud.fantasy-labai.workers.dev";
 const K_ACCOUNT = "counsel.cloud.account";
 
-export type CloudProvider = "stripe" | "square" | "shopify" | "plaid" | "etsy";
+export type CloudProvider = "stripe" | "square" | "shopify" | "plaid" | "etsy" | "quickbooks";
 
 interface CloudAccount { accountId: string; accountSecret: string }
 
@@ -127,7 +127,7 @@ export function isNativeApp(): boolean {
   } catch { return false; }
 }
 
-export async function oauthConnectUrl(provider: "stripe" | "square" | "etsy" | "shopify", extra?: { shop?: string }): Promise<string> {
+export async function oauthConnectUrl(provider: "stripe" | "square" | "etsy" | "shopify" | "quickbooks", extra?: { shop?: string }): Promise<string> {
   await ensureAccount();
   const body = { ...(extra ?? {}), native: isNativeApp() };
   const res = await api(`/v1/oauth/${provider}/start`, { method: "POST", body: JSON.stringify(body) });
