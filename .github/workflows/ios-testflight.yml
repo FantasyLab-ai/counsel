@@ -65,8 +65,15 @@ jobs:
               )
               setup_ci
               # Create (or fetch) the distribution cert + profile through
-              # the API — this is the no-Mac signing path.
-              cert(api_key: api_key)
+              # the API — this is the no-Mac signing path. The keychain
+              # must be named explicitly on CI or cert cannot find its
+              # own import ("Could not find the newly generated
+              # certificate installed").
+              cert(
+                api_key: api_key,
+                keychain_path: File.expand_path("~/Library/Keychains/fastlane_tmp_keychain-db"),
+                keychain_password: "",
+              )
               sigh(api_key: api_key, app_identifier: "ai.fantasylab.counsel")
               update_code_signing_settings(
                 use_automatic_signing: false,
