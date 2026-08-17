@@ -21,10 +21,17 @@ on:
 
 jobs:
   build-upload:
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+
+      - name: Select newest Xcode (App Store requires the current SDK)
+        run: |
+          ls -d /Applications/Xcode*.app
+          latest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          sudo xcode-select -s "${latest:-/Applications/Xcode.app}"
+          xcodebuild -version
 
       - uses: actions/setup-node@v4
         with:
