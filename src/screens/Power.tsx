@@ -672,9 +672,37 @@ function DropIn() {
   const chargesRef = useRef<HTMLInputElement>(null);
   const expensesRef = useRef<HTMLInputElement>(null);
   const postsRef = useRef<HTMLInputElement>(null);
+  const anyRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
   const [active, setActive] = useState(hasUserData());
   const meta = userMeta();
+
+  // The universal drop: many files at once — CSVs (auto-detected sales vs
+  // expenses), PDF statements, receipt photos. All parsed on this device.
+  async function onBatch(list: FileList | null) {
+    if (!list?.length) return;
+    const files = [...list];
+    setStatus({ ok: true, msg: `reading ${files.length} file${files.length > 1 ? "s" : ""}…` });
+    try {
+      const { intakeFiles } = await import("../engine/fileIntake");
+      const r = await intakeFiles(files, (s) => setStatus({ ok: true, msg: s }));
+      if (!r.charges.length && !r.expenses.length) {
+        setStatus({ ok: false, msg: r.notes.join(" · ") || "nothing usable found in those files" });
+        return;
+      }
+      const label = files.length === 1 ? files[0].name : `${files.length} files`;
+      storeUserData(r.charges.length ? (r.charges as never) : null, r.expenses.length ? (r.expenses as never) : null, label);
+      setActive(true);
+      const summary = [
+        r.charges.length ? `${r.charges.length} sales rows` : "",
+        r.expenses.length ? `${r.expenses.length} expense rows` : "",
+      ].filter(Boolean).join(" + ");
+      setStatus({ ok: true, msg: `${summary} loaded · ${r.notes.join(" · ")} — reloading on your data…` });
+      setTimeout(() => window.location.assign("/insights"), 1600);
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
+    }
+  }
 
   async function onFile(kind: "charges" | "expenses" | "posts", file: File | undefined) {
     if (!file) return;
@@ -707,7 +735,9 @@ function DropIn() {
   }
 
   return (
-    <article className="mcard open il-card dropin" id="csv-dropin">
+    <article className="mcard open il-card dropin" id="csv-dropin"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); onBatch(e.dataTransfer?.files ?? null); }}>
       <div className="il-head">
         <span className="il-kick">Use YOUR data — right now</span>
         <span className={`pill ${active ? "lite-hi" : "lite-fc"}`}><span className="dot" />
@@ -715,21 +745,26 @@ function DropIn() {
         </span>
       </div>
       <div className="mmean">
-        Drop a CSV and every engine recomputes on your business — parsed <b>on this
-        device</b>, stored <b>on this device</b>, never uploaded. Sales/charges
-        need just <code>date</code> + <code>amount</code> (product, qty,
-        unit_price, customer_id, fee unlock more engines).
+        Drop in what you have — <b>several files at once</b>: CSVs (sales or
+        expenses, told apart automatically), PDF bank statements, even receipt
+        photos. Everything parses <b>on this device</b>, stored <b>on this
+        device</b>, never uploaded. Sales CSVs need just <code>date</code> +
+        <code>amount</code>; the rest unlocks more engines.
       </div>
       <div className="dropin-row">
-        <button className="dbtn primary" onClick={() => chargesRef.current?.click()}>Load sales CSV</button>
-        <button className="dbtn" onClick={() => expensesRef.current?.click()}>Load expenses CSV</button>
-        <button className="dbtn" onClick={() => postsRef.current?.click()}>Load posts CSV</button>
+        <button className="dbtn primary" onClick={() => anyRef.current?.click()}>Drop in files — CSV · PDF · photos</button>
+        <button className="dbtn" onClick={() => chargesRef.current?.click()}>Sales CSV only</button>
+        <button className="dbtn" onClick={() => expensesRef.current?.click()}>Expenses CSV only</button>
+        <button className="dbtn" onClick={() => postsRef.current?.click()}>Posts CSV</button>
         {active && (
           <button className="dbtn" onClick={() => { clearUserData(); setActive(false); setStatus({ ok: true, msg: "back to the demo ledger — reload any screen" }); }}>
             Reset to demo
           </button>
         )}
       </div>
+      <input ref={anyRef} type="file" multiple hidden
+             accept=".csv,.tsv,.txt,.pdf,.png,.jpg,.jpeg,.webp,text/csv,application/pdf,image/*"
+             onChange={(e) => { onBatch(e.target.files); e.target.value = ""; }} />
       <input ref={chargesRef} type="file" accept=".csv,text/csv" hidden
              onChange={(e) => onFile("charges", e.target.files?.[0])} />
       <input ref={expensesRef} type="file" accept=".csv,text/csv" hidden
@@ -738,8 +773,9 @@ function DropIn() {
              onChange={(e) => onFile("posts", e.target.files?.[0])} />
       {status && <div className={`dropin-status ${status.ok ? "ok" : "err"}`}>{status.msg}</div>}
       <div className="il-cite">
-        works with bank exports, Etsy/Shopify order exports, or any spreadsheet saved as CSV ·
-        money baselines (margin, cash on hand) stay demo until expenses/bank data is loaded — cards say which is which
+        works with bank exports, Etsy/Shopify order exports, PDF statements (with a text layer),
+        receipt photos (the photo reader downloads once; photos never leave the device) ·
+        money baselines stay demo until expenses/bank data is loaded — cards say which is which
       </div>
     </article>
   );

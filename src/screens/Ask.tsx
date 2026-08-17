@@ -174,6 +174,26 @@ export default function Ask() {
     setInput("");
     setTurns((t) => [...t, { kind: "q", text: question }]);
 
+    // Action requests aren't questions: "connect a source", "load more
+    // data" — those go to Power Up, not to a model.
+    const ACTION_RE = /\b(connect|link|hook ?up)\b.*\b(source|bank|data|square|stripe|shopify|etsy|quickbooks)\b|what (do|should) i connect|connect (another|a) source|\b(load|import|upload|drop|add)\b.*\b(data|csv|file|statement|receipt|expense)|load more data|go live/i;
+    if (ACTION_RE.test(question)) {
+      const a: AskAnswer = {
+        id: `act-${Date.now()}`,
+        headline: question,
+        confidence: "moderate",
+        confidenceLabel: "Action",
+        checked: ["Power Up"],
+        verdict: "That's a doing thing — <em>let's go do it.</em>",
+        body: "Connecting sources and dropping in files both live on Power Up. Taking you there now — the guided walk starts at the top, the file drop is just below it.",
+        honestNote: "",
+        followups: [],
+      };
+      setTurns((t) => [...t, { kind: "a", a }]);
+      setTimeout(() => nav("/power"), 1100);
+      return;
+    }
+
     // Ask v2: the intent router first. If a REAL engine can answer this
     // question with computed numbers, it stays on-device — no cloud consent
     // needed, because nothing would leave.
