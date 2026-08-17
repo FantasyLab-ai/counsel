@@ -74,7 +74,12 @@ function corsHeaders(req) {
   const origin = req.headers.get("Origin") || "";
   const ok = /^https:\/\/([a-z0-9-]+\.)?counsel-demo\.pages\.dev$/.test(origin)
     || /^http:\/\/localhost(:\d+)?$/.test(origin)
-    || /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin);
+    || /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)
+    // the native shells: iOS serves from capacitor://localhost, Android
+    // from https://localhost — without these every in-app fetch dies as
+    // a WebKit "Load failed" before it ever leaves the phone
+    || /^capacitor:\/\/localhost$/.test(origin)
+    || /^https:\/\/localhost(:\d+)?$/.test(origin);
   return {
     "Access-Control-Allow-Origin": ok ? origin : "https://counsel-demo.pages.dev",
     "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
