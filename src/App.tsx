@@ -219,7 +219,9 @@ export default function App() {
           <span className="fab-diamond" aria-hidden="true">◆</span>
         </button>
       )}
-      {!inOnboarding && pathname !== "/packet" && <TabBar />}
+      {/* No dock on /ask: the floating tab bar would sit on the composer.
+          Ask is a room you enter by FAB and leave by its close button. */}
+      {!inOnboarding && pathname !== "/packet" && pathname !== "/ask" && <TabBar />}
     </div>
   );
 }

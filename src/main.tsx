@@ -11,6 +11,12 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
   });
 }
 
+// Store billing (native builds only; dormant on web and until the
+// RevenueCat keys exist). Applies an active subscription to the Pro
+// entitlement at startup and keeps listening for changes.
+import { initBilling } from "./engine/billing";
+initBilling().catch(() => { /* billing must never block the app */ });
+
 // Capture the Android install prompt EARLY — it fires before screens mount.
 declare global { interface Window { __deferredInstall?: Event & { prompt(): Promise<void> } } }
 window.addEventListener("beforeinstallprompt", (e) => {

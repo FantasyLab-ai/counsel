@@ -3,16 +3,38 @@
 // countdown timers, no fake scarcity, no guilt buttons. The honesty is
 // free; Pro is Counsel working for you.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BackBtn, Reveal, tapFeedback } from "../components/ui";
 import {
   PRO_FEATURES, isPro, redeemFoundingCode, tierLabel,
 } from "../engine/entitlement";
+import { billingAvailable, listPackages, purchase, restore } from "../engine/billing";
 
 export default function Pro() {
   const [code, setCode] = useState("");
   const [state, setState] = useState<"idle" | "bad" | "good">("idle");
+  const [pkgs, setPkgs] = useState<{ id: string; identifier: string; title: string }[]>([]);
+  const [busy, setBusy] = useState(false);
   const pro = isPro();
+
+  // Native store builds with billing configured show real buy buttons;
+  // everywhere else the paywall stays informational + founding codes.
+  useEffect(() => {
+    if (billingAvailable()) listPackages().then(setPkgs).catch(() => undefined);
+  }, []);
+
+  async function buy(identifier: string) {
+    tapFeedback(); setBusy(true);
+    try {
+      if (await purchase(identifier)) window.location.assign("/");
+    } finally { setBusy(false); }
+  }
+  async function doRestore() {
+    tapFeedback(); setBusy(true);
+    try {
+      if (await restore()) window.location.assign("/");
+    } finally { setBusy(false); }
+  }
 
   async function redeem() {
     tapFeedback();
@@ -62,11 +84,30 @@ export default function Pro() {
               <span className="num">$14.99</span>
               <span className="dlt flat">/ month · or $119/yr (2 months free)</span>
             </div>
-            <div className="mmean">
-              Billing arrives with the app-store builds. Until then, Pro is
-              open only to founding members — the twelve pilot businesses
-              helping test Counsel keep it free for life.
-            </div>
+            {pkgs.length > 0 ? (
+              <>
+                {pkgs.map((p) => (
+                  <button key={p.id} className="btn" style={{ marginTop: 10 }}
+                          disabled={busy} onClick={() => buy(p.identifier)}>
+                    {busy ? "…" : `Subscribe · ${p.title}`}
+                  </button>
+                ))}
+                <button className="subbtn" style={{ width: "100%" }} disabled={busy}
+                        onClick={doRestore}>
+                  already subscribed? restore purchases
+                </button>
+                <div className="mmean" style={{ marginTop: 10 }}>
+                  Billed by the app store; cancel anytime in your store
+                  subscriptions. The math stays free either way.
+                </div>
+              </>
+            ) : (
+              <div className="mmean">
+                Billing arrives with the app-store builds. Until then, Pro is
+                open only to founding members — the twelve pilot businesses
+                helping test Counsel keep it free for life.
+              </div>
+            )}
             <div className="field" style={{ marginTop: 14 }}>
               <input
                 value={code}

@@ -87,16 +87,24 @@ export async function redeemFoundingCode(code: string): Promise<boolean> {
   return true;
 }
 
-/** Store-billing hook. When RevenueCat lands with the store builds this
- *  becomes the entitlement listener; until then it exists so gates are
- *  written against the final shape. */
+/** Store-billing hooks — driven by RevenueCat's entitlement state (see
+ *  engine/billing.ts). Founding tiers are never store-sourced, so a
+ *  lapsed subscription can only revoke what a subscription granted. */
 export function grantStorePro(): void {
+  if (proState().tier === "founding") return; // founding outranks store
   const state: ProState = {
     tier: "pro",
     since: new Date().toISOString().slice(0, 10),
     source: "store",
   };
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* noop */ }
+}
+
+export function revokeStorePro(): void {
+  const cur = proState();
+  if (cur.tier === "pro" && cur.source === "store") {
+    try { localStorage.removeItem(KEY); } catch { /* noop */ }
+  }
 }
 
 /** What Pro includes — one list, used by the paywall and any gate copy.
