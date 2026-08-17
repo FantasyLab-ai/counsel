@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PERSONA_GROUPS, PERSONAS, setBusinessName, setPersona } from "../engine/persona";
-import { connectProvider, syncNow, type CloudProvider } from "../engine/cloudSync";
+import { syncNow } from "../engine/cloudSync";
 import { parseCharges } from "../engine/csvParse";
 import { storeUserData, userCharges } from "../engine/dataSource";
 import { money } from "../engine/tierMath";
@@ -37,13 +37,11 @@ export default function Onboarding() {
   const persona = PERSONAS.find((p) => p.id === who)!;
   const [done, setDone] = useState(0); // analyzing checklist progress
 
-  // v3 connect-first: real doors on step 3.
+  // v4 connect-first: the SAME one-tap sign-in the Power walkthrough uses —
+  // no keys, no tokens. Square/Shopify are live; the rest say so honestly.
   const csvRef = useRef<HTMLInputElement>(null);
   const [liveForm, setLiveForm] = useState(false);
-  const [obProvider, setObProvider] = useState<CloudProvider>("stripe");
-  const [obKey, setObKey] = useState("");
   const [obShop, setObShop] = useState("");
-  const [obEnv, setObEnv] = useState<"production" | "sandbox">("production");
   const [obBusy, setObBusy] = useState<string | null>(null);
   const [obErr, setObErr] = useState<string | null>(null);
   const [usedReal, setUsedReal] = useState(false);
@@ -63,19 +61,41 @@ export default function Onboarding() {
     }
   }
 
-  async function obConnect() {
+  async function obOAuth(prov: "square" | "shopify") {
     setObErr(null);
-    setObBusy("validating with the provider…");
+    if (prov === "shopify" && !obShop.trim()) {
+      setObErr("enter your your-shop.myshopify.com name first");
+      return;
+    }
+    setObBusy(`opening ${prov === "square" ? "Square" : "Shopify"} sign-in…`);
     try {
-      const creds = obProvider === "stripe" ? { key: obKey.trim() }
-        : obProvider === "square" ? { token: obKey.trim(), env: obEnv }
-        : { shop: obShop.trim(), token: obKey.trim() };
-      await connectProvider(obProvider, creds);
-      setObBusy("pulling your transactions…");
-      await syncNow();
-      setObKey("");
-      setUsedReal(true);
-      setStep(4);
+      const { oauthConnectUrl, isNativeApp, cloudStatus } = await import("../engine/cloudSync");
+      const url = await oauthConnectUrl(prov, prov === "shopify" ? { shop: obShop.trim() } : undefined);
+      if (!isNativeApp()) {
+        // Web: full-page redirect; the callback returns to Power Up, so
+        // don't bounce them back into onboarding afterwards.
+        markVisited();
+        window.location.assign(url);
+        return;
+      }
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url });
+      setObBusy("waiting for the sign-in to finish…");
+      for (let i = 0; i < 60; i++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        try {
+          const st = await cloudStatus();
+          if (st.providers.includes(prov)) {
+            try { await Browser.close(); } catch { /* sheet may be closed */ }
+            setObBusy("pulling your transactions…");
+            await syncNow();
+            setUsedReal(true);
+            setStep(4);
+            return;
+          }
+        } catch { /* transient — keep polling */ }
+      }
+      setObErr("sign-in didn't finish — retry here, or continue and connect any time in Power Up");
     } catch (e) {
       setObErr(String(e instanceof Error ? e.message : e));
     } finally {
@@ -175,24 +195,24 @@ export default function Onboarding() {
         <section className="step paper active">
           <div className="content top">
             <div className="kick paper">Connect · 2 of 3</div>
-            <h1 className="big">Connect your <em>payments</em> to begin.</h1>
-            <p className="lede">Stripe is the fastest way to start — it's where the story of your revenue lives.</p>
+            <h1 className="big">Connect your <em>register</em> to begin.</h1>
+            <p className="lede">One sign-in on the provider's own page — no keys, no tokens. Your sales flow in and every engine reads them.</p>
             <div className="connect-card">
               <div className="cc-head">
-                <div className="cc-logo">S</div>
+                <div className="cc-logo">◼</div>
                 <div>
-                  <div className="ccn">Stripe</div>
-                  <div className="ccs">Payments &amp; payouts</div>
+                  <div className="ccn">Square · Shopify</div>
+                  <div className="ccs">Your register &amp; your store — live today (bank, Stripe, QuickBooks: in review)</div>
                 </div>
               </div>
               <div className="trust">
                 <div className="t">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><line x1="4" y1="4" x2="20" y2="20" /></svg>
-                  <span><b>Your money is untouchable.</b> Changes happen only with your signature — each with an armed undo.</span>
+                  <span><b>Your money is untouchable.</b> Read-only access; changes happen only with your signature.</span>
                 </div>
                 <div className="t">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                  <span><b>Bank-level encryption.</b> You log in on Stripe — we never see your password.</span>
+                  <span><b>Bank-level encryption.</b> You log in on their page — we never see your password.</span>
                 </div>
                 <div className="t">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 2v10" /></svg>
@@ -207,7 +227,7 @@ export default function Onboarding() {
             <>
               <button className="btn" onClick={() => setLiveForm(true)}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                Connect live sync (Stripe · Square · Shopify)
+                Connect live sync — one sign-in, no keys
               </button>
               <button className="btn ghost" onClick={() => csvRef.current?.click()}>
                 Drop a sales CSV instead — on-device
@@ -222,29 +242,20 @@ export default function Onboarding() {
             </>
           ) : (
             <div className="ob-live-form">
-              <select className="ps-select" value={obProvider} aria-label="Provider"
-                onChange={(e) => setObProvider(e.target.value as CloudProvider)}>
-                <option value="stripe">Stripe — secret/restricted key</option>
-                <option value="square">Square — access token</option>
-                <option value="shopify">Shopify — shpat_ Admin token</option>
-              </select>
-              {obProvider === "shopify" && (
-                <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
-                  value={obShop} onChange={(e) => setObShop(e.target.value)} autoComplete="off" />
-              )}
-              {obProvider === "square" && (
-                <select className="ps-select" value={obEnv} aria-label="Square environment"
-                  onChange={(e) => setObEnv(e.target.value as "production" | "sandbox")}>
-                  <option value="production">Production (real business)</option>
-                  <option value="sandbox">Sandbox (developer testing)</option>
-                </select>
-              )}
-              <input className="dt-input" type="password" autoComplete="off"
-                placeholder={obProvider === "stripe" ? "sk_… or rk_… (read-only)" : obProvider === "square" ? "EAAA… access token" : "shpat_…"}
-                value={obKey} onChange={(e) => setObKey(e.target.value)} />
-              <button className="btn" disabled={!!obBusy || !obKey.trim()} onClick={obConnect}>
-                {obBusy ?? "Connect & pull my data"}
+              <button className="btn" disabled={!!obBusy} onClick={() => obOAuth("square")}>
+                {obBusy ?? "Connect Square — sign in"}
               </button>
+              <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
+                value={obShop} onChange={(e) => setObShop(e.target.value)} autoComplete="off"
+                aria-label="Shopify shop name" />
+              <button className="btn" disabled={!!obBusy || !obShop.trim()} onClick={() => obOAuth("shopify")}>
+                Connect Shopify — sign in
+              </button>
+              <div className="ob-persona-note">
+                Bank, Stripe, QuickBooks, and Etsy connections are in each platform's
+                final review — they arrive as one-tap sign-ins too. The walkthrough
+                in Power Up always shows what's live.
+              </div>
               {obErr && <div className="dropin-status err">{obErr}</div>}
               <div className="subbtn" role="button" tabIndex={0} onClick={() => setLiveForm(false)}
                 onKeyDown={(e) => { if (e.key === "Enter") setLiveForm(false); }}>← other options</div>
