@@ -1063,12 +1063,14 @@ export default {
         try { const p = JSON.parse(raw); if (p && p.id) return p; } catch { /* raw id */ }
         return { id: raw, native: false };
       };
-      const nativeDone = (ok, provider) => new Response(
+      const nativeDone = (ok, provider, q) => new Response(
         `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Counsel</title>` +
         `<body style="background:#0f1511;color:#ecf1e8;font-family:-apple-system,'Inter',sans-serif;display:grid;place-items:center;height:100vh;margin:0;text-align:center">` +
         `<div><div style="font-size:44px;color:${ok ? "#c9f36a" : "#e08a76"}">${ok ? "\u2713" : "\u2715"}</div>` +
         `<h2 style="font-weight:600;margin:10px 0 6px">${ok ? `${provider} connected` : `${provider} connection failed`}</h2>` +
-        `<p style="color:#9aa89c;font-size:15px">Close this window and return to Counsel${ok ? " \u2014 your data is on its way." : " and try again."}</p></div>`,
+        `<p style="color:#9aa89c;font-size:15px">Close this window and return to Counsel${ok ? " \u2014 your data is on its way." : " and try again."}</p>` +
+        (!ok && q ? `<p style="color:#75827a;font-size:12px;font-family:ui-monospace,monospace;max-width:300px;margin:10px auto 0;word-break:break-all">${String(decodeURIComponent(String(q).replace(/^error=/, ""))).replace(/[<>&"']/g, "").slice(0, 160)}</p>` : "") +
+        `</div>`,
         { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
 
       // -- Square OAuth callback: browser redirect from Square, no auth header;
@@ -1081,7 +1083,7 @@ export default {
         const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
         if (!st) return back("error=square_expired");
         const acctId = st.id;
-        const finish = (ok, q) => st.native ? nativeDone(ok, "Square") : back(q);
+        const finish = (ok, q) => st.native ? nativeDone(ok, "Square", q) : back(q);
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
@@ -1106,7 +1108,7 @@ export default {
         const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
         if (!st) return back("error=quickbooks_expired");
         const acctId = st.id;
-        const finish = (ok, q) => st.native ? nativeDone(ok, "QuickBooks") : back(q);
+        const finish = (ok, q) => st.native ? nativeDone(ok, "QuickBooks", q) : back(q);
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
@@ -1135,7 +1137,7 @@ export default {
         const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
         if (!st) return back("error=stripe_expired");
         const acctId = st.id;
-        const finish = (ok, q) => st.native ? nativeDone(ok, "Stripe") : back(q);
+        const finish = (ok, q) => st.native ? nativeDone(ok, "Stripe", q) : back(q);
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
@@ -1171,7 +1173,7 @@ export default {
         if (!code || !state) return back("error=etsy");
         const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
         if (!st) return back("error=etsy_expired");
-        const finish = (ok, q) => st.native ? nativeDone(ok, "Etsy") : back(q);
+        const finish = (ok, q) => st.native ? nativeDone(ok, "Etsy", q) : back(q);
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const { id: acctId, verifier } = st;
@@ -1207,7 +1209,7 @@ export default {
         const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
         if (!st) return back("error=shopify_expired");
         const acctId = st.id;
-        const finish = (ok, q) => st.native ? nativeDone(ok, "Shopify") : back(q);
+        const finish = (ok, q) => st.native ? nativeDone(ok, "Shopify", q) : back(q);
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
