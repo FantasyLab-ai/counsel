@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { parseCharges, parseExpenses, parsePosts } from "../engine/csvParse";
-import { clearUserData, hasUserData, storeUserData, userCharges, userExpenses, userMeta } from "../engine/dataSource";
+import { clearUserData, dataMode, hasUserData, storeUserData, userCharges, userExpenses, userMeta } from "../engine/dataSource";
 import { addPostsBulk } from "../engine/socialMath";
 import { displayName, getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
 import {
@@ -336,24 +336,29 @@ function LiveConnect() {
     }
   }
 
+  async function doPlaid() {
+    setStatus(null);
+    setBusy("opening Plaid Link…");
+    try {
+      const ok = await connectBank();
+      if (ok) {
+        setConnected((await cloudStatus()).providers);
+        setStatus({ ok: true, msg: "bank connected via Plaid — pulling your transactions…" });
+        setTimeout(doSync, 800);
+      } else {
+        setStatus({ ok: true, msg: "bank picker closed — nothing connected." });
+      }
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function doConnect() {
     setStatus(null);
     if (provider === "plaid") {
-      setBusy("opening Plaid Link…");
-      try {
-        const ok = await connectBank();
-        if (ok) {
-          setConnected((await cloudStatus()).providers);
-          setStatus({ ok: true, msg: "bank connected via Plaid — pulling your transactions…" });
-          setTimeout(doSync, 800);
-        } else {
-          setStatus({ ok: true, msg: "bank picker closed — nothing connected." });
-        }
-      } catch (e) {
-        setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
-      } finally {
-        setBusy(null);
-      }
+      await doPlaid();
       return;
     }
     setBusy("validating with the provider…");
@@ -465,6 +470,14 @@ function LiveConnect() {
             <div className="guide-name">{g.name}</div>
             <div className="guide-what">{g.what}</div>
             {g.note && <div className="guide-note">{g.note}</div>}
+            {g.id === "plaid" && !isConn && dataMode() === "demo" && (
+              <div className="guide-note">
+                Want to feel it now? You can walk the real flow with a test bank —
+                pick any bank, sign in with <b>user_good</b> / <b>pass_good</b>.
+                Fake numbers, clearly test; Settings clears them in one tap. This
+                option only appears before real data is connected — never after.
+              </div>
+            )}
             {g.id === "shopify" && g.status === "ready" && !isConn && (
               <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
                 value={shop} onChange={(e) => setShop(e.target.value)} autoComplete="off"
@@ -480,6 +493,11 @@ function LiveConnect() {
                 <button className="dbtn primary" disabled={!!busy || (g.id === "shopify" && !shop.trim())}
                   onClick={() => doOAuth(g.id as "stripe" | "square" | "etsy" | "shopify" | "quickbooks")}>
                   Connect {g.name} — sign in
+                </button>
+              )}
+              {g.id === "plaid" && !isConn && dataMode() === "demo" && (
+                <button className="dbtn primary" disabled={!!busy} onClick={doPlaid}>
+                  Demo the flow — test bank
                 </button>
               )}
               <button className="dbtn" onClick={() => gGo(gStep + 1)}>

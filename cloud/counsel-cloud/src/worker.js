@@ -358,6 +358,19 @@ function dedupeSources(charges) {
    SQUARE_OAUTH_ENV (vars) + SQUARE_CLIENT_SECRET (secret). */
 const SQUARE_OAUTH_SCOPES = "PAYMENTS_READ ORDERS_READ MERCHANT_PROFILE_READ ITEMS_READ";
 const APP_REDIRECT = "https://counsel-demo.pages.dev/power";
+// Breadcrumbs for OAuth support: every start/callback writes a 7-day KV
+// record so a failed connect can be diagnosed from `wrangler kv key list
+// --binding ACCOUNTS --prefix oauthlog --remote` without user screenshots.
+// Never stores codes, tokens, or account ids — provider + stage + error only.
+async function logOAuth(env, prov, stage, extra) {
+  try {
+    await env.ACCOUNTS.put(
+      `oauthlog:${Date.now()}_${prov}_${stage}`,
+      JSON.stringify({ prov, stage, at: new Date().toISOString(), ...extra }),
+      { expirationTtl: 604800 },
+    );
+  } catch { /* diagnostics must never break the flow */ }
+}
 function squareOAuthHost(env) {
   return (env.SQUARE_OAUTH_ENV || "production") === "sandbox"
     ? "https://connect.squareupsandbox.com"
@@ -961,7 +974,7 @@ async function hasLiveCredential(env, acct) {
   for (const prov of Object.keys(acct.providers)) {
     try {
       const cred = JSON.parse(await openToken(env, acct.providers[prov].t));
-      if (prov === "stripe" && (cred.oauth || !/^(sk|rk)_test_/.test(cred.key || ""))) return true;
+      if (prov === "stripe" && (cred.oauth ? cred.livemode !== false : !/^(sk|rk)_test_/.test(cred.key || ""))) return true;
       if (prov === "square" && cred.env !== "sandbox") return true;
       if (prov === "shopify") return true;
       if (prov === "plaid" && cred.env === "production") return true;
@@ -1079,11 +1092,20 @@ export default {
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state");
         const back = (q) => new Response(null, { status: 302, headers: { Location: `${APP_REDIRECT}?${q}` } });
-        if (!code || !state) return back("error=square");
+        if (!code || !state) {
+          await logOAuth(env, "square", "callback", { ok: false, err: `no code — Square sent: ${url.search.slice(1, 120) || "(empty query)"}` });
+          return back("error=square");
+        }
         const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
-        if (!st) return back("error=square_expired");
+        if (!st) {
+          await logOAuth(env, "square", "callback", { ok: false, err: "state expired/unknown (sheet older than 10 min, or a stale retry)" });
+          return back("error=square_expired");
+        }
         const acctId = st.id;
-        const finish = (ok, q) => st.native ? nativeDone(ok, "Square", q) : back(q);
+        const finish = async (ok, q) => {
+          await logOAuth(env, "square", "callback", { ok, native: !!st.native, ...(ok ? {} : { err: String(q || "").slice(0, 140) }) });
+          return st.native ? nativeDone(ok, "Square", q) : back(q);
+        };
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
@@ -1108,7 +1130,10 @@ export default {
         const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
         if (!st) return back("error=quickbooks_expired");
         const acctId = st.id;
-        const finish = (ok, q) => st.native ? nativeDone(ok, "QuickBooks", q) : back(q);
+        const finish = async (ok, q) => {
+          await logOAuth(env, "quickbooks", "callback", { ok, native: !!st.native, ...(ok ? {} : { err: String(q || "").slice(0, 140) }) });
+          return st.native ? nativeDone(ok, "QuickBooks", q) : back(q);
+        };
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
@@ -1137,7 +1162,10 @@ export default {
         const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
         if (!st) return back("error=stripe_expired");
         const acctId = st.id;
-        const finish = (ok, q) => st.native ? nativeDone(ok, "Stripe", q) : back(q);
+        const finish = async (ok, q) => {
+          await logOAuth(env, "stripe", "callback", { ok, native: !!st.native, ...(ok ? {} : { err: String(q || "").slice(0, 140) }) });
+          return st.native ? nativeDone(ok, "Stripe", q) : back(q);
+        };
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
@@ -1156,7 +1184,7 @@ export default {
           if (!r.ok || !j.stripe_user_id) {
             return finish(false, `error=${encodeURIComponent(String(j.error_description || j.error || "stripe_exchange").slice(0, 80))}`);
           }
-          const cred = { oauth: true, acct: j.stripe_user_id };
+          const cred = { oauth: true, acct: j.stripe_user_id, livemode: j.livemode !== false };
           acct.providers.stripe = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
           await saveAcct(env, acctId, acct);
           return finish(true, "connected=stripe");
@@ -1290,6 +1318,7 @@ export default {
         const qbBody = (await readBody(req)) ?? {};
         const state = `qb_${randHex(16)}`;
         await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, native: !!qbBody.native }), { expirationTtl: 600 });
+        await logOAuth(env, "quickbooks", "start", { native: !!qbBody.native });
         return json(req, 200, { url: qboAuthorizeUrl(env, state) });
       }
 
@@ -1321,6 +1350,7 @@ export default {
         const stBody = (await readBody(req)) ?? {};
         const state = `st_${randHex(16)}`;
         await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, native: !!stBody.native }), { expirationTtl: 600 });
+        await logOAuth(env, "stripe", "start", { native: !!stBody.native });
         return json(req, 200, { url: stripeAuthorizeUrl(env, state) });
       }
 
@@ -1330,6 +1360,7 @@ export default {
         const sqBody = (await readBody(req)) ?? {};
         const state = `sq_${randHex(16)}`;
         await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, native: !!sqBody.native }), { expirationTtl: 600 });
+        await logOAuth(env, "square", "start", { native: !!sqBody.native });
         return json(req, 200, { url: squareAuthorizeUrl(env, state) });
       }
 
