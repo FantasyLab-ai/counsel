@@ -145,6 +145,34 @@ export default function Settings() {
       <Reveal i={1}>
         <section className="sec">
           <div className="sec-h">Connected tools</div>
+          {!hasUserData() && (
+            <div className="group" style={{ marginBottom: 10 }}>
+              <div className="srow tap" role="button" tabIndex={0}
+                   onClick={() => nav("/power")}
+                   onKeyDown={(e) => { if (e.key === "Enter") nav("/power"); }}>
+                <div className="ico">◆</div>
+                <div className="rl">
+                  <div className="rt">You're browsing demo data</div>
+                  <div className="rs">Everything below belongs to Kiln &amp; Co., our showroom business — not you. Tap here to connect yours: a bank, Stripe, Square, Shopify, or just a CSV. Two minutes, and it never leaves your phone.</div>
+                </div>
+                <div className="rr">{CHEV}</div>
+              </div>
+            </div>
+          )}
+          {hasUserData() && demoView() && (
+            <div className="group" style={{ marginBottom: 10 }}>
+              <div className="srow tap" role="button" tabIndex={0}
+                   onClick={() => { setDemoView(false); window.location.reload(); }}
+                   onKeyDown={(e) => { if (e.key === "Enter") { setDemoView(false); window.location.reload(); } }}>
+                <div className="ico">◆</div>
+                <div className="rl">
+                  <div className="rt">Showroom view is on — your data is hidden</div>
+                  <div className="rs">You're seeing the demo ledger. Tap here to switch back to your business.</div>
+                </div>
+                <div className="rr">{CHEV}</div>
+              </div>
+            </div>
+          )}
           <div className="group">
             {sources.map((s) => (
               <div className="srow tap" key={s.id} role="button" tabIndex={0}
@@ -164,7 +192,7 @@ export default function Settings() {
               <div className="plus">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
               </div>
-              <span>Connect Stripe, Square, Shopify, QuickBooks…</span>
+              <span>Add your data — bank, Stripe, Square, Shopify, or a CSV. It stays on your phone.</span>
             </div>
           </div>
         </section>
