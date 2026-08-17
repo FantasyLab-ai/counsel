@@ -43,12 +43,14 @@ jobs:
           rm -rf www && cp -R ../dist www
           npx cap sync ios
 
-      - name: Write API key
+      - name: Write API key + signing certificate
         env:
           ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          IOS_DIST_P12: ${{ secrets.IOS_DIST_P12 }}
         run: |
           mkdir -p ~/private_keys
           printf '%s' "$ASC_API_KEY_P8" > ~/private_keys/asc_key.p8
+          printf '%s' "$IOS_DIST_P12" | base64 -d > ~/private_keys/dist.p12
 
       - name: Write Fastfile
         working-directory: mobile/ios/App
@@ -64,14 +66,15 @@ jobs:
                 key_filepath: File.expand_path("~/private_keys/asc_key.p8"),
               )
               setup_ci
-              # Create (or fetch) the distribution cert + profile through
-              # the API — this is the no-Mac signing path. The keychain
-              # must be named explicitly on CI or cert cannot find its
-              # own import ("Could not find the newly generated
-              # certificate installed").
-              cert(
-                api_key: api_key,
-                keychain_path: File.expand_path("~/Library/Keychains/fastlane_tmp_keychain-db"),
+              # Import the durable distribution certificate (minted once
+              # via the ASC API; private key lives with Brandon, p12 in
+              # repo secrets). Ephemeral runners can't own certs — the
+              # first attempt at cert-per-run orphaned two of Apple's
+              # limit of two distribution slots.
+              import_certificate(
+                certificate_path: File.expand_path("~/private_keys/dist.p12"),
+                certificate_password: ENV["IOS_DIST_P12_PASSWORD"],
+                keychain_name: "fastlane_tmp_keychain",
                 keychain_password: "",
               )
               sigh(api_key: api_key, app_identifier: "ai.fantasylab.counsel")
@@ -99,6 +102,7 @@ jobs:
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          IOS_DIST_P12_PASSWORD: ${{ secrets.IOS_DIST_P12_PASSWORD }}
         run: fastlane beta
 
       - name: Keep the IPA as a run artifact
