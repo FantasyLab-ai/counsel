@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Counsel — founding member cards (print, two-sided)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Two-sided, 10 cards per US Letter sheet (2 x 5 of 3.5in x 2in).
+     Page 1 = fronts, page 2 = backs (columns MIRRORED so a long-edge
+     duplex print lines up). Print from Chrome/Edge: Ctrl+P -> More
+     settings -> Background graphics ON, scale 100%, Letter, two-sided
+     "flip on long edge" (or print page 1, re-feed, print page 2). */
+  * { margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { background: #fff; }
+  .sheet {
+    width: 8.5in; height: 11in; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(2, 3.5in);
+    grid-auto-rows: 2in; gap: 0.18in; justify-content: center;
+    align-content: center;
+  }
+  .sheet.backs { direction: rtl; }        /* mirror columns for duplex */
+  .sheet.backs .card { direction: ltr; }
+  @media print {
+    @page { size: letter portrait; margin: 0.25in; }
+    .hint { display: none; }
+    .pagebreak { break-before: page; }
+  }
+  .hint { font: 13px/1.6 Inter, sans-serif; color: #444; max-width: 7.5in;
+          margin: 14px auto; }
+  .card {
+    width: 3.5in; height: 2in; background: #0f1511; border-radius: 10px;
+    position: relative; overflow: hidden; color: #ecf1e8;
+    display: flex; padding: 0.16in;
+    outline: 1px dashed #bbb; outline-offset: 2px;
+  }
+  .card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 5px; background: linear-gradient(180deg, #c9f36a, #5ab8ff);
+  }
+  .left { flex: 1; display: flex; flex-direction: column; padding-left: 0.1in; }
+  .word { font-family: Fraunces, serif; font-weight: 500; font-size: 17px; }
+  .word span { font-family: "JetBrains Mono", monospace; font-size: 7px;
+               letter-spacing: 0.22em; text-transform: uppercase;
+               color: #93a095; margin-left: 6px; }
+  .tag { font-family: Fraunces, serif; font-style: italic; font-size: 11.5px;
+         color: #cdae7e; margin-top: 3px; }
+  .steps { margin-top: auto; font: 8.5px/1.65 Inter, sans-serif; color: #bcc8bd; }
+  .steps b { color: #ecf1e8; font-weight: 600; }
+  .steps .n { color: #c9f36a; font-family: "JetBrains Mono", monospace; }
+  .code { margin-top: 5px; font-family: "JetBrains Mono", monospace;
+          font-size: 8px; letter-spacing: 0.06em; color: #93a095; }
+  .code .line { display: inline-block; width: 1.25in;
+                border-bottom: 1px solid #3a453c; height: 11px; }
+  .contact { margin-top: 4px; font-family: "JetBrains Mono", monospace;
+             font-size: 7px; line-height: 1.5; color: #75827a; letter-spacing: 0.04em; }
+  .qrwrap { width: 1.18in; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 4px; }
+  .qr { width: 1.06in; height: 1.06in; background: #fff; border-radius: 8px;
+        display: grid; place-items: center; padding: 0.04in; }
+  .qr img { width: 100%; height: 100%; display: block; }
+  .qr .placeholder { font: 8px/1.4 Inter, sans-serif; color: #999;
+                     text-align: center; }
+  .qrlabel { font-family: "JetBrains Mono", monospace; font-size: 6.5px;
+             letter-spacing: 0.14em; text-transform: uppercase; color: #93a095; }
+  /* back-side specifics */
+  .roles { font-family: Fraunces, serif; font-size: 10.5px; line-height: 1.5;
+           color: #ecf1e8; }
+  .roles em { font-style: italic; color: #cdae7e; }
+  .desc { font: 8px/1.55 Inter, sans-serif; color: #bcc8bd; margin-top: 6px; }
+  .desc b { color: #ecf1e8; }
+  .math { margin-top: auto; font-family: Fraunces, serif; font-style: italic;
+          font-size: 9.5px; color: #c9f36a; }
+</style>
+</head>
+<body>
+<p class="hint">
+  <b>Two-sided print:</b> Chrome/Edge → Ctrl+P → Background graphics <b>ON</b>,
+  scale 100%, Letter, two-sided <b>flip on long edge</b>. (Or print page 1,
+  re-feed the stack, print page 2.) Backs are column-mirrored so they align.
+  Cardstock if available; FedEx Office cuts the stack for ~$2.
+</p>
+
+<div class="sheet fronts">
+  <script>
+    const front = `
+    <div class="card">
+      <div class="left">
+        <div class="word">Counsel<span>by Aurora</span></div>
+        <div class="tag">The whole C-suite, in your pocket.</div>
+        <div class="steps">
+          <span class="n">1</span> Get <b>TestFlight</b> (App Store)&nbsp;·
+          <span class="n">2</span> <b>Scan</b>&nbsp;·
+          <span class="n">3</span> <b>Install</b> Counsel
+        </div>
+        <div class="code">founding code <span class="line"></span></div>
+        <div class="contact">Brandon Grutkowski · founder &amp; developer<br>contact@fantasylab.tech</div>
+      </div>
+      <div class="qrwrap">
+        <div class="qr"><img src="data:image/png;base64,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" alt="TestFlight install link"></div>
+        <div class="qrlabel">install the app</div>
+      </div>
+    </div>`;
+    document.currentScript.insertAdjacentHTML("beforebegin", front.repeat(10));
+  </script>
+</div>
+
+<div class="pagebreak"></div>
+
+<div class="sheet backs">
+  <script>
+    const back = `
+    <div class="card">
+      <div class="left">
+        <div class="roles">Numbers like a <em>CFO</em>. Operations like a <em>COO</em>.
+          Plays like a <em>CEO</em>. Honest like none of them.</div>
+        <div class="desc">Counsel reads your sales and expenses and says what is
+          happening in plain words: what needs a minute today, what you can
+          safely <b>pay yourself</b>, where the next two weeks land. Under the
+          hood: the <b>19 statistical methods</b> hospitals, economists, and
+          engineers trust, in your pocket. <b>Your data stays on your device.</b></div>
+        <div class="math">Every number shows its math. Tap it.</div>
+      </div>
+      <div class="qrwrap">
+        <div class="qr"><img src="data:image/png;base64,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" alt="counsel-site.pages.dev"></div>
+        <div class="qrlabel">see it first</div>
+      </div>
+    </div>`;
+    document.currentScript.insertAdjacentHTML("beforebegin", back.repeat(10));
+  </script>
+</div>
+</body>
+</html>

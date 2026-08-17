@@ -116,9 +116,22 @@ export async function connectBank(): Promise<boolean> {
    Full-page redirect flow: the worker mints state->account and returns the
    Square authorize URL; the merchant signs in on Square; Square redirects to
    the worker callback, which seals the token and bounces back to /power. */
+/** True inside the Capacitor shells — OAuth flows behave differently
+ *  there (in-app browser sheet + "close and return" page instead of a
+ *  web redirect). */
+export function isNativeApp(): boolean {
+  try {
+    const cap = (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor;
+    const plat = cap?.getPlatform?.();
+    return plat === "ios" || plat === "android";
+  } catch { return false; }
+}
+
 export async function oauthConnectUrl(provider: "square" | "etsy" | "shopify", extra?: { shop?: string }): Promise<string> {
   await ensureAccount();
-  const res = await api(`/v1/oauth/${provider}/start`, { method: "POST", body: JSON.stringify(extra ?? {}) });
+  const body = { ...(extra ?? {}), native: isNativeApp() };
+  const res = await api(`/v1/oauth/${provider}/start`, { method: "POST", body: JSON.stringify(body) });
+  if (!res?.url) throw new Error(`${provider} sign-in did not return a link — try again in a minute`);
   return res.url as string;
 }
 

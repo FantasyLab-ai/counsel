@@ -960,6 +960,23 @@ export default {
         if (await limited(env.RL_NORM, `oauth:${clientKey(req)}`, 60)) return tooMany(req);
       }
 
+      // Native app flows end on a small page instead of a web redirect —
+      // the in-app browser sheet closes and the app picks up the new
+      // provider by polling cloudStatus. parseState tolerates both the
+      // legacy raw-id KV values and the JSON {id, native, ...} form.
+      const parseState = (raw) => {
+        if (!raw) return null;
+        try { const p = JSON.parse(raw); if (p && p.id) return p; } catch { /* raw id */ }
+        return { id: raw, native: false };
+      };
+      const nativeDone = (ok, provider) => new Response(
+        `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Counsel</title>` +
+        `<body style="background:#0f1511;color:#ecf1e8;font-family:-apple-system,'Inter',sans-serif;display:grid;place-items:center;height:100vh;margin:0;text-align:center">` +
+        `<div><div style="font-size:44px;color:${ok ? "#c9f36a" : "#e08a76"}">${ok ? "\u2713" : "\u2715"}</div>` +
+        `<h2 style="font-weight:600;margin:10px 0 6px">${ok ? `${provider} connected` : `${provider} connection failed`}</h2>` +
+        `<p style="color:#9aa89c;font-size:15px">Close this window and return to Counsel${ok ? " \u2014 your data is on its way." : " and try again."}</p></div>`,
+        { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
+
       // -- Square OAuth callback: browser redirect from Square, no auth header;
       //    the state we minted maps back to the device account. --
       if (path === "/v1/oauth/square/callback" && req.method === "GET") {
@@ -967,19 +984,21 @@ export default {
         const state = url.searchParams.get("state");
         const back = (q) => new Response(null, { status: 302, headers: { Location: `${APP_REDIRECT}?${q}` } });
         if (!code || !state) return back("error=square");
-        const acctId = await env.ACCOUNTS.get(`oauthstate:${state}`);
-        if (!acctId) return back("error=square_expired");
+        const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
+        if (!st) return back("error=square_expired");
+        const acctId = st.id;
+        const finish = (ok, q) => st.native ? nativeDone(ok, "Square") : back(q);
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
-          if (!raw) return back("error=square_account");
+          if (!raw) return finish(false, "error=square_account");
           const acct = JSON.parse(raw);
           const cred = await squareExchange(env, code);
           acct.providers.square = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
           await saveAcct(env, acctId, acct);
-          return back("connected=square");
+          return finish(true, "connected=square");
         } catch (e) {
-          return back(`error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
+          return finish(false, `error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
         }
       }
 
@@ -989,13 +1008,14 @@ export default {
         const state = url.searchParams.get("state");
         const back = (q) => new Response(null, { status: 302, headers: { Location: `${APP_REDIRECT}?${q}` } });
         if (!code || !state) return back("error=etsy");
-        const raw = await env.ACCOUNTS.get(`oauthstate:${state}`);
-        if (!raw) return back("error=etsy_expired");
+        const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
+        if (!st) return back("error=etsy_expired");
+        const finish = (ok, q) => st.native ? nativeDone(ok, "Etsy") : back(q);
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
-          const { id: acctId, verifier } = JSON.parse(raw);
+          const { id: acctId, verifier } = st;
           const araw = await env.ACCOUNTS.get(`acct:${acctId}`);
-          if (!araw) return back("error=etsy_account");
+          if (!araw) return finish(false, "error=etsy_account");
           const acct = JSON.parse(araw);
           const cred = await etsyTokenCall(env, {
             grant_type: "authorization_code",
@@ -1006,9 +1026,9 @@ export default {
           });
           acct.providers.etsy = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
           await saveAcct(env, acctId, acct);
-          return back("connected=etsy");
+          return finish(true, "connected=etsy");
         } catch (e) {
-          return back(`error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
+          return finish(false, `error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
         }
       }
 
@@ -1023,19 +1043,21 @@ export default {
         if (!(await shopifyVerifyHmac(env, url))) return back("error=shopify_hmac");
         const sub = shopifySubdomain(shopParam);
         if (!sub) return back("error=shopify_shop");
-        const acctId = await env.ACCOUNTS.get(`oauthstate:${state}`);
-        if (!acctId) return back("error=shopify_expired");
+        const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
+        if (!st) return back("error=shopify_expired");
+        const acctId = st.id;
+        const finish = (ok, q) => st.native ? nativeDone(ok, "Shopify") : back(q);
         await env.ACCOUNTS.delete(`oauthstate:${state}`);
         try {
           const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
-          if (!raw) return back("error=shopify_account");
+          if (!raw) return finish(false, "error=shopify_account");
           const acct = JSON.parse(raw);
           const cred = await shopifyExchange(env, sub, code);
           acct.providers.shopify = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
           await saveAcct(env, acctId, acct);
-          return back("connected=shopify");
+          return finish(true, "connected=shopify");
         } catch (e) {
-          return back(`error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
+          return finish(false, `error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
         }
       }
 
@@ -1102,10 +1124,11 @@ export default {
       // -- Etsy OAuth start (PKCE): mint state+verifier, return authorize URL --
       if (path === "/v1/oauth/etsy/start" && req.method === "POST") {
         if (!env.ETSY_CLIENT_ID) return json(req, 400, { error: "Etsy not configured — set ETSY_CLIENT_ID (var)" });
+        const etBody = (await readBody(req)) ?? {};
         const state = `et_${randHex(16)}`;
         const verifier = pkceVerifier();
         const challenge = await pkceChallenge(verifier);
-        await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, verifier }), { expirationTtl: 600 });
+        await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, verifier, native: !!etBody.native }), { expirationTtl: 600 });
         return json(req, 200, { url: etsyAuthorizeUrl(env, state, challenge) });
       }
 
@@ -1116,15 +1139,16 @@ export default {
         const sub = shopifySubdomain(body.shop);
         if (!sub) return json(req, 400, { error: "enter your shop, e.g. your-shop (from your-shop.myshopify.com)" });
         const state = `sh_${randHex(16)}`;
-        await env.ACCOUNTS.put(`oauthstate:${state}`, id, { expirationTtl: 600 });
+        await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, native: !!body.native }), { expirationTtl: 600 });
         return json(req, 200, { url: shopifyAuthorizeUrl(env, sub, state) });
       }
 
       // -- Square OAuth start: mint state -> account, return the authorize URL --
       if (path === "/v1/oauth/square/start" && req.method === "POST") {
         if (!env.SQUARE_CLIENT_ID) return json(req, 400, { error: "Square OAuth not configured — set SQUARE_CLIENT_ID (var) + SQUARE_CLIENT_SECRET (secret)" });
+        const sqBody = (await readBody(req)) ?? {};
         const state = `sq_${randHex(16)}`;
-        await env.ACCOUNTS.put(`oauthstate:${state}`, id, { expirationTtl: 600 });
+        await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, native: !!sqBody.native }), { expirationTtl: 600 });
         return json(req, 200, { url: squareAuthorizeUrl(env, state) });
       }
 

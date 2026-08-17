@@ -260,7 +260,34 @@ function LiveConnect() {
     setStatus(null);
     try {
       const url = await oauthConnectUrl(prov, prov === "shopify" ? { shop: shop.trim() } : undefined);
-      window.location.assign(url); // full-page redirect to the provider
+      const { isNativeApp } = await import("../engine/cloudSync");
+      if (!isNativeApp()) {
+        window.location.assign(url); // web: full-page redirect works fine
+        return;
+      }
+      // Native shells swallow external location.assign — open the
+      // provider in the in-app browser sheet instead, and poll the
+      // worker until the connection lands (the sheet's final page says
+      // "close this and return to Counsel").
+      const { Browser } = await import("@capacitor/browser");
+      await Browser.open({ url });
+      setBusy(`waiting for ${prov} sign-in to finish…`);
+      for (let i = 0; i < 60; i++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        try {
+          const st = await cloudStatus();
+          if (st.providers.includes(prov as CloudProvider)) {
+            try { await Browser.close(); } catch { /* sheet may be closed */ }
+            setConnected(st.providers);
+            setBusy(null);
+            setStatus({ ok: true, msg: `${prov} connected — pulling your data…` });
+            await doSync();
+            return;
+          }
+        } catch { /* transient — keep polling */ }
+      }
+      setBusy(null);
+      setStatus({ ok: false, msg: `${prov} sign-in didn't finish — if you completed it, tap Sync; otherwise try again` });
     } catch (e) {
       setStatus({ ok: false, msg: String(e instanceof Error ? e.message : e) });
       setBusy(null);
