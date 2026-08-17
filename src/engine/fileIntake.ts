@@ -79,6 +79,29 @@ function linesToExpenses(lines: string[], cat: string): { rows: Expense[]; credi
   return { rows, credits };
 }
 
+// A document of dated amounts is usually money OUT (a statement) — but a
+// sales report reads as money IN. Decide from the document's own words:
+// statement vocabulary wins outright; otherwise enough sales vocabulary
+// flips the read to sales rows. Ambiguity defaults to expenses, and the
+// per-file note always says which way it was read.
+const STATEMENT_RE = /\b(withdrawal|debit|beginning balance|ending balance|statement period|account (number|ending)|available balance)\b/i;
+const SALES_RE = /\b(orders?|sale|sales|sold|item sales|gross sales|net sales|receipt #|invoice #|customers?|payment received)\b/i;
+function docReadsAsSales(lines: string[]): boolean {
+  let statement = 0;
+  let sales = 0;
+  for (const line of lines) {
+    if (STATEMENT_RE.test(line)) statement++;
+    if (SALES_RE.test(line)) sales++;
+  }
+  return statement === 0 && sales >= Math.max(3, Math.ceil(lines.length * 0.1));
+}
+function txnsToCharges(rows: Expense[]): Charge[] {
+  return rows.map((r) => ({
+    date: r.d, product: r.vendor, qty: 1, price: r.amount,
+    customer: "", fee: 0, channel: "import",
+  }));
+}
+
 /* --------------------------------- PDF text -------------------------------- */
 async function pdfLines(file: File): Promise<string[]> {
   const pdfjs = await import("pdfjs-dist");
@@ -174,9 +197,15 @@ export async function intakeFiles(files: File[], onStatus?: (s: string) => void)
         const lines = await pdfLines(f);
         const { rows, credits } = linesToExpenses(lines, "bank");
         if (rows.length >= 2) {
-          out.expenses.push(...rows);
-          out.okFiles++;
-          out.notes.push(`${name}: ${rows.length} expense lines${credits ? ` (${credits} deposits/credits skipped)` : ""}`);
+          if (docReadsAsSales(lines)) {
+            out.charges.push(...txnsToCharges(rows));
+            out.okFiles++;
+            out.notes.push(`${name}: ${rows.length} lines read as SALES (the document talks about orders, not withdrawals)`);
+          } else {
+            out.expenses.push(...rows);
+            out.okFiles++;
+            out.notes.push(`${name}: ${rows.length} expense lines${credits ? ` (${credits} deposits/credits skipped)` : ""}`);
+          }
         } else if (lines.length < 3) {
           out.failFiles++;
           out.notes.push(`${name}: this PDF is a scan with no text layer — take photos of the pages instead and drop those`);
@@ -196,9 +225,15 @@ export async function intakeFiles(files: File[], onStatus?: (s: string) => void)
         const lines = await ocrLines(f, onStatus);
         const { rows } = linesToExpenses(lines, "receipt");
         if (rows.length >= 3) {
-          out.expenses.push(...rows);
-          out.okFiles++;
-          out.notes.push(`${name}: ${rows.length} expense lines read from the photo`);
+          if (docReadsAsSales(lines)) {
+            out.charges.push(...txnsToCharges(rows));
+            out.okFiles++;
+            out.notes.push(`${name}: ${rows.length} lines read as SALES from the photo`);
+          } else {
+            out.expenses.push(...rows);
+            out.okFiles++;
+            out.notes.push(`${name}: ${rows.length} expense lines read from the photo`);
+          }
         } else {
           const single = receiptFromLines(lines, f);
           if (single) {

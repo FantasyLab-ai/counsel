@@ -1,4 +1,4 @@
-import { Component, useEffect, type ReactNode } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import Today from "./screens/Today";
 import Numbers from "./screens/Numbers";
@@ -95,13 +95,36 @@ const TABS = [
 function TabBar() {
   const { pathname } = useLocation();
   const nav = useNavigate();
+  // The dock breathes with the reader: tucks away while you scroll down
+  // into the content, resurfaces the moment you scroll back or near the top.
+  const [tucked, setTucked] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const delta = y - last;
+        if (y < 90) setTucked(false);
+        else if (delta > 8) setTucked(true);
+        else if (delta < -8) setTucked(false);
+        last = y;
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => { setTucked(false); }, [pathname]);
   return (
-    <nav className="tabbar" aria-label="Main">
+    <nav className={`tabbar ${tucked ? "tucked" : ""}`} aria-label="Main">
       {TABS.map((t) => (
         <button
           key={t.to}
           className={`tab ${pathname === t.to ? "on" : ""}`}
-          onClick={() => nav(t.to)}
+          onClick={() => { try { navigator.vibrate?.(4); } catch { /* no haptics */ } nav(t.to); }}
           aria-current={pathname === t.to ? "page" : undefined}
         >
           {t.icon}

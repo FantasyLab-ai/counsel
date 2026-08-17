@@ -3,10 +3,10 @@
   "appName": "Counsel",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#faf8f3"
+    "backgroundColor": "#0f1511"
   },
   "ios": {
-    "backgroundColor": "#faf8f3",
+    "backgroundColor": "#0f1511",
     "contentInset": "always",
     "scrollEnabled": true,
     "preferredContentMode": "mobile"

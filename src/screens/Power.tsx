@@ -122,6 +122,47 @@ const ITEMS: PowerItem[] = [
   },
 ];
 
+// The close-the-loop drop: lives ON each "open your tool" card so the
+// export you just downloaded lands right where the instructions were —
+// same universal intake as the main drop (CSV/PDF/photos, many at once).
+function CardDrop() {
+  const ref = useRef<HTMLInputElement>(null);
+  const [st, setSt] = useState<{ ok: boolean; msg: string } | null>(null);
+  async function go(list: FileList | null) {
+    if (!list?.length) return;
+    setSt({ ok: true, msg: `reading ${list.length} file${list.length > 1 ? "s" : ""}…` });
+    try {
+      const { intakeFiles } = await import("../engine/fileIntake");
+      const r = await intakeFiles([...list], (s) => setSt({ ok: true, msg: s }));
+      if (!r.charges.length && !r.expenses.length) {
+        setSt({ ok: false, msg: r.notes.join(" · ") || "nothing usable found" });
+        return;
+      }
+      storeUserData(r.charges.length ? (r.charges as never) : null, r.expenses.length ? (r.expenses as never) : null,
+        list.length === 1 ? list[0].name : `${list.length} files`);
+      const summary = [
+        r.charges.length ? `${r.charges.length} sales rows` : "",
+        r.expenses.length ? `${r.expenses.length} expense rows` : "",
+      ].filter(Boolean).join(" + ");
+      setSt({ ok: true, msg: `${summary} loaded · ${r.notes.join(" · ")} — reloading on your data…` });
+      setTimeout(() => window.location.assign("/insights"), 1600);
+    } catch (e) {
+      setSt({ ok: false, msg: String(e instanceof Error ? e.message : e) });
+    }
+  }
+  return (
+    <>
+      <div className="dropin-row" style={{ marginTop: 10 }}>
+        <button className="dbtn primary" onClick={() => ref.current?.click()}>Got the export? Drop it here</button>
+      </div>
+      <input ref={ref} type="file" multiple hidden
+        accept=".csv,.tsv,.txt,.pdf,.png,.jpg,.jpeg,.webp,text/csv,application/pdf,image/*"
+        onChange={(e) => { go(e.target.files); e.target.value = ""; }} />
+      {st && <div className={`dropin-status ${st.ok ? "ok" : "err"}`}>{st.msg}</div>}
+    </>
+  );
+}
+
 // Put Counsel on the home screen — the elegant version of Chrome's banner.
 function InstallCard() {
   const [canPrompt, setCanPrompt] = useState(!!window.__deferredInstall);
@@ -1008,6 +1049,7 @@ export default function Power() {
               <span className="pw-csv-lbl">then drop in</span>
               <code>{it.csv}</code>
             </div>
+            <CardDrop />
           </article>
         </Reveal>
       ))}
@@ -1015,9 +1057,10 @@ export default function Power() {
       <Reveal i={ITEMS.length + 3}>
         <div className="reassure">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-          Those links open your provider's own sign-in — Counsel never sees your password, and the
-          export lands as a file you choose to drop in. One-tap read-only connections arrive with
-          the connector phase; the schemas above are exactly what the engines consume either way.
+          Those links open your provider's own sign-in — Counsel never sees your password. Download
+          the export they give you (CSV or PDF, or just photograph the paper) and drop it on the
+          card you got it from — it reads and files itself. One-tap connections replace this
+          ritual as each platform's review clears.
         </div>
       </Reveal>
     </div>
