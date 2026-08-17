@@ -169,9 +169,15 @@ async function saveAcct(env, id, acct) {
 // -> canonical Charge rows {date, product, qty, price, customer, fee, channel}.
 
 const stripeAdapter = {
+  headers(cred) {
+    return {
+      Authorization: `Bearer ${cred.key}`,
+      ...(cred.acct ? { "Stripe-Account": cred.acct } : {}),
+    };
+  },
   async validate(cred) {
     const r = await fetch("https://api.stripe.com/v1/charges?limit=1", {
-      headers: { Authorization: `Bearer ${cred.key}` },
+      headers: this.headers(cred),
     });
     return r.ok;
   },
@@ -184,7 +190,7 @@ const stripeAdapter = {
       if (withFees) params.append("expand[]", "data.balance_transaction");
       if (after) params.set("starting_after", after);
       const r = await fetch(`https://api.stripe.com/v1/charges?${params}`, {
-        headers: { Authorization: `Bearer ${cred.key}` },
+        headers: this.headers(cred),
       });
       if (!r.ok) {
         // restricted key without Balance read -> retry the page without fees
@@ -356,6 +362,16 @@ function squareOAuthHost(env) {
   return (env.SQUARE_OAUTH_ENV || "production") === "sandbox"
     ? "https://connect.squareupsandbox.com"
     : "https://connect.squareup.com";
+}
+const STRIPE_REDIRECT = "https://counsel-cloud.fantasy-labai.workers.dev/v1/oauth/stripe/callback";
+function stripeAuthorizeUrl(env, state) {
+  const u = new URL("https://connect.stripe.com/oauth/authorize");
+  u.searchParams.set("response_type", "code");
+  u.searchParams.set("client_id", env.STRIPE_CLIENT_ID || "");
+  u.searchParams.set("scope", "read_only");
+  u.searchParams.set("redirect_uri", STRIPE_REDIRECT);
+  u.searchParams.set("state", state);
+  return u.toString();
 }
 function squareAuthorizeUrl(env, state) {
   const u = new URL(`${squareOAuthHost(env)}/oauth2/authorize`);
@@ -868,7 +884,7 @@ async function hasLiveCredential(env, acct) {
   for (const prov of Object.keys(acct.providers)) {
     try {
       const cred = JSON.parse(await openToken(env, acct.providers[prov].t));
-      if (prov === "stripe" && !/^(sk|rk)_test_/.test(cred.key)) return true;
+      if (prov === "stripe" && (cred.oauth || !/^(sk|rk)_test_/.test(cred.key || ""))) return true;
       if (prov === "square" && cred.env !== "sandbox") return true;
       if (prov === "shopify") return true;
       if (prov === "plaid" && cred.env === "production") return true;
@@ -997,6 +1013,43 @@ export default {
           acct.providers.square = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
           await saveAcct(env, acctId, acct);
           return finish(true, "connected=square");
+        } catch (e) {
+          return finish(false, `error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
+        }
+      }
+
+      // -- Stripe Connect OAuth callback: exchange code -> connected acct id --
+      if (path === "/v1/oauth/stripe/callback" && req.method === "GET") {
+        const code = url.searchParams.get("code");
+        const state = url.searchParams.get("state");
+        const back = (q) => new Response(null, { status: 302, headers: { Location: `${APP_REDIRECT}?${q}` } });
+        if (!code || !state) return back("error=stripe");
+        const st = parseState(await env.ACCOUNTS.get(`oauthstate:${state}`));
+        if (!st) return back("error=stripe_expired");
+        const acctId = st.id;
+        const finish = (ok, q) => st.native ? nativeDone(ok, "Stripe") : back(q);
+        await env.ACCOUNTS.delete(`oauthstate:${state}`);
+        try {
+          const raw = await env.ACCOUNTS.get(`acct:${acctId}`);
+          if (!raw) return finish(false, "error=stripe_account");
+          const acct = JSON.parse(raw);
+          const r = await fetch("https://connect.stripe.com/oauth/token", {
+            method: "POST",
+            headers: { "content-type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              grant_type: "authorization_code",
+              code,
+              client_secret: env.STRIPE_SECRET_KEY || "",
+            }),
+          });
+          const j = await r.json();
+          if (!r.ok || !j.stripe_user_id) {
+            return finish(false, `error=${encodeURIComponent(String(j.error_description || j.error || "stripe_exchange").slice(0, 80))}`);
+          }
+          const cred = { oauth: true, acct: j.stripe_user_id };
+          acct.providers.stripe = { t: await sealToken(env, JSON.stringify(cred)), at: new Date().toISOString().slice(0, 10) };
+          await saveAcct(env, acctId, acct);
+          return finish(true, "connected=stripe");
         } catch (e) {
           return finish(false, `error=${encodeURIComponent(String(e?.message || e).slice(0, 80))}`);
         }
@@ -1141,6 +1194,15 @@ export default {
         const state = `sh_${randHex(16)}`;
         await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, native: !!body.native }), { expirationTtl: 600 });
         return json(req, 200, { url: shopifyAuthorizeUrl(env, sub, state) });
+      }
+
+      // -- Stripe Connect OAuth start: mint state -> account, return URL --
+      if (path === "/v1/oauth/stripe/start" && req.method === "POST") {
+        if (!env.STRIPE_CLIENT_ID) return json(req, 400, { error: "Stripe Connect not configured — set STRIPE_CLIENT_ID (var) + STRIPE_SECRET_KEY (secret)" });
+        const stBody = (await readBody(req)) ?? {};
+        const state = `st_${randHex(16)}`;
+        await env.ACCOUNTS.put(`oauthstate:${state}`, JSON.stringify({ id, native: !!stBody.native }), { expirationTtl: 600 });
+        return json(req, 200, { url: stripeAuthorizeUrl(env, state) });
       }
 
       // -- Square OAuth start: mint state -> account, return the authorize URL --
@@ -1305,7 +1367,10 @@ export default {
               await saveAcct(env, id, acct);
               continue;
             }
-            const rows = await ADAPTERS[provider].pull(cred, sinceUnix);
+            const hydrated = provider === "stripe" && cred.oauth
+              ? { ...cred, key: env.STRIPE_SECRET_KEY }
+              : cred;
+            const rows = await ADAPTERS[provider].pull(hydrated, sinceUnix);
             pulled[provider] = rows.length;
             for (const r of rows) r._src = provider;
             charges.push(...rows);

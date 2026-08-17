@@ -255,7 +255,7 @@ function LiveConnect() {
     }
   }, []);
 
-  async function doOAuth(prov: "square" | "etsy" | "shopify") {
+  async function doOAuth(prov: "stripe" | "square" | "etsy" | "shopify") {
     setBusy(`opening ${prov} sign-in…`);
     setStatus(null);
     try {
@@ -427,6 +427,16 @@ function LiveConnect() {
             </button>
             <div className="lc-mint">
               <b>One tap:</b> enter your shop, sign in on Shopify, approve read-only access. Or paste an Admin token below.
+            </div>
+          </>
+        )}
+        {provider === "stripe" && (
+          <>
+            <button className="dbtn primary" disabled={!!busy} onClick={() => doOAuth("stripe")}>
+              Connect with Stripe — sign in
+            </button>
+            <div className="lc-mint">
+              <b>One tap:</b> you sign in on Stripe and approve read-only access — no key to copy. Or paste a restricted key below.
             </div>
           </>
         )}
