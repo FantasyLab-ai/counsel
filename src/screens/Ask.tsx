@@ -60,7 +60,7 @@ const SEED_QUESTIONS = [
 ];
 const PROMPTS = ["Which product should I restock first?", "Is my pricing too low?", "What's my slowest day?"];
 
-function Answer({ a, decision }: { a: AskAnswer; decision?: RouteDecision }) {
+function Answer({ a, decision, onAsk }: { a: AskAnswer; decision?: RouteDecision; onAsk?: (q: string) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className={`a ${open ? "open" : ""}`}>
@@ -90,7 +90,9 @@ function Answer({ a, decision }: { a: AskAnswer; decision?: RouteDecision }) {
       </div>
       {a.followups.length > 0 && (
         <div className="followups" style={{ marginTop: 14 }}>
-          {a.followups.map((f) => <span className="fu" key={f}>{f}</span>)}
+          {a.followups.map((f) => (
+            <button type="button" className="fu" key={f} onClick={() => onAsk?.(f)}>{f}</button>
+          ))}
         </div>
       )}
     </div>
@@ -201,7 +203,7 @@ export default function Ask() {
               }
             />
           ) : (
-            <Answer a={t.a} decision={t.decision} key={i} />
+            <Answer a={t.a} decision={t.decision} onAsk={submit} key={i} />
           )
         )}
         <div ref={endRef} />

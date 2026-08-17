@@ -14,7 +14,7 @@ import { drivers } from "./drivers";
 import { sentinel } from "./sentinel";
 import { menuMap } from "./menu";
 import { cashView } from "./cashview";
-import { arAging } from "./money";
+import { arAging, staffingPlan } from "./money";
 import { postLift, channelAttribution } from "./socialMath";
 
 const strip = (html: string) => html.replace(/<[^>]+>/g, "");
@@ -47,6 +47,32 @@ const noExp = () => live() && !userExpenses();
 const EXP_NOTE = "Baseline costs are the demo's until your expenses arrive — drop a bank CSV in Power Up and this recomputes on your true burn.";
 
 const INTENTS: Intent[] = [
+  // ---- staffing: match people to the weekly rhythm ----
+  {
+    match: /\b(staff(ing)?|labor|labour|headcount|how many people)\b/i,
+    run: async (q) => {
+      const plan = await staffingPlan().catch(() => null);
+      if (!plan || plan.some((d) => !isFinite(d.factor))) {
+        return answer(q, ["daily sales: not enough days yet"],
+          `Not enough days to see your rhythm <em>yet.</em>`,
+          `Staffing-to-demand needs a couple of weeks of daily sales so each weekday has its own baseline. Connect your register or drop a sales CSV in Power Up, and this becomes a per-day coverage plan computed from YOUR week.`,
+          "I won't guess your busy days from an industry average.",
+          ["What do I connect?", "How's this month going?"]);
+      }
+      const busy = plan.filter((d) => d.people > 1);
+      const lines = plan.map((d) =>
+        `<b>${d.day}</b> — ${d.people} ${d.people > 1 ? "people" : "person"} · ${Math.round(d.factor * 100)}% of an average day${d.note ? ` (${d.note})` : ""}`,
+      ).join("\n");
+      return answer(q,
+        ["weekday rhythm (your daily sales)", "staffing-to-demand"],
+        busy.length
+          ? `Your week has a shape — <em>${busy.map((d) => d.day).join(" and ")} earn${busy.length === 1 ? "s" : ""} the second pair of hands.</em>`
+          : `One steady pair of hands — <em>your week runs flat.</em>`,
+        `${lines}\n\nJudge slow days against their OWN weekday, not the week's best — and staff to the shape instead of evenly.`,
+        "Coverage is rhythm-based: a day at 110%+ of average suggests the second person. Wage math is separate — ask the hire question with a wage and I'll run true affordability.",
+        ["Can I afford a helper at $1,400/mo?", "What's my slowest day?"]);
+    },
+  },
   // ---- can I afford X? ----
   {
     match: /\b(afford|buy|purchase|invest in|worth (buying|getting))\b/i,
@@ -246,7 +272,7 @@ const INTENTS: Intent[] = [
     run: async (q) => {
       const [se, st] = await Promise.all([seasonality().catch(() => null), sentinel().catch(() => null)]);
       return answer(q, ["weekday decomposition", "sentinel bands"],
-        se ? `${se.strongest}s run <em>${se.ratio.toFixed(1)}× your ${se.weakest}s.</em>` : `Your weekly rhythm is still forming.`,
+        se ? `${se.strongest} run <em>${se.ratio.toFixed(1)}× your ${se.weakest}.</em>` : `Your weekly rhythm is still forming.`,
         (se ? `Strongest: <b>${se.strongest}</b> · weakest: <b>${se.weakest}</b> (${se.ratio.toFixed(1)}×). Staff and produce to that shape — and judge slow days against their OWN weekday, not the week's best.` : "") +
         (st ? `\n\nSentinel: ${strip(st.headline)}` : ""),
         "A slow Tuesday is only a problem if it's slow FOR a Tuesday.",
