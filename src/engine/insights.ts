@@ -25,15 +25,24 @@ export async function ledger(): Promise<Ledger> {
 }
 
 // --- baselines (P&L mock — same figures as the rest of the prototype) -------
-export const BASELINE = {
-  avgProfit: 3050, // $/mo, trailing 3
-  worstProfit: 2050, // Feb
-  cash: 48300,
-  burn: 6900, // avg net monthly outgoings
-  margin: 0.34,
-  fixedOutgoings: 6900, // rent + materials + software, monthly
-  variancePct: 30,
-};
+// BASELINE is DOMAIN-AWARE: the demo anchors every deep engine reads
+// (Pay Yourself, cash view, runway, board meeting) move with the chosen
+// world, so no screen can contradict another. Live mode never reads
+// these — real businesses compute from their own rows.
+export const BASELINE = (() => {
+  let g = "";
+  try {
+    const id = localStorage.getItem("counsel.persona") ?? "";
+    const food = ["foodtruck","restaurant","cafe","bakery","bar","catering","ghostkitchen"];
+    const music = ["songwriter","band","producer"];
+    const svc = ["landscaper","contractor","plumber","electrician","hvac","cleaning","painting","roofing","handyman","poolservice","pestcontrol","autoshop","towing"];
+    g = food.includes(id) ? "food" : music.includes(id) ? "music" : svc.includes(id) ? "svc" : "";
+  } catch { /* default world */ }
+  if (g === "food") return { avgProfit: 4100, worstProfit: 1900, cash: 22800, burn: 6000, margin: 0.29, fixedOutgoings: 6000, variancePct: 24 };
+  if (g === "svc") return { avgProfit: 5200, worstProfit: 2400, cash: 31500, burn: 5700, margin: 0.42, fixedOutgoings: 5700, variancePct: 38 };
+  if (g === "music") return { avgProfit: 1450, worstProfit: 300, cash: 9400, burn: 2250, margin: 0.58, fixedOutgoings: 2250, variancePct: 55 };
+  return { avgProfit: 3050, worstProfit: 2050, cash: 48300, burn: 6900, margin: 0.34, fixedOutgoings: 6900, variancePct: 30 };
+})();
 
 export const money = (x: number) => `$${Math.round(x).toLocaleString("en-US")}`;
 
