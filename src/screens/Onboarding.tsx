@@ -61,13 +61,13 @@ export default function Onboarding() {
     }
   }
 
-  async function obOAuth(prov: "square" | "shopify") {
+  async function obOAuth(prov: "square" | "shopify" | "stripe") {
     setObErr(null);
     if (prov === "shopify" && !obShop.trim()) {
       setObErr("enter your your-shop.myshopify.com name first");
       return;
     }
-    setObBusy(`opening ${prov === "square" ? "Square" : "Shopify"} sign-in…`);
+    setObBusy(`opening ${prov === "square" ? "Square" : prov === "stripe" ? "Stripe" : "Shopify"} sign-in…`);
     try {
       const { oauthConnectUrl, isNativeApp, cloudStatus } = await import("../engine/cloudSync");
       const url = await oauthConnectUrl(prov, prov === "shopify" ? { shop: obShop.trim() } : undefined);
@@ -201,8 +201,8 @@ export default function Onboarding() {
               <div className="cc-head">
                 <div className="cc-logo">◼</div>
                 <div>
-                  <div className="ccn">Square · Shopify</div>
-                  <div className="ccs">Your register &amp; your store — live today (bank, Stripe, QuickBooks: in review)</div>
+                  <div className="ccn">Square · Shopify · Stripe</div>
+                  <div className="ccs">Your register, store &amp; payments — live today (bank, QuickBooks: in review)</div>
                 </div>
               </div>
               <div className="trust">
@@ -245,6 +245,9 @@ export default function Onboarding() {
               <button className="btn" disabled={!!obBusy} onClick={() => obOAuth("square")}>
                 {obBusy ?? "Connect Square — sign in"}
               </button>
+              <button className="btn" disabled={!!obBusy} onClick={() => obOAuth("stripe")}>
+                Connect Stripe — sign in
+              </button>
               <input className="dt-input" placeholder="your-shop (from your-shop.myshopify.com)"
                 value={obShop} onChange={(e) => setObShop(e.target.value)} autoComplete="off"
                 aria-label="Shopify shop name" />
@@ -252,7 +255,7 @@ export default function Onboarding() {
                 Connect Shopify — sign in
               </button>
               <div className="ob-persona-note">
-                Bank, Stripe, QuickBooks, and Etsy connections are in each platform's
+                Bank, QuickBooks, and Etsy connections are in each platform's
                 final review — they arrive as one-tap sign-ins too. The walkthrough
                 in Power Up always shows what's live.
               </div>
