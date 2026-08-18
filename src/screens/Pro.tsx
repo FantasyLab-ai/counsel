@@ -16,7 +16,9 @@ export default function Pro() {
   const [pkgs, setPkgs] = useState<{ id: string; identifier: string; title: string }[]>([]);
   const [diag, setDiag] = useState("");
   const [busy, setBusy] = useState(false);
-  const pro = isPro();
+  // ?paywall=1 lets a founding member preview exactly what non-members
+  // see: buttons, prices, diagnosis line and all. Entitlement untouched.
+  const pro = isPro() && !window.location.search.includes("paywall=1");
 
   // Native store builds with billing configured show real buy buttons;
   // everywhere else the paywall stays informational + founding codes.

@@ -120,7 +120,7 @@ export default function Settings() {
             <div className="pn">{displayName()}</div>
             <div className="pm">{getPersona()?.label ?? "your business"} · tap to edit</div>
           </div>
-          <div className="plan" role="button" tabIndex={0} style={{cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();nav("/pro");}} onKeyDown={(e)=>{if(e.key==="Enter")nav("/pro");}}>{tierLabel()}</div>
+          <div className="plan" role="button" tabIndex={0} style={{cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();nav("/pro?paywall=1");}} onKeyDown={(e)=>{if(e.key==="Enter")nav("/pro?paywall=1");}}>{tierLabel()}</div>
         </div>
       </Reveal>
 
