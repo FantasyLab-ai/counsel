@@ -23,6 +23,10 @@
     // (Prior app 9jrjuecsq3mxb5jusixtbcqk was banned in Etsy's July purge.)
     "ETSY_CLIENT_ID": "a9pt2jt0sv73cr7001avhwfv",
     "SHOPIFY_CLIENT_ID": "a2448137f1eaae2812da54bebd40540f",
+    // Intuit DEVELOPMENT keys — sandbox companies only. On production
+    // approval: swap both to the Production tab's values and set
+    // QBO_ENV=production (worker defaults to sandbox without it).
+    "QBO_CLIENT_ID": "ABa6L0dlBnVTEz8XN1hrVYJNuntGRw44Tl9HGaXp8ZzkCKZLyC",
     // LIVE Stripe Connect client id (platform review cleared 2026-08-18).
     // Pairs with the live STRIPE_SECRET_KEY secret for token exchange.
     "STRIPE_CLIENT_ID": "ca_V5foouysKSN8v0Yza4bMisFCSKlLqv7M"
