@@ -100,6 +100,21 @@ export function capabilityRead(): CapabilityRead {
       status: "live", note: "always on — honesty is not optional equipment" },
   ];
 
+  // The showroom SHOWCASES: in demo view every engine runs on demo fuel —
+  // the full instrument panel, so a prospect sees what they'd be unlocking.
+  // The live/warming/locked truth-telling begins the moment real data
+  // lands and mode flips to "live".
+  if (mode === "demo") {
+    const showcase = engines.map((e) => ({
+      ...e,
+      status: "live" as const,
+      note: e.id === "calibration" ? e.note : undefined,
+      unlock: undefined,
+      unlockKind: undefined,
+    }));
+    return { mode, engines: showcase, live: showcase.length, warming: 0, locked: 0, pct: 100 };
+  }
+
   const live = engines.filter((e) => e.status === "live").length;
   const warming = engines.filter((e) => e.status === "warming").length;
   const locked = engines.filter((e) => e.status === "locked").length;

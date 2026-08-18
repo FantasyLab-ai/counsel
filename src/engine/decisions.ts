@@ -1,3 +1,4 @@
+import { demoStarProduct } from "./persona";
 // The Decisions Tracker — advice → action → outcome, managed like a real
 // project board. Counsel grades its own recommendations against what
 // actually happened; you can also add, advance, grade and drop decisions
@@ -44,7 +45,7 @@ const SEED: Decision[] = [
   {
     id: "seed-restock",
     loggedAt: "2026-03-10",
-    action: "Expedited the Sunset Mug restock (+$120 rush fee)",
+    action: `Expedited the ${demoStarProduct()} restock (+$120 rush fee)`,
     expected: "recover ≥ half of the ~$300/day stockout drag",
     gradeAt: "2026-04-09",
     status: "grading",

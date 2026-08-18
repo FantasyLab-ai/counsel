@@ -9,6 +9,7 @@ import type {
   Period,
   Source,
 } from "./counsel";
+import { demoStarProduct } from "../engine/persona";
 
 // Small helper so the prototype still *feels* like it computed something.
 const delay = <T,>(v: T, ms = 220): Promise<T> =>
@@ -45,7 +46,7 @@ export function brief(): Promise<Brief> {
       {
         id: "att-2",
         source: "Inventory · Shopify",
-        headline: "<b>Sunset Mug</b> out of stock 6 days — it was 18% of March sales.",
+        headline: `<b>${demoStarProduct()}</b> out of stock 6 days — it was 18% of March sales.`,
         confidence: "moderate",
         confidenceLabel: "Likely a factor",
         citationChip: "SKU share",
@@ -257,7 +258,7 @@ const FORECAST_ANSWER: AskAnswer = {
   verdict: "It should recover — but I'll give you a <em>range, not a promise.</em>",
   checked: ["trend since Mar 4", "restock date", "◆ Shopify"],
   body:
-    "If the Sunset Mug restocks on schedule (~<b>Mar 16</b>), my best estimate is April lands between <b>$58k and $67k</b>.\n\nThe range is wide on purpose. One product and one ended promo drove the dip — I can't perfectly predict either, so I won't pretend to.",
+    `If the ${demoStarProduct()} restocks on schedule (~<b>Mar 16</b>), my best estimate is April lands between <b>$58k and $67k</b>.\n\nThe range is wide on purpose. One product and one ended promo drove the dip — I can't perfectly predict either, so I won't pretend to.`,
   honestNote: "This is a projection, not a guarantee. I'd rather show you the range than fake a single number.",
   confidence: "forecast",
   confidenceLabel: "Forecast · honest range",

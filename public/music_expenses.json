@@ -1,0 +1,172 @@
+{
+ "expenses": [
+  {
+   "d": "2025-12-01",
+   "vendor": "Rehearsal Room \u2014 East Nash",
+   "amount": 350.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2025-12-05",
+   "vendor": "Plugin & distro subscriptions",
+   "amount": 29.0,
+   "cat": "software"
+  },
+  {
+   "d": "2025-12-07",
+   "vendor": "Shell (van fuel)",
+   "amount": 192.69,
+   "cat": "travel"
+  },
+  {
+   "d": "2025-12-08",
+   "vendor": "Studio time \u2014 mix session",
+   "amount": 384.71,
+   "cat": "recording"
+  },
+  {
+   "d": "2025-12-11",
+   "vendor": "Sweetwater \u2014 strings & cables",
+   "amount": 93.19,
+   "cat": "gear"
+  },
+  {
+   "d": "2025-12-11",
+   "vendor": "Sweetwater \u2014 strings & cables",
+   "amount": 43.79,
+   "cat": "gear"
+  },
+  {
+   "d": "2025-12-12",
+   "vendor": "Shell (van fuel)",
+   "amount": 101.94,
+   "cat": "travel"
+  },
+  {
+   "d": "2025-12-18",
+   "vendor": "Shell (van fuel)",
+   "amount": 184.49,
+   "cat": "travel"
+  },
+  {
+   "d": "2025-12-28",
+   "vendor": "Studio time \u2014 mix session",
+   "amount": 280.43,
+   "cat": "recording"
+  },
+  {
+   "d": "2026-01-01",
+   "vendor": "Rehearsal Room \u2014 East Nash",
+   "amount": 350.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2026-01-03",
+   "vendor": "Shell (van fuel)",
+   "amount": 113.57,
+   "cat": "travel"
+  },
+  {
+   "d": "2026-01-04",
+   "vendor": "Studio time \u2014 mix session",
+   "amount": 351.11,
+   "cat": "recording"
+  },
+  {
+   "d": "2026-01-05",
+   "vendor": "Plugin & distro subscriptions",
+   "amount": 39.0,
+   "cat": "software"
+  },
+  {
+   "d": "2026-01-07",
+   "vendor": "Sweetwater \u2014 strings & cables",
+   "amount": 134.88,
+   "cat": "gear"
+  },
+  {
+   "d": "2026-01-19",
+   "vendor": "Shell (van fuel)",
+   "amount": 170.32,
+   "cat": "travel"
+  },
+  {
+   "d": "2026-01-23",
+   "vendor": "Sweetwater \u2014 strings & cables",
+   "amount": 102.21,
+   "cat": "gear"
+  },
+  {
+   "d": "2026-01-24",
+   "vendor": "Shell (van fuel)",
+   "amount": 133.38,
+   "cat": "travel"
+  },
+  {
+   "d": "2026-02-01",
+   "vendor": "Rehearsal Room \u2014 East Nash",
+   "amount": 350.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2026-02-03",
+   "vendor": "Shell (van fuel)",
+   "amount": 196.74,
+   "cat": "travel"
+  },
+  {
+   "d": "2026-02-05",
+   "vendor": "Plugin & distro subscriptions",
+   "amount": 49.0,
+   "cat": "software"
+  },
+  {
+   "d": "2026-02-05",
+   "vendor": "Van repair \u2014 alternator",
+   "amount": 410.0,
+   "cat": "repairs"
+  },
+  {
+   "d": "2026-02-05",
+   "vendor": "Van repair \u2014 alternator",
+   "amount": 410.0,
+   "cat": "repairs"
+  },
+  {
+   "d": "2026-03-01",
+   "vendor": "Rehearsal Room \u2014 East Nash",
+   "amount": 350.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2026-03-05",
+   "vendor": "Plugin & distro subscriptions",
+   "amount": 59.0,
+   "cat": "software"
+  },
+  {
+   "d": "2026-03-16",
+   "vendor": "Shell (van fuel)",
+   "amount": 213.4,
+   "cat": "travel"
+  },
+  {
+   "d": "2026-03-16",
+   "vendor": "Sweetwater \u2014 strings & cables",
+   "amount": 56.62,
+   "cat": "gear"
+  },
+  {
+   "d": "2026-03-19",
+   "vendor": "Merch print run",
+   "amount": 336.17,
+   "cat": "merch"
+  },
+  {
+   "d": "2026-03-21",
+   "vendor": "Merch print run",
+   "amount": 505.36,
+   "cat": "merch"
+  }
+ ]
+}

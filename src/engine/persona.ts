@@ -279,5 +279,24 @@ export function setBusinessName(name: string): void {
 }
 
 export function displayName(): string {
-  return getBusinessName() ?? "Kiln & Co.";
+  const real = getBusinessName();
+  if (real) return real;
+  // Demo businesses match the chosen line of work — a restaurateur tours
+  // a restaurant, a landscaper a crew, a songwriter a merch table.
+  const g = getPersona()?.group;
+  if (g === "Food & drink") return "Ember & Oak";
+  if (g === "Trades & field") return "GreenLine Yards";
+  if (g === "Music & entertainment") return "The Wren Sessions";
+  return "Kiln & Co.";
+}
+
+/** The demo ledger's headline product, matched to the chosen line of work
+ *  (authored demo copy interpolates this so a restaurateur never reads
+ *  about pottery). */
+export function demoStarProduct(): string {
+  const g = getPersona()?.group;
+  if (g === "Food & drink") return "Smash Burger";
+  if (g === "Trades & field") return "Lawn Care Visit";
+  if (g === "Music & entertainment") return "Merch Tee";
+  return "Sunset Mug";
 }

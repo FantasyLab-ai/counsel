@@ -1,0 +1,232 @@
+{
+ "expenses": [
+  {
+   "d": "2025-12-01",
+   "vendor": "Shop Bay Lease",
+   "amount": 900.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2025-12-05",
+   "vendor": "Jobber subscriptions",
+   "amount": 49.0,
+   "cat": "software"
+  },
+  {
+   "d": "2025-12-07",
+   "vendor": "Shell Fleet Fuel",
+   "amount": 599.23,
+   "cat": "fuel"
+  },
+  {
+   "d": "2025-12-10",
+   "vendor": "Shell Fleet Fuel",
+   "amount": 520.01,
+   "cat": "fuel"
+  },
+  {
+   "d": "2025-12-10",
+   "vendor": "Home Depot",
+   "amount": 202.41,
+   "cat": "materials"
+  },
+  {
+   "d": "2025-12-13",
+   "vendor": "SiteOne Landscape Supply",
+   "amount": 680.25,
+   "cat": "materials"
+  },
+  {
+   "d": "2025-12-13",
+   "vendor": "Home Depot",
+   "amount": 114.66,
+   "cat": "materials"
+  },
+  {
+   "d": "2025-12-22",
+   "vendor": "Progressive Commercial",
+   "amount": 310.0,
+   "cat": "insurance"
+  },
+  {
+   "d": "2025-12-22",
+   "vendor": "Home Depot",
+   "amount": 118.48,
+   "cat": "materials"
+  },
+  {
+   "d": "2026-01-01",
+   "vendor": "Shop Bay Lease",
+   "amount": 900.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2026-01-02",
+   "vendor": "Shell Fleet Fuel",
+   "amount": 560.1,
+   "cat": "fuel"
+  },
+  {
+   "d": "2026-01-05",
+   "vendor": "Jobber subscriptions",
+   "amount": 64.0,
+   "cat": "software"
+  },
+  {
+   "d": "2026-01-05",
+   "vendor": "Dump fees",
+   "amount": 92.53,
+   "cat": "disposal"
+  },
+  {
+   "d": "2026-01-14",
+   "vendor": "Home Depot",
+   "amount": 233.31,
+   "cat": "materials"
+  },
+  {
+   "d": "2026-01-17",
+   "vendor": "SiteOne Landscape Supply",
+   "amount": 652.1,
+   "cat": "materials"
+  },
+  {
+   "d": "2026-01-17",
+   "vendor": "Home Depot",
+   "amount": 101.2,
+   "cat": "materials"
+  },
+  {
+   "d": "2026-01-22",
+   "vendor": "Equipment Repair \u2014 mower deck",
+   "amount": 285.0,
+   "cat": "repairs"
+  },
+  {
+   "d": "2026-01-22",
+   "vendor": "Equipment Repair \u2014 mower deck",
+   "amount": 285.0,
+   "cat": "repairs"
+  },
+  {
+   "d": "2026-01-24",
+   "vendor": "Home Depot",
+   "amount": 172.57,
+   "cat": "materials"
+  },
+  {
+   "d": "2026-01-25",
+   "vendor": "Progressive Commercial",
+   "amount": 310.0,
+   "cat": "insurance"
+  },
+  {
+   "d": "2026-02-01",
+   "vendor": "Shop Bay Lease",
+   "amount": 900.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2026-02-02",
+   "vendor": "Progressive Commercial",
+   "amount": 310.0,
+   "cat": "insurance"
+  },
+  {
+   "d": "2026-02-02",
+   "vendor": "Dump fees",
+   "amount": 91.01,
+   "cat": "disposal"
+  },
+  {
+   "d": "2026-02-04",
+   "vendor": "SiteOne Landscape Supply",
+   "amount": 741.15,
+   "cat": "materials"
+  },
+  {
+   "d": "2026-02-05",
+   "vendor": "Jobber subscriptions",
+   "amount": 79.0,
+   "cat": "software"
+  },
+  {
+   "d": "2026-02-06",
+   "vendor": "Shell Fleet Fuel",
+   "amount": 452.88,
+   "cat": "fuel"
+  },
+  {
+   "d": "2026-02-06",
+   "vendor": "Dump fees",
+   "amount": 62.64,
+   "cat": "disposal"
+  },
+  {
+   "d": "2026-02-09",
+   "vendor": "SiteOne Landscape Supply",
+   "amount": 504.42,
+   "cat": "materials"
+  },
+  {
+   "d": "2026-02-10",
+   "vendor": "Shell Fleet Fuel",
+   "amount": 462.07,
+   "cat": "fuel"
+  },
+  {
+   "d": "2026-02-11",
+   "vendor": "Progressive Commercial",
+   "amount": 310.0,
+   "cat": "insurance"
+  },
+  {
+   "d": "2026-03-01",
+   "vendor": "Shop Bay Lease",
+   "amount": 900.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2026-03-05",
+   "vendor": "Jobber subscriptions",
+   "amount": 94.0,
+   "cat": "software"
+  },
+  {
+   "d": "2026-03-06",
+   "vendor": "SiteOne Landscape Supply",
+   "amount": 610.74,
+   "cat": "materials"
+  },
+  {
+   "d": "2026-03-07",
+   "vendor": "Dump fees",
+   "amount": 47.35,
+   "cat": "disposal"
+  },
+  {
+   "d": "2026-03-13",
+   "vendor": "Shell Fleet Fuel",
+   "amount": 451.03,
+   "cat": "fuel"
+  },
+  {
+   "d": "2026-03-17",
+   "vendor": "Shell Fleet Fuel",
+   "amount": 558.73,
+   "cat": "fuel"
+  },
+  {
+   "d": "2026-03-20",
+   "vendor": "Shell Fleet Fuel",
+   "amount": 492.45,
+   "cat": "fuel"
+  },
+  {
+   "d": "2026-03-25",
+   "vendor": "SiteOne Landscape Supply",
+   "amount": 458.7,
+   "cat": "materials"
+  }
+ ]
+}

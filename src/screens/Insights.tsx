@@ -283,7 +283,7 @@ export default function Insights() {
                   </span></div>
                 <div className="mval"><span className="num">{out.elasticity.elasticity.toFixed(2)}</span><span className="dlt">elasticity</span></div>
                 <div className="mmean">
-                  Your Feb 1 price move (+{out.elasticity.pricePct.toFixed(0)}% on the Sunset Mug) cost only{" "}
+                  Your Feb 1 price move (+{out.elasticity.pricePct.toFixed(0)}% on the {out.elasticity.productName}) cost only{" "}
                   <b>{Math.abs(out.elasticity.qtyPct).toFixed(0)}% of unit demand</b> — your buyers are{" "}
                   {out.elasticity.inelastic ? <b>price-tolerant</b> : <b>price-sensitive</b>}.{" "}
                   {out.elasticity.inelastic && out.elasticity.monthlyGain > 0 && (

@@ -1005,12 +1005,21 @@ export default function Power() {
         <article className="mcard open il-card cap-ledger">
           <div className="il-head">
             <span className="il-kick">{cap.mode === "demo" ? "read on demo fuel — connect to make it yours" : "read from YOUR data, live"}</span>
-            <span className="pill lite-hi"><span className="dot" />{cap.live} live · {cap.warming} warming · {cap.locked} locked</span>
+            <span className="pill lite-hi"><span className="dot" />
+              {cap.mode === "demo" ? `${cap.engines.length} engines · full showcase` : `${cap.live} live · ${cap.warming} warming · ${cap.locked} locked`}
+            </span>
           </div>
           <div className="mmean">
-            Counsel tells you how sure it is on every number — this is the same honesty
-            about the whole app. Each engine below is <b>live</b>, <b>warming up</b>
-            (your history is still short), or <b>locked</b> with the exact unlock.
+            {cap.mode === "demo" ? (
+              <>You're seeing <b>every engine</b> running on demo fuel — the full instrument
+                panel, so you know exactly what you're unlocking. The moment your first real
+                source lands, this ledger switches to the truth: which engines are live on
+                <b> YOUR</b> data, which are warming up, and which need one more source.</>
+            ) : (
+              <>Counsel tells you how sure it is on every number — this is the same honesty
+                about the whole app. Each engine below is <b>live</b>, <b>warming up</b>
+                (your history is still short), or <b>locked</b> with the exact unlock.</>
+            )}
           </div>
           {(["live", "warming", "locked"] as const).map((group) =>
             cap.engines.filter((e) => e.status === group).map((e) => (

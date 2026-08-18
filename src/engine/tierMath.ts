@@ -25,9 +25,36 @@ export interface Expense { d: string; vendor: string; amount: number; cat: strin
 
 let _led: EnrichedLedger | null = null;
 let _exp: Expense[] | null = null;
+let _demoKey = ""; // which domain bundle the cache holds
+
+// The demo tours the CHOSEN line of work: a restaurateur sees a restaurant,
+// a landscaper a crew, a songwriter gigs and a merch table. Same planted
+// truths in every bundle (price change, spike day, regulars, audit bait).
+function demoFiles(): { ledger: string; expenses: string } {
+  let g = "";
+  try {
+    const id = localStorage.getItem("counsel.persona") ?? "";
+    const groupOf: Record<string, string> = {
+      foodtruck: "food", restaurant: "food", cafe: "food", bakery: "food", bar: "food", catering: "food", ghostkitchen: "food",
+      songwriter: "music", band: "music", producer: "music",
+      landscaper: "svc", contractor: "svc", plumber: "svc", electrician: "svc", hvac: "svc", cleaning: "svc",
+      painting: "svc", roofing: "svc", handyman: "svc", poolservice: "svc", pestcontrol: "svc", autoshop: "svc", towing: "svc",
+    };
+    g = groupOf[id] ?? "";
+  } catch { /* default bundle */ }
+  if (g === "food") return { ledger: "/restaurant_ledger.json", expenses: "/restaurant_expenses.json" };
+  if (g === "svc") return { ledger: "/service_ledger.json", expenses: "/service_expenses.json" };
+  if (g === "music") return { ledger: "/music_ledger.json", expenses: "/music_expenses.json" };
+  return { ledger: "/kiln_ledger.json", expenses: "/kiln_expenses.json" };
+}
+
+function demoCacheCheck(): void {
+  const key = demoFiles().ledger;
+  if (key !== _demoKey) { _led = null; _exp = null; _demoKey = key; }
+}
 
 async function demoEnriched(): Promise<EnrichedLedger> {
-  const raw = await (await fetch("/kiln_ledger.json")).json();
+  const raw = await (await fetch(demoFiles().ledger)).json();
   return {
     products: raw.products,
     priceChange: raw.priceChange,
@@ -40,14 +67,16 @@ async function demoEnriched(): Promise<EnrichedLedger> {
 }
 
 export async function enriched(): Promise<EnrichedLedger> {
+  demoCacheCheck();
   if (_led) return _led;
   await loadCore();
   _led = await getEnriched(demoEnriched);
   return _led;
 }
 export async function expenses(): Promise<Expense[]> {
+  demoCacheCheck();
   if (_exp) return _exp;
-  _exp = await getExpenses(async () => (await (await fetch("/kiln_expenses.json")).json()).expenses);
+  _exp = await getExpenses(async () => (await (await fetch(demoFiles().expenses)).json()).expenses);
   return _exp!;
 }
 
@@ -70,6 +99,7 @@ export interface ElasticityOut {
   pricePct: number; qtyPct: number;
   inelastic: boolean; monthlyGain: number; // margin gain from a further +5% test
   nPre: number; nPost: number;
+  productName: string; // the product whose price moved — from THE ledger, never hardcoded
 }
 export async function priceElasticity(): Promise<ElasticityOut | null> {
   const led = await enriched();
@@ -118,6 +148,7 @@ export async function priceElasticity(): Promise<ElasticityOut | null> {
     pricePct: dp * 100, qtyPct: dq * 100,
     inelastic: Math.abs(e) < 1, monthlyGain: marginNew - marginNow,
     nPre: pre.length, nPost: post.length,
+    productName: led.products.find((p) => p.id === pc.product)?.name ?? pc.product,
   };
 }
 

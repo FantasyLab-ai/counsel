@@ -1,0 +1,214 @@
+{
+ "expenses": [
+  {
+   "d": "2025-12-01",
+   "vendor": "Eastside Property Mgmt",
+   "amount": 3800.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2025-12-02",
+   "vendor": "Sysco Nashville",
+   "amount": 2165.84,
+   "cat": "food"
+  },
+  {
+   "d": "2025-12-04",
+   "vendor": "US Foods",
+   "amount": 1087.38,
+   "cat": "food"
+  },
+  {
+   "d": "2025-12-05",
+   "vendor": "ChefCloud POS add-ons",
+   "amount": 89.0,
+   "cat": "software"
+  },
+  {
+   "d": "2025-12-11",
+   "vendor": "Sysco Nashville",
+   "amount": 1715.65,
+   "cat": "food"
+  },
+  {
+   "d": "2025-12-12",
+   "vendor": "Sysco Nashville",
+   "amount": 1547.95,
+   "cat": "food"
+  },
+  {
+   "d": "2025-12-17",
+   "vendor": "US Foods",
+   "amount": 1235.26,
+   "cat": "food"
+  },
+  {
+   "d": "2025-12-20",
+   "vendor": "Linen Service",
+   "amount": 174.91,
+   "cat": "supplies"
+  },
+  {
+   "d": "2025-12-22",
+   "vendor": "Metro Power & Water",
+   "amount": 466.6,
+   "cat": "utilities"
+  },
+  {
+   "d": "2025-12-25",
+   "vendor": "Metro Power & Water",
+   "amount": 450.94,
+   "cat": "utilities"
+  },
+  {
+   "d": "2025-12-27",
+   "vendor": "Linen Service",
+   "amount": 158.87,
+   "cat": "supplies"
+  },
+  {
+   "d": "2026-01-01",
+   "vendor": "Eastside Property Mgmt",
+   "amount": 3800.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2026-01-05",
+   "vendor": "ChefCloud POS add-ons",
+   "amount": 104.0,
+   "cat": "software"
+  },
+  {
+   "d": "2026-01-13",
+   "vendor": "US Foods",
+   "amount": 979.26,
+   "cat": "food"
+  },
+  {
+   "d": "2026-01-15",
+   "vendor": "Sysco Nashville",
+   "amount": 1988.69,
+   "cat": "food"
+  },
+  {
+   "d": "2026-01-18",
+   "vendor": "Sysco Nashville",
+   "amount": 2191.33,
+   "cat": "food"
+  },
+  {
+   "d": "2026-01-23",
+   "vendor": "US Foods",
+   "amount": 839.96,
+   "cat": "food"
+  },
+  {
+   "d": "2026-01-23",
+   "vendor": "Linen Service",
+   "amount": 162.6,
+   "cat": "supplies"
+  },
+  {
+   "d": "2026-01-24",
+   "vendor": "Sysco Nashville",
+   "amount": 1922.38,
+   "cat": "food"
+  },
+  {
+   "d": "2026-01-30",
+   "vendor": "Linen Service",
+   "amount": 168.2,
+   "cat": "supplies"
+  },
+  {
+   "d": "2026-02-01",
+   "vendor": "Eastside Property Mgmt",
+   "amount": 3800.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2026-02-05",
+   "vendor": "ChefCloud POS add-ons",
+   "amount": 119.0,
+   "cat": "software"
+  },
+  {
+   "d": "2026-02-12",
+   "vendor": "Hood Cleaning Co",
+   "amount": 450.0,
+   "cat": "repairs"
+  },
+  {
+   "d": "2026-02-12",
+   "vendor": "Hood Cleaning Co",
+   "amount": 450.0,
+   "cat": "repairs"
+  },
+  {
+   "d": "2026-02-21",
+   "vendor": "Linen Service",
+   "amount": 181.43,
+   "cat": "supplies"
+  },
+  {
+   "d": "2026-02-23",
+   "vendor": "Metro Power & Water",
+   "amount": 483.25,
+   "cat": "utilities"
+  },
+  {
+   "d": "2026-02-26",
+   "vendor": "Sysco Nashville",
+   "amount": 1992.06,
+   "cat": "food"
+  },
+  {
+   "d": "2026-03-01",
+   "vendor": "Eastside Property Mgmt",
+   "amount": 3800.0,
+   "cat": "rent"
+  },
+  {
+   "d": "2026-03-04",
+   "vendor": "US Foods",
+   "amount": 1045.03,
+   "cat": "food"
+  },
+  {
+   "d": "2026-03-05",
+   "vendor": "ChefCloud POS add-ons",
+   "amount": 134.0,
+   "cat": "software"
+  },
+  {
+   "d": "2026-03-07",
+   "vendor": "Repair \u2014 walk-in cooler",
+   "amount": 343.19,
+   "cat": "repairs"
+  },
+  {
+   "d": "2026-03-09",
+   "vendor": "Metro Power & Water",
+   "amount": 457.25,
+   "cat": "utilities"
+  },
+  {
+   "d": "2026-03-10",
+   "vendor": "US Foods",
+   "amount": 772.87,
+   "cat": "food"
+  },
+  {
+   "d": "2026-03-10",
+   "vendor": "Repair \u2014 walk-in cooler",
+   "amount": 388.61,
+   "cat": "repairs"
+  },
+  {
+   "d": "2026-03-16",
+   "vendor": "Sysco Nashville",
+   "amount": 2169.03,
+   "cat": "food"
+  }
+ ]
+}
