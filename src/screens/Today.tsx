@@ -3,7 +3,7 @@
 // the honest "watching" section, and connected sources.
 
 import { useEffect, useState } from "react";
-import { displayName, getPersona } from "../engine/persona";
+import { displayName, getPersona, setPersona } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
 import { demoView, hasUserData } from "../engine/dataSource";
@@ -224,6 +224,38 @@ export default function Today() {
           </div>
         </button>
       </Reveal>
+
+      {/* Demo world switcher: the showroom tours the chosen line of work —
+          one tap moves the whole demo (ledger, name, copy) to another world. */}
+      {!hasUserData() && (
+        <Reveal i={1}>
+          <div className="demo-worlds" role="group" aria-label="Tour a different demo business">
+            <span className="dw-lbl">tour as</span>
+            {[
+              { id: "maker", label: "🏺 Maker" },
+              { id: "restaurant", label: "🍽 Restaurant" },
+              { id: "landscaper", label: "🌱 Field crew" },
+              { id: "songwriter", label: "🎤 Musician" },
+            ].map((w) => {
+              const cur = getPersona()?.id ?? "maker";
+              const groups: Record<string, string[]> = {
+                maker: ["maker"], restaurant: ["restaurant"], landscaper: ["landscaper"], songwriter: ["songwriter"],
+              };
+              const on = groups[w.id]?.includes(cur) ||
+                (w.id === "restaurant" && getPersona()?.group === "Food & drink") ||
+                (w.id === "landscaper" && getPersona()?.group === "Trades & field") ||
+                (w.id === "songwriter" && getPersona()?.group === "Music & entertainment") ||
+                (w.id === "maker" && !["Food & drink", "Trades & field", "Music & entertainment"].includes(getPersona()?.group ?? ""));
+              return (
+                <button key={w.id} className={`chip-sm dw ${on ? "sel" : ""}`}
+                  onClick={() => { setPersona(w.id); window.location.reload(); }}>
+                  {w.label}
+                </button>
+              );
+            })}
+          </div>
+        </Reveal>
+      )}
 
       <div className="eyebrow">Needs your attention</div>
       <div className="eyebrow-sub">the few things worth a minute today, ranked</div>
