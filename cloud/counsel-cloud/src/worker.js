@@ -386,7 +386,13 @@ function stripeAuthorizeUrl(env, state) {
   const u = new URL("https://connect.stripe.com/oauth/authorize");
   u.searchParams.set("response_type", "code");
   u.searchParams.set("client_id", env.STRIPE_CLIENT_ID || "");
-  u.searchParams.set("scope", "read_only");
+  // Stripe gates the read_only OAuth scope behind a support request for
+  // new platforms ("Please use the read_write scope, or contact support").
+  // Until that request is granted, read_write is the only scope Stripe
+  // accepts — Counsel's code path remains read-only by construction (the
+  // adapter only ever GETs /v1/charges), and the in-app copy reflects
+  // policy-level honesty rather than permission-level until then.
+  u.searchParams.set("scope", "read_write");
   u.searchParams.set("redirect_uri", STRIPE_REDIRECT);
   u.searchParams.set("state", state);
   return u.toString();

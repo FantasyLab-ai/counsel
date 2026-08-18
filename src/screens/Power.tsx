@@ -287,7 +287,7 @@ const GUIDE_STEPS: {
     what: "your expenses, straight from the bank",
     note: "bank connections are in final review — days away" },
   { id: "stripe", name: "Stripe", status: "ready",
-    what: "online payments and invoices — sign in once, read-only, no keys" },
+    what: "online payments and invoices — sign in once, no keys. Counsel only ever reads" },
   { id: "quickbooks", name: "QuickBooks", status: "soon",
     what: "your books — expenses feed the money map and cash view",
     note: "Intuit verification underway" },
@@ -595,7 +595,7 @@ function LiveConnect() {
               Connect with Stripe — sign in
             </button>
             <div className="lc-mint">
-              <b>One tap:</b> you sign in on Stripe and approve read-only access — no key to copy. Or paste a restricted key below.
+              <b>One tap:</b> you sign in on Stripe and approve access — no key to copy. Counsel only ever reads your charges; nothing is written. Or paste a restricted read-only key below.
             </div>
           </>
         )}
