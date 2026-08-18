@@ -20,22 +20,30 @@ const DM = (() => {
   if (g === "Food & drink") return {
     headline: "A loud month — <em>the weekend carried it.</em>",
     sub: "Food costs held. Friday and Saturday did the lifting — and Monday is quietly costing you staff hours.",
-    rev: "$83,400", margin: "29%", runway: "3.8 mo", cust: "2,150",
+    rev: "$83,400", margin: "29%", runway: "3.8 mo", cust: "2,150", cash: "$22,800", burn: "$6,000",
+    marginNote: "<b>Healthy for full-service food.</b> Plate costs held; no creep in the walk-in.",
+    custLabel: "New customers · March", custNote: "<b>Walk-ins lead</b>; DoorDash is growing fastest. Watch its fees, not its volume.",
   };
   if (g === "Trades & field") return {
     headline: "Winter-slow — <em>and right on schedule.</em>",
     sub: "The spring ramp is already visible in bookings. Cash bridges the gap; the install jobs are the swing factor.",
-    rev: "$38,900", margin: "42%", runway: "5.5 mo", cust: "74",
+    rev: "$38,900", margin: "42%", runway: "5.5 mo", cust: "74", cash: "$31,500", burn: "$5,700",
+    marginNote: "<b>Strong for a crew business.</b> Materials held; the margin lives in the schedule.",
+    custLabel: "New clients · March", custNote: "<b>Referrals do the heavy lifting</b>. Every finished yard is a lead; keep asking.",
   };
   if (g === "Music & entertainment") return {
     headline: "Feast and famine — <em>mapped, not feared.</em>",
     sub: "Three good gig weekends, one dry week. Merch is quietly your steadiest earner per hour on stage.",
-    rev: "$6,840", margin: "58%", runway: "4.2 mo", cust: "9 venues",
+    rev: "$6,840", margin: "58%", runway: "4.2 mo", cust: "9 venues", cash: "$9,400", burn: "$2,250",
+    marginNote: "<b>Lean and healthy.</b> Merch and gigs both earn; costs stayed at strings-and-gas level.",
+    custLabel: "Venues played · this season", custNote: "<b>The merch table converts best</b> at weekend rooms. Stock for Fridays.",
   };
   return {
     headline: "A steady month — with <em>one real dent.</em>",
     sub: "Margins and cash are healthy. The only thing off is revenue, and I know exactly when it started.",
-    rev: "$61,200", margin: "34%", runway: "7 mo", cust: "214",
+    rev: "$61,200", margin: "34%", runway: "7 mo", cust: "214", cash: "$48,300", burn: "$6,900",
+    marginNote: "<b>Healthy and steady</b> for handmade goods. No meaningful change; costs did not creep.",
+    custLabel: "New customers · March", custNote: "<b>Instagram is pulling its weight</b>; your strongest channel right now. Worth leaning into while revenue is soft.",
   };
 })();
 
@@ -138,7 +146,7 @@ const METRICS: Metric[] = [
     label: "Gross margin",
     value: DM.margin,
     delta: { text: "— flat", dir: "flat" },
-    meaning: "<b>Healthy and steady</b> for handmade goods. No meaningful change — costs didn't creep.",
+    meaning: DM.marginNote,
     confidence: "high",
     confidenceLabel: "High",
     math: {
@@ -148,8 +156,8 @@ const METRICS: Metric[] = [
       keyStatNotation: "within ±1 std dev of 6-mo mean · no change flagged",
       viz: {
         kind: "band",
-        rangeLabel: "your normal range · 32–36%",
-        nowLabel: "now 34%",
+        rangeLabel: "your normal range, banded from 6 months",
+        nowLabel: `now ${DM.margin}`,
         nowPosPct: 50,
       },
       citation: {
@@ -162,7 +170,7 @@ const METRICS: Metric[] = [
     id: "runway",
     label: "Cash runway",
     value: DM.runway,
-    delta: { text: "$48,300 on hand", dir: "flat" },
+    delta: { text: `${DM.cash} on hand`, dir: "flat" },
     meaning: "<b>Comfortable.</b> Even a rough month wouldn't put you in danger.",
     confidence: "high",
     confidenceLabel: "High",
@@ -173,9 +181,9 @@ const METRICS: Metric[] = [
       viz: {
         kind: "arithmetic",
         lines: [
-          { text: "$48,300", op: "cash" },
-          { text: "÷ $6,900", op: "avg net burn / mo" },
-          { text: "≈ 7.0 months", kind: "result" },
+          { text: DM.cash, op: "cash" },
+          { text: `÷ ${DM.burn}`, op: "avg net burn / mo" },
+          { text: `≈ ${DM.runway}`, kind: "result" },
         ],
       },
       citation: {
@@ -186,11 +194,11 @@ const METRICS: Metric[] = [
   },
   {
     id: "customers",
-    label: "New customers · March",
+    label: DM.custLabel,
     value: DM.cust,
     delta: { text: "▴ 8%", dir: "up" },
     meaning:
-      "<b>Instagram is pulling its weight</b> — your strongest channel right now. Worth leaning into while revenue's soft.",
+      DM.custNote,
     confidence: "moderate",
     confidenceLabel: "Moderate",
     wide: true,

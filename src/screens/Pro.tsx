@@ -31,6 +31,23 @@ export default function Pro() {
     }).catch(() => billingDiag().then(setDiag).catch((e) => setDiag(`diagnosis failed: ${String(e).slice(0, 90)}`)));
   }, []);
 
+  // Founding auto-claim: the first 50 public-link installs become founding
+  // members automatically, each on its own seat. No code to type.
+  useEffect(() => {
+    if (isPro()) return;
+    (async () => {
+      try {
+        const { claimFoundingSeat } = await import("../engine/cloudSync");
+        const r = await claimFoundingSeat();
+        if (r.ok) {
+          const { grantFounding } = await import("../engine/entitlement");
+          grantFounding(r.seat);
+          window.location.reload();
+        }
+      } catch { /* offline; claimed on a later visit */ }
+    })();
+  }, []);
+
   async function buy(identifier: string) {
     tapFeedback(); setBusy(true);
     try {

@@ -72,6 +72,8 @@ export async function initBilling(): Promise<void> {
   }
 }
 
+const _direct: Record<string, unknown> = {};
+
 /** The offering's packages, for the paywall buttons. */
 export async function listPackages(): Promise<PackageView[]> {
   if (!billingAvailable()) return [];
@@ -79,11 +81,23 @@ export async function listPackages(): Promise<PackageView[]> {
     const Purchases = await rc();
     if (!configured) await initBilling();
     const { current } = await Purchases.getOfferings();
-    return (current?.availablePackages ?? []).map((p) => ({
+    const pks = (current?.availablePackages ?? []).map((p) => ({
       id: p.identifier,
       identifier: p.identifier,
       title: `${p.product.priceString}${p.packageType === "ANNUAL" ? " / year" : " / month"}`,
     }));
+    if (pks.length) return pks;
+    // Offerings empty -> go straight at the store products. Sidesteps any
+    // offering-level config or cache issue; StoreKit is the only gate left.
+    const res = await Purchases.getProducts({ productIdentifiers: ["counsel_pro_monthly", "counsel_pro_annual"] });
+    return (res.products ?? []).map((pr) => {
+      _direct[`direct:${pr.identifier}`] = pr;
+      return {
+        id: `direct:${pr.identifier}`,
+        identifier: `direct:${pr.identifier}`,
+        title: `${pr.priceString}${pr.identifier.includes("annual") ? " / year" : " / month"}`,
+      };
+    });
   } catch { return []; }
 }
 
@@ -123,6 +137,15 @@ export async function purchase(identifier: string): Promise<boolean> {
   if (!billingAvailable()) return false;
   try {
     const Purchases = await rc();
+    if (identifier.startsWith("direct:")) {
+      const product = _direct[identifier];
+      if (!product) return false;
+      const rcAny = Purchases as unknown as { purchaseStoreProduct: (o: { product: unknown }) => Promise<{ customerInfo: { entitlements?: { active?: Record<string, unknown> } } }> };
+      const { customerInfo } = await rcAny.purchaseStoreProduct({ product });
+      const okD = Boolean(customerInfo?.entitlements?.active?.[RC_ENTITLEMENT]);
+      if (okD) grantStorePro();
+      return okD;
+    }
     const { current } = await Purchases.getOfferings();
     const pkg = current?.availablePackages.find((p) => p.identifier === identifier);
     if (!pkg) return false;

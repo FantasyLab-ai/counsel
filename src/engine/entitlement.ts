@@ -90,6 +90,14 @@ export async function redeemFoundingCode(code: string): Promise<boolean> {
 /** Store-billing hooks — driven by RevenueCat's entitlement state (see
  *  engine/billing.ts). Founding tiers are never store-sourced, so a
  *  lapsed subscription can only revoke what a subscription granted. */
+/** Auto-claimed founding seat (first 50 public-link installs). */
+export function grantFounding(seat?: number): void {
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ tier: "founding", since: new Date().toISOString().slice(0, 10), source: "code" }));
+    if (seat) localStorage.setItem("counsel.founding.seat", String(seat));
+  } catch { /* fine */ }
+}
+
 export function grantStorePro(): void {
   if (proState().tier === "founding") return; // founding outranks store
   const state: ProState = {

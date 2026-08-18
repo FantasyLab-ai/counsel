@@ -107,6 +107,13 @@ export async function cloudAsk(
   };
 }
 
+/** First-50 founding auto-claim: each install gets its own seat. */
+export async function claimFoundingSeat(): Promise<{ ok: boolean; seat?: number; full?: boolean }> {
+  await ensureAccount();
+  const res = await api("/v1/founding/claim", { method: "POST", body: "{}" });
+  return { ok: Boolean(res.ok), seat: typeof res.seat === "number" ? res.seat : undefined, full: Boolean(res.full) };
+}
+
 function loadPlaidScript(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.Plaid) return resolve();

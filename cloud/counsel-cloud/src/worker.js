@@ -1445,6 +1445,18 @@ export default {
         });
       }
 
+      // -- Founding auto-claim: first 50 accounts, founding free-for-life --
+      if (path === "/v1/founding/claim" && req.method === "POST") {
+        const already = await env.ACCOUNTS.get(`founding:acct:${id}`);
+        if (already) return json(req, 200, { ok: true, seat: parseInt(already, 10) });
+        const count = parseInt((await env.ACCOUNTS.get("founding:count")) || "0", 10);
+        if (count >= 50) return json(req, 200, { ok: false, full: true });
+        const seat = count + 1;
+        await env.ACCOUNTS.put("founding:count", String(seat));
+        await env.ACCOUNTS.put(`founding:acct:${id}`, String(seat));
+        return json(req, 200, { ok: true, seat });
+      }
+
       if (path === "/v1/plaid/link-token" && req.method === "POST") {
         const j = await plaidCall(env, "/link/token/create", {
           user: { client_user_id: id },
