@@ -18,7 +18,10 @@
     "PLAID_ENV": "sandbox",
     "SQUARE_CLIENT_ID": "sq0idp-t2S6tWCrHRvCMSGwdTG3DA",
     "SQUARE_OAUTH_ENV": "production",
-    "ETSY_CLIENT_ID": "9jrjuecsq3mxb5jusixtbcqk",
+    // "Counsel Sync" personal-tier app (2026-08-18) — provisional access,
+    // own-shop testing; commercial review comes when a pilot needs Etsy.
+    // (Prior app 9jrjuecsq3mxb5jusixtbcqk was banned in Etsy's July purge.)
+    "ETSY_CLIENT_ID": "a9pt2jt0sv73cr7001avhwfv",
     "SHOPIFY_CLIENT_ID": "a2448137f1eaae2812da54bebd40540f",
     // LIVE Stripe Connect client id (platform review cleared 2026-08-18).
     // Pairs with the live STRIPE_SECRET_KEY secret for token exchange.
