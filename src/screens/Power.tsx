@@ -270,33 +270,10 @@ const LIVE_HELP: Record<CloudProvider, { hint: string; mint: string; url: string
   },
 };
 
-// The guided connect walk: one connector at a time, in the order that
-// pays off fastest, each skippable, each honest about its state.
-// "soon" connectors are fully wired server-side and flip to "ready"
-// the day their platform review clears — update ONLY this table.
-const GUIDE_STEPS: {
-  id: CloudProvider | "csv"; name: string; what: string;
-  status: "ready" | "soon"; note?: string;
-}[] = [
-  { id: "square", name: "Square", status: "ready",
-    what: "your register — sales sync automatically after one sign-in" },
-  { id: "shopify", name: "Shopify", status: "ready",
-    what: "your online store — orders flow in after you sign in",
-    note: "pilot stores: we connect this together — have your your-shop.myshopify.com name handy" },
-  { id: "plaid", name: "Bank account", status: "soon",
-    what: "your expenses, straight from the bank",
-    note: "bank connections are in final review — days away" },
-  { id: "stripe", name: "Stripe", status: "ready",
-    what: "online payments and invoices — sign in once, no keys. Counsel only ever reads" },
-  { id: "quickbooks", name: "QuickBooks", status: "soon",
-    what: "your books — expenses feed the money map and cash view",
-    note: "Intuit verification underway" },
-  { id: "etsy", name: "Etsy", status: "soon",
-    what: "maker sales from your shop",
-    note: "Etsy approved our new integration — final testing, days away" },
-  { id: "csv", name: "A simple file", status: "ready",
-    what: "export a CSV from anywhere — sales or expenses — and drop it in. Always works, nothing to sign into" },
-];
+// The guided connect walk derives from THE shared connector-status table
+// (engine/connectorStatus.ts) — the same source the onboarding doors use,
+// so a platform going live is one flip that updates every surface.
+import { GUIDE_STEPS } from "../engine/connectorStatus";
 
 function LiveConnect() {
   const [provider, setProvider] = useState<CloudProvider>("stripe");
