@@ -1385,3 +1385,33 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
   .wordmark span { display: none; }
   .digest-btn { padding: 7px 10px; gap: 5px; }
 }
+
+/* ---------- the capability ledger ---------- */
+.cap-card { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  background: var(--card); border: 1px solid rgba(201, 243, 106, 0.22); border-radius: 20px;
+  padding: 14px 16px; margin: 14px 0 4px; cursor: pointer;
+  transition: transform var(--d-fast) var(--spring), background var(--d-fast) var(--ease-out); }
+.cap-card:active { transform: scale(0.985); }
+.cap-ring { width: 46px; height: 46px; flex-shrink: 0; }
+.cap-ring circle { fill: none; stroke-width: 3.4; }
+.cap-ring .cap-bg { stroke: #2c362e; }
+.cap-ring .cap-fg { stroke: var(--accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
+.cap-card.demo .cap-fg { stroke: #5a6b4a; }
+.cap-ring .cap-txt { fill: var(--ink); font-family: var(--mono); font-size: 10.5px; text-anchor: middle; }
+.cap-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cap-t { font-family: var(--serif); font-size: 16.5px; color: var(--ink); }
+.cap-s { font-size: 12px; line-height: 1.45; color: var(--muted); }
+.cap-go { margin-left: auto; color: var(--accent); font-size: 18px; flex-shrink: 0; }
+.cap-ledger .cap-row { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--line); }
+.cap-ledger .cap-row:first-of-type { border-top: 0; }
+.cap-dot { font-family: var(--mono); font-size: 13px; flex-shrink: 0; width: 18px; text-align: center; padding-top: 1px; }
+.cap-row.live .cap-dot { color: var(--accent); }
+.cap-row.warming .cap-dot { color: var(--brass); }
+.cap-row.locked .cap-dot { color: var(--faint); }
+.cap-row.locked .cap-rt { color: var(--muted); }
+.cap-rl { min-width: 0; flex: 1; }
+.cap-rt { font-size: 13.5px; color: var(--ink); font-weight: 500; }
+.cap-gives { font-weight: 400; color: var(--ink-2); }
+.cap-row.locked .cap-gives { color: var(--faint); }
+.cap-rn { font-size: 11.5px; color: var(--muted); margin-top: 2px; font-style: italic; }
+.cap-btn { flex-shrink: 0; white-space: nowrap; }

@@ -12,6 +12,7 @@ import { money, revenueBand, type RevenueBand } from "../engine/insights";
 import { overdueCount } from "../engine/decisions";
 import { sentinel, type SentinelOut } from "../engine/sentinel";
 import { dataBasis, type DataBasis } from "../engine/dataBasis";
+import { capabilityRead } from "../engine/capability";
 import { CitePill, ConfidencePill, CountUp, Html, Receipt, Reveal, Written } from "../components/ui";
 import { BreakSpark, VizView } from "../components/charts";
 
@@ -317,6 +318,41 @@ export default function Today() {
           ))}
         </div>
       </Reveal>
+
+      {/* The capability ledger, compact: Counsel discloses its own current
+          capability the way it discloses confidence on every number. */}
+      {(() => {
+        const cap = capabilityRead();
+        const dash = `${(cap.mode === "demo" ? 100 : cap.pct) * 1.194} 119.4`;
+        return (
+          <Reveal i={8}>
+            <button className={`cap-card ${cap.mode}`} onClick={() => nav("/power#capability")}>
+              <svg className="cap-ring" viewBox="0 0 44 44" aria-hidden="true">
+                <circle cx="22" cy="22" r="19" className="cap-bg" />
+                <circle cx="22" cy="22" r="19" className="cap-fg" style={{ strokeDasharray: dash }} />
+                <text x="22" y="26.5" className="cap-txt">{cap.mode === "demo" ? "◆" : `${cap.pct}%`}</text>
+              </svg>
+              <span className="cap-body">
+                {cap.mode === "demo" ? (
+                  <>
+                    <span className="cap-t">The full engine room — on demo fuel</span>
+                    <span className="cap-s">connect your data and this becomes YOUR capability ledger: engines light up as sources land</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="cap-t">{cap.live} of {cap.engines.length} engines live on your data</span>
+                    <span className="cap-s">
+                      {cap.warming > 0 && `${cap.warming} warming up · `}
+                      {cap.locked > 0 ? `${cap.locked} unlock with one more source` : "full capability"} — see the ledger
+                    </span>
+                  </>
+                )}
+              </span>
+              <span className="cap-go" aria-hidden="true">→</span>
+            </button>
+          </Reveal>
+        );
+      })()}
 
       {/* The hub — every deep section, one grid, ordered by what THIS
           line of work reaches for first (persona.deeper). */}

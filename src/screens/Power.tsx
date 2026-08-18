@@ -274,6 +274,7 @@ const LIVE_HELP: Record<CloudProvider, { hint: string; mint: string; url: string
 // (engine/connectorStatus.ts) — the same source the onboarding doors use,
 // so a platform going live is one flip that updates every surface.
 import { GUIDE_STEPS } from "../engine/connectorStatus";
+import { capabilityRead } from "../engine/capability";
 
 function LiveConnect() {
   const [provider, setProvider] = useState<CloudProvider>("stripe");
@@ -935,6 +936,19 @@ export default function Power() {
   ];
   const live = mine.filter((m) => m.on).length;
   const meta = userMeta();
+  const cap = capabilityRead();
+
+  // Arriving via /power#capability (the Today card) lands on the ledger.
+  useEffect(() => {
+    if (window.location.hash === "#capability") {
+      setTimeout(() => document.getElementById("capability")?.scrollIntoView({ behavior: "smooth", block: "start" }), 350);
+    }
+  }, []);
+
+  const capUnlock = (kind?: string) => {
+    if (kind === "posts") { window.location.assign("/marketing"); return; }
+    document.getElementById(kind === "expenses" ? "csv-dropin" : "main")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="app">
@@ -985,6 +999,41 @@ export default function Power() {
 
       <div className="eyebrow">Go live — paste one read-only key</div>
       <Reveal i={2}><LiveConnect /></Reveal>
+
+      <div className="eyebrow" id="capability">The capability ledger — what your setup unlocks</div>
+      <Reveal i={2}>
+        <article className="mcard open il-card cap-ledger">
+          <div className="il-head">
+            <span className="il-kick">{cap.mode === "demo" ? "read on demo fuel — connect to make it yours" : "read from YOUR data, live"}</span>
+            <span className="pill lite-hi"><span className="dot" />{cap.live} live · {cap.warming} warming · {cap.locked} locked</span>
+          </div>
+          <div className="mmean">
+            Counsel tells you how sure it is on every number — this is the same honesty
+            about the whole app. Each engine below is <b>live</b>, <b>warming up</b>
+            (your history is still short), or <b>locked</b> with the exact unlock.
+          </div>
+          {(["live", "warming", "locked"] as const).map((group) =>
+            cap.engines.filter((e) => e.status === group).map((e) => (
+              <div className={`cap-row ${e.status}`} key={e.id}>
+                <span className="cap-dot" aria-hidden="true">{e.status === "live" ? "✓" : e.status === "warming" ? "◐" : "○"}</span>
+                <div className="cap-rl">
+                  <div className="cap-rt">{e.name} <span className="cap-gives">— {e.gives}</span></div>
+                  {(e.note || e.unlock) && (
+                    <div className="cap-rn">
+                      {e.status === "locked" ? <>unlock: {e.unlock}</> : e.note}
+                    </div>
+                  )}
+                </div>
+                {e.status === "locked" && (
+                  <button className="dt-btn cap-btn" onClick={() => capUnlock(e.unlockKind)}>
+                    {e.unlockKind === "posts" ? "open Marketing" : e.unlockKind === "expenses" ? "add expenses" : "add sales"}
+                  </button>
+                )}
+              </div>
+            )),
+          )}
+        </article>
+      </Reveal>
 
       <div className="eyebrow">Signed execution — Counsel's hands, under contract</div>
       <Reveal i={2}><ProGate feature="Execution rails" line="price changes with your signature, watched and auto-reverted if reality disagrees."><ExecutionCardSlot /></ProGate></Reveal>
