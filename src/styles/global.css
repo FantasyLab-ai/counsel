@@ -886,6 +886,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   opacity: 0;
   filter: blur(3px);
   transform: translateY(4px);
+}
+/* the write starts only when the reader can see it — .go is added two
+   painted frames after mount (Written in ui.tsx), so the native launch
+   screen can't swallow the animation */
+.written.go .wr {
   animation: inkIn 340ms var(--ease-out) forwards;
 }
 .written .wr-word { display: inline-block; white-space: nowrap; }
@@ -893,7 +898,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   to { opacity: 1; filter: blur(0); transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .written .wr { animation: none; opacity: 1; filter: none; transform: none; }
+  .written .wr, .written.go .wr { animation: none; opacity: 1; filter: none; transform: none; }
 }
 
 /* ---- Counsel proposes (decision contracts) ---- */

@@ -293,7 +293,7 @@ const GUIDE_STEPS: {
     note: "Intuit verification underway" },
   { id: "etsy", name: "Etsy", status: "soon",
     what: "maker sales from your shop",
-    note: "reapplying under Etsy's new API program" },
+    note: "Etsy approved our new integration — final testing, days away" },
   { id: "csv", name: "A simple file", status: "ready",
     what: "export a CSV from anywhere — sales or expenses — and drop it in. Always works, nothing to sign into" },
 ];

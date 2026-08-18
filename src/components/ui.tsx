@@ -158,6 +158,20 @@ export function Awaiting({ title, needs, unlocks }: { title: string; needs: stri
 export function Written({ text, mode = "letters", startDelay = 0 }: {
   text: string; mode?: "letters" | "words"; startDelay?: number;
 }) {
+  // The ink must start writing when the READER can see it — not when the
+  // component mounts. On the native app, mount happens behind the launch
+  // screen, so mount-anchored animations finish before the splash lifts
+  // and the voice appears fully written. Two painted frames + a beat,
+  // then go.
+  const [go, setGo] = useState(false);
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout>;
+    let r2 = 0;
+    const r1 = requestAnimationFrame(() => {
+      r2 = requestAnimationFrame(() => { t = setTimeout(() => setGo(true), 90); });
+    });
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); clearTimeout(t); };
+  }, []);
   const html = useMemo(() => {
     const step = mode === "letters" ? 26 : 60; // ms between arrivals
     let t = startDelay;
@@ -180,7 +194,7 @@ export function Written({ text, mode = "letters", startDelay = 0 }: {
       }).join("");
     return render(text);
   }, [text, mode, startDelay]);
-  return <span className="written" dangerouslySetInnerHTML={{ __html: html }} />;
+  return <span className={`written ${go ? "go" : ""}`} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 // ---- The universal receipt gesture -----------------------------------------
