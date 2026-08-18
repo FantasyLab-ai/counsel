@@ -8,19 +8,26 @@ import { BackBtn, Reveal, tapFeedback } from "../components/ui";
 import {
   PRO_FEATURES, isPro, redeemFoundingCode, tierLabel,
 } from "../engine/entitlement";
-import { billingAvailable, listPackages, purchase, restore } from "../engine/billing";
+import { billingAvailable, billingDiag, listPackages, purchase, restore } from "../engine/billing";
 
 export default function Pro() {
   const [code, setCode] = useState("");
   const [state, setState] = useState<"idle" | "bad" | "good">("idle");
   const [pkgs, setPkgs] = useState<{ id: string; identifier: string; title: string }[]>([]);
+  const [diag, setDiag] = useState("");
   const [busy, setBusy] = useState(false);
   const pro = isPro();
 
   // Native store builds with billing configured show real buy buttons;
   // everywhere else the paywall stays informational + founding codes.
+  // When billing SHOULD work but no products load, say why — never a
+  // silent empty paywall.
   useEffect(() => {
-    if (billingAvailable()) listPackages().then(setPkgs).catch(() => undefined);
+    if (!billingAvailable()) return;
+    listPackages().then((pk) => {
+      setPkgs(pk);
+      if (!pk.length) billingDiag().then(setDiag).catch(() => undefined);
+    }).catch(() => undefined);
   }, []);
 
   async function buy(identifier: string) {
@@ -102,11 +109,16 @@ export default function Pro() {
                 </div>
               </>
             ) : (
-              <div className="mmean">
-                Billing arrives with the app-store builds. Until then, Pro is
-                open only to founding members — the twelve pilot businesses
-                helping test Counsel keep it free for life.
-              </div>
+              <>
+                <div className="mmean">
+                  Billing arrives with the app-store builds. Until then, Pro is
+                  open only to founding members — the twelve pilot businesses
+                  helping test Counsel keep it free for life.
+                </div>
+                {billingAvailable() && diag && (
+                  <div className="honest-note" style={{ marginTop: 10 }}>{diag}</div>
+                )}
+              </>
             )}
             <div className="field" style={{ marginTop: 14 }}>
               <input

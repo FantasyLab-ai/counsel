@@ -87,6 +87,33 @@ export async function listPackages(): Promise<PackageView[]> {
   } catch { return []; }
 }
 
+/** Why is the paywall empty? A plain-English, stage-by-stage diagnosis —
+ *  the same honesty the OAuth failure pages practice. */
+export async function billingDiag(): Promise<string> {
+  const p = nativePlatform();
+  if (!p) return "";
+  if (!(p === "ios" ? RC_IOS_KEY : RC_ANDROID_KEY)) return `no ${p} billing key in this build yet`;
+  try {
+    const Purchases = await rc();
+    if (!configured) await initBilling();
+    if (!configured) return "billing SDK could not start — close and reopen the app";
+    const offerings = await Purchases.getOfferings();
+    const all = Object.keys(offerings.all ?? {});
+    if (!offerings.current) {
+      return all.length
+        ? `no offering is marked CURRENT in RevenueCat (found: ${all.join(", ")})`
+        : "no offerings configured in RevenueCat yet";
+    }
+    const n = offerings.current.availablePackages?.length ?? 0;
+    if (n === 0) {
+      return `offering "${offerings.current.identifier}" is current, but the App Store returned none of its products — subscription metadata or availability is still incomplete or propagating`;
+    }
+    return "";
+  } catch (e) {
+    return `billing check failed: ${String(e instanceof Error ? e.message : e).slice(0, 120)}`;
+  }
+}
+
 /** Purchase a package. Returns true when the entitlement is active. */
 export async function purchase(identifier: string): Promise<boolean> {
   if (!billingAvailable()) return false;
