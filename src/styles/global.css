@@ -1375,8 +1375,8 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
 .sync { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 110px; }
 .pill { max-width: 100%; }
 
-/* long pages scroll smoother: offscreen cards skip rendering entirely */
-.mcard, .sec { content-visibility: auto; contain-intrinsic-size: auto 240px; }
+/* (content-visibility removed: its paint containment trapped fixed-position
+   receipt sheets inside their cards — full-screen sheets outrank scroll perf) */
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 
 /* narrow phones: the wordmark yields its flourish so all three artifact
