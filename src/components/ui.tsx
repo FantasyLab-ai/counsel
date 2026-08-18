@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Confidence } from "../api/counsel";
 
@@ -236,7 +237,9 @@ export function MathSheet({ block, title, onClose }: { block: MathBlock; title?:
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("keydown", onKey); prev?.focus?.(); };
   }, [onClose]);
-  return (
+  // Portaled to <body>: no ancestor transform/containment can ever trap
+  // the sheet inside a card again — it is full-screen by construction.
+  return createPortal(
     <div className="sheet-veil" role="dialog" aria-modal="true" aria-label={title ?? "The math"}
          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet">
@@ -291,6 +294,7 @@ export function MathSheet({ block, title, onClose }: { block: MathBlock; title?:
         </div>
       </div>
     </div>
+    , document.body
   );
 }
 
