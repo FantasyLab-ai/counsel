@@ -12,6 +12,9 @@ export interface Persona {
   firstConnect: string; // the wedge source
   leadInsight: string; // what Counsel leads with for them
   quickStart: string[];
+  /** Today's "Go deeper" tile order for this line of work (tile keys:
+   *  insights · money · ops · decisions · marketing). Omit = default. */
+  deeper?: string[];
 }
 
 const QS = {
@@ -57,6 +60,26 @@ export const PERSONAS: Persona[] = [
     systems: "DoorDash/UberEats · POS", firstConnect: "platform payout export",
     leadInsight: "platform-fee drift (they creep) + which menu items carry you",
     quickStart: [QS.sales("payout export"), QS.audit, QS.season] },
+
+  // ───────────── Music & entertainment ─────────────
+  { id: "songwriter", group: "Music & entertainment", label: "Singer-songwriter", icon: "🎤",
+    systems: "gig payouts · Square merch table · DistroKid/TuneCore · BMI/ASCAP statements",
+    firstConnect: "gig payouts CSV (or Square merch export)",
+    leadInsight: "feast-famine smoothing between gigs + which stream actually pays: shows, merch, or royalties",
+    quickStart: [QS.sales("gig payout / merch export"), QS.sentry, QS.worth],
+    deeper: ["money", "marketing", "decisions", "insights", "ops"] },
+  { id: "band", group: "Music & entertainment", label: "Band / touring act", icon: "🎸",
+    systems: "show settlements · Square merch · Bandcamp · DistroKid",
+    firstConnect: "settlements/merch CSV",
+    leadInsight: "per-show economics after travel + merch-per-head truth by room",
+    quickStart: [QS.sales("settlement/merch export"), QS.audit, QS.rehearse],
+    deeper: ["money", "ops", "marketing", "decisions", "insights"] },
+  { id: "producer", group: "Music & entertainment", label: "Producer / engineer", icon: "🎚️",
+    systems: "session invoices · Stripe/Venmo · a drawer of plugin subscriptions",
+    firstConnect: "invoices CSV",
+    leadInsight: "session-rate utilization + subscription creep hiding in the plugin drawer",
+    quickStart: [QS.ar, QS.audit, QS.sentry],
+    deeper: ["money", "insights", "decisions", "marketing", "ops"] },
 
   // ───────────── Trades & field services ─────────────
   { id: "landscaper", group: "Trades & field", label: "Landscaping / lawn care", icon: "🌱",

@@ -3,7 +3,7 @@
 // the honest "watching" section, and connected sources.
 
 import { useEffect, useState } from "react";
-import { displayName } from "../engine/persona";
+import { displayName, getPersona } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
 import { demoView, hasUserData } from "../engine/dataSource";
@@ -161,6 +161,7 @@ export default function Today() {
             <div className="coach-line"><b>Plain words first.</b> Counsel tells you what's happening in sentences — you never need the math to act.</div>
             <div className="coach-line"><b>Every number opens.</b> The ≡ mark means tap it — the receipt shows how it was computed, from your data.</div>
             <div className="coach-line"><b>Pills say how sure.</b> High, moderate, or "not ready to call" — Counsel says which, and refuses to bluff.</div>
+            <div className="coach-line"><b>Four rooms, one bubble.</b> Today is the brief · Numbers holds the ledger, P&amp;L and statement · Plan rehearses decisions · Settings connects your tools. The ◆ bubble answers questions about your numbers.</div>
             <button className="dt-btn coach-got" onClick={dismissCoach}>got it</button>
           </div>
         </Reveal>
@@ -226,7 +227,9 @@ export default function Today() {
       <div className="eyebrow">Needs your attention</div>
       <div className="eyebrow-sub">the few things worth a minute today, ranked</div>
       <div className="rows">
-        {brief.attention.map((a, i) => (
+        {/* The attention budget: three things, ranked — a morning brief,
+            not an inbox. The rest wait in their rooms, and say so. */}
+        {brief.attention.slice(0, 3).map((a, i) => (
           <Reveal i={i + 1} key={a.id}>
             <article className="row-card">
               <div className="rank">{i + 1}</div>
@@ -241,6 +244,12 @@ export default function Today() {
             </article>
           </Reveal>
         ))}
+        {brief.attention.length > 3 && (
+          <div className="eyebrow-sub" style={{ marginTop: 2 }}>
+            + {brief.attention.length - 3} quieter note{brief.attention.length - 3 > 1 ? "s" : ""} waiting in
+            {" "}their rooms — nothing urgent, or they'd be up here
+          </div>
+        )}
       </div>
 
       <div className="eyebrow">The numbers, read</div>
@@ -309,36 +318,50 @@ export default function Today() {
         </div>
       </Reveal>
 
-      {/* The hub — every deep section, one grid. Fixes discovery. */}
+      {/* The hub — every deep section, one grid, ordered by what THIS
+          line of work reaches for first (persona.deeper). */}
       <div className="fleuron" aria-hidden="true">◆</div>
       <div className="eyebrow">Go deeper</div>
       <Reveal i={9}>
         <div className="hub-grid">
-          <button className="hub-card" onClick={() => nav("/insights")}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 3v6L4 20a1.5 1.5 0 0 0 1.4 2h13.2a1.5 1.5 0 0 0 1.4-2L15 9V3M7 3h10" /></svg>
-            <span className="hc-t">Insights Lab</span>
-            <span className="hc-s">nine deep reads</span>
-          </button>
-          <button className="hub-card" onClick={() => nav("/money")}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></svg>
-            <span className="hc-t">Money</span>
-            <span className="hc-s">calendar · AR · tax pot</span>
-          </button>
-          <button className="hub-card" onClick={() => nav("/ops")}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5m0 0l9-5m-9 5v8" /></svg>
-            <span className="hc-t">Stock &amp; shipping</span>
-            <span className="hc-s">cover · reorders · stalls</span>
-          </button>
-          <button className="hub-card" onClick={() => nav("/decisions")}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
-            <span className="hc-t">Decisions{toGrade > 0 && <span className="hc-badge">{toGrade} to grade</span>}</span>
-            <span className="hc-s">the track record</span>
-          </button>
-          <button className="hub-card" onClick={() => nav("/marketing")}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 11l18-8-8 18-2.5-7.5z" /></svg>
-            <span className="hc-t">Marketing</span>
-            <span className="hc-s">channels · post lift</span>
-          </button>
+          {(() => {
+            const TILES: Record<string, { to: string; icon: JSX.Element; t: JSX.Element | string; s: string }> = {
+              insights: {
+                to: "/insights",
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 3v6L4 20a1.5 1.5 0 0 0 1.4 2h13.2a1.5 1.5 0 0 0 1.4-2L15 9V3M7 3h10" /></svg>,
+                t: "Insights Lab", s: "nine deep reads",
+              },
+              money: {
+                to: "/money",
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></svg>,
+                t: "Money", s: "calendar · AR · tax pot",
+              },
+              ops: {
+                to: "/ops",
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5m0 0l9-5m-9 5v8" /></svg>,
+                t: "Stock & shipping", s: "cover · reorders · stalls",
+              },
+              decisions: {
+                to: "/decisions",
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>,
+                t: <>Decisions{toGrade > 0 && <span className="hc-badge">{toGrade} to grade</span>}</>,
+                s: "the track record",
+              },
+              marketing: {
+                to: "/marketing",
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 11l18-8-8 18-2.5-7.5z" /></svg>,
+                t: "Marketing", s: "channels · post lift",
+              },
+            };
+            const order = getPersona()?.deeper ?? ["insights", "money", "ops", "decisions", "marketing"];
+            return order.filter((k) => TILES[k]).map((k) => (
+              <button className="hub-card" key={k} onClick={() => nav(TILES[k].to)}>
+                {TILES[k].icon}
+                <span className="hc-t">{TILES[k].t}</span>
+                <span className="hc-s">{TILES[k].s}</span>
+              </button>
+            ));
+          })()}
         </div>
       </Reveal>
 
