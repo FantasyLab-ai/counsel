@@ -91,7 +91,11 @@ export async function listPackages(): Promise<PackageView[]> {
  *  the same honesty the OAuth failure pages practice. */
 export async function billingDiag(): Promise<string> {
   const p = nativePlatform();
-  if (!p) return "";
+  if (!p) {
+    return typeof window !== "undefined" && (window as { Capacitor?: unknown }).Capacitor
+      ? "native shell detected but platform undetected — billing bridge not wired"
+      : "";
+  }
   if (!(p === "ios" ? RC_IOS_KEY : RC_ANDROID_KEY)) return `no ${p} billing key in this build yet`;
   try {
     const Purchases = await rc();
@@ -108,7 +112,7 @@ export async function billingDiag(): Promise<string> {
     if (n === 0) {
       return `offering "${offerings.current.identifier}" is current, but the App Store returned none of its products — subscription metadata or availability is still incomplete or propagating`;
     }
-    return "";
+    return `offering "${offerings.current.identifier}" has ${n} package${n > 1 ? "s" : ""} — if no buttons show, reopen this screen`;
   } catch (e) {
     return `billing check failed: ${String(e instanceof Error ? e.message : e).slice(0, 120)}`;
   }

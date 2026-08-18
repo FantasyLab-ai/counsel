@@ -23,11 +23,12 @@ export default function Pro() {
   // When billing SHOULD work but no products load, say why — never a
   // silent empty paywall.
   useEffect(() => {
-    if (!billingAvailable()) return;
+    // Diagnose in EVERY empty-paywall case — a silent empty paywall is
+    // the one failure mode this screen is not allowed to have.
     listPackages().then((pk) => {
       setPkgs(pk);
-      if (!pk.length) billingDiag().then(setDiag).catch(() => undefined);
-    }).catch(() => undefined);
+      if (!pk.length) billingDiag().then(setDiag).catch((e) => setDiag(`diagnosis failed: ${String(e).slice(0, 90)}`));
+    }).catch(() => billingDiag().then(setDiag).catch((e) => setDiag(`diagnosis failed: ${String(e).slice(0, 90)}`)));
   }, []);
 
   async function buy(identifier: string) {
@@ -115,7 +116,7 @@ export default function Pro() {
                   open only to founding members — the twelve pilot businesses
                   helping test Counsel keep it free for life.
                 </div>
-                {billingAvailable() && diag && (
+                {diag && (
                   <div className="honest-note" style={{ marginTop: 10 }}>{diag}</div>
                 )}
               </>

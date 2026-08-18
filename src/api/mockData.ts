@@ -9,9 +9,36 @@ import type {
   Period,
   Source,
 } from "./counsel";
-import { demoStarProduct } from "../engine/persona";
+import { demoStarProduct, getPersona } from "../engine/persona";
 
 // Small helper so the prototype still *feels* like it computed something.
+
+// Domain overlay: the demo voice + headline numbers move with the chosen
+// line of work, so switching worlds visibly changes the story being told.
+const DM = (() => {
+  const g = (() => { try { return getPersona()?.group; } catch { return undefined; } })();
+  if (g === "Food & drink") return {
+    headline: "A loud month — <em>the weekend carried it.</em>",
+    sub: "Food costs held. Friday and Saturday did the lifting — and Monday is quietly costing you staff hours.",
+    rev: "$83,400", margin: "29%", runway: "3.8 mo", cust: "2,150",
+  };
+  if (g === "Trades & field") return {
+    headline: "Winter-slow — <em>and right on schedule.</em>",
+    sub: "The spring ramp is already visible in bookings. Cash bridges the gap; the install jobs are the swing factor.",
+    rev: "$38,900", margin: "42%", runway: "5.5 mo", cust: "74",
+  };
+  if (g === "Music & entertainment") return {
+    headline: "Feast and famine — <em>mapped, not feared.</em>",
+    sub: "Three good gig weekends, one dry week. Merch is quietly your steadiest earner per hour on stage.",
+    rev: "$6,840", margin: "58%", runway: "4.2 mo", cust: "9 venues",
+  };
+  return {
+    headline: "A steady month — with <em>one real dent.</em>",
+    sub: "Margins and cash are healthy. The only thing off is revenue, and I know exactly when it started.",
+    rev: "$61,200", margin: "34%", runway: "7 mo", cust: "214",
+  };
+})();
+
 const delay = <T,>(v: T, ms = 220): Promise<T> =>
   new Promise((res) => setTimeout(() => res(v), ms));
 
@@ -26,8 +53,8 @@ export function brief(): Promise<Brief> {
     greeting: { date: "Tuesday, March 11", business: "Kiln & Co." },
     state: {
       eyebrow: "Right now",
-      headline: "A steady month — with <em>one real dent.</em>",
-      sub: "Margins and cash are healthy. The only thing off is revenue, and I know exactly when it started.",
+      headline: DM.headline,
+      sub: DM.sub,
       micro: [
         { label: "Revenue", value: "Soft", tone: "mod" },
         { label: "Margin", value: "Held", tone: "hi" },
@@ -73,7 +100,7 @@ const METRICS: Metric[] = [
   {
     id: "revenue",
     label: "Revenue · month to date",
-    value: "$61,200",
+    value: DM.rev,
     delta: { text: "▾ 12% vs Feb", dir: "down" },
     meaning: "<b>The March 4 break is the whole story.</b> Before it, you were running ahead of February.",
     confidence: "high",
@@ -109,7 +136,7 @@ const METRICS: Metric[] = [
   {
     id: "margin",
     label: "Gross margin",
-    value: "34%",
+    value: DM.margin,
     delta: { text: "— flat", dir: "flat" },
     meaning: "<b>Healthy and steady</b> for handmade goods. No meaningful change — costs didn't creep.",
     confidence: "high",
@@ -134,7 +161,7 @@ const METRICS: Metric[] = [
   {
     id: "runway",
     label: "Cash runway",
-    value: "7 mo",
+    value: DM.runway,
     delta: { text: "$48,300 on hand", dir: "flat" },
     meaning: "<b>Comfortable.</b> Even a rough month wouldn't put you in danger.",
     confidence: "high",
@@ -160,7 +187,7 @@ const METRICS: Metric[] = [
   {
     id: "customers",
     label: "New customers · March",
-    value: "214",
+    value: DM.cust,
     delta: { text: "▴ 8%", dir: "up" },
     meaning:
       "<b>Instagram is pulling its weight</b> — your strongest channel right now. Worth leaning into while revenue's soft.",
