@@ -10,7 +10,7 @@ import { anchorDate, periodMetrics, resolveWindow, type PeriodId } from "../engi
 import { dataMode } from "../engine/dataSource";
 import { drivers, type DriversOut, type DriversThin } from "../engine/drivers";
 import { money } from "../engine/tierMath";
-import { ActOn, ConfidencePill, CountUp, Html, Receipt, Reveal, ShareCard, Skeleton } from "../components/ui";
+import { ActOn, ConfidencePill, CountUp, FinanceSegs, Html, Receipt, Reveal, ShareCard, Skeleton } from "../components/ui";
 import { MathView } from "../components/charts";
 
 // The "what changed" card — driver decomposition. Answers WHY revenue moved:
@@ -164,6 +164,7 @@ export default function Numbers() {
           Packet
         </button>
       </div>
+      <FinanceSegs />
 
       <div className="period" role="tablist" aria-label="Period">
         {PERIODS.map((p) => (

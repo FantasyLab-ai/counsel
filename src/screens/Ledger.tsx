@@ -9,7 +9,7 @@ import { displayName } from "../engine/persona";
 import { dataBasis, type DataBasis } from "../engine/dataBasis";
 import { ledgerView, type LedgerViewOut, type LedgerViewThin, type TxRow } from "../engine/ledgerView";
 import { money } from "../engine/tierMath";
-import { Awaiting, Reveal, Skeleton } from "../components/ui";
+import { Awaiting, FinanceSegs, Reveal, Skeleton } from "../components/ui";
 
 const PAGE = 60;
 
@@ -67,6 +67,7 @@ export default function Ledger() {
     return (
       <div className="app">
         <div className="appbar"><div className="titleblock"><div className="kicker">{displayName()}</div><h1>The ledger</h1></div></div>
+        <FinanceSegs />
         <Skeleton lines={5} caption="listing every row on file…" />
       </div>
     );
@@ -75,6 +76,7 @@ export default function Ledger() {
     return (
       <div className="app">
         <div className="appbar"><div className="titleblock"><div className="kicker">{displayName()}</div><h1>The ledger</h1></div></div>
+        <FinanceSegs />
         <Awaiting title="The ledger" needs="sales data (connect a source or drop a CSV)"
           unlocks="Every transaction listed with its source — the rows every claim traces back to." />
       </div>

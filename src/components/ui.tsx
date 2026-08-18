@@ -1,5 +1,29 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { Confidence } from "../api/counsel";
+
+/** The Numbers family lives under ONE dock tab; these segments move
+ *  between its three rooms. Same strip on all three screens. */
+export function FinanceSegs() {
+  const { pathname } = useLocation();
+  const nav = useNavigate();
+  const SEGS = [
+    { to: "/numbers", label: "Overview" },
+    { to: "/pnl", label: "P&L" },
+    { to: "/ledger", label: "Ledger" },
+  ];
+  return (
+    <nav className="fin-segs" aria-label="Numbers sections">
+      {SEGS.map((s) => (
+        <button key={s.to} className={`fseg ${pathname === s.to ? "on" : ""}`}
+          aria-current={pathname === s.to ? "page" : undefined}
+          onClick={() => { tapFeedback(); if (pathname !== s.to) nav(s.to); }}>
+          {s.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
 
 /** Render trusted mock copy that carries <b>/<em> emphasis. All strings come
  *  from our own api layer (mockData), never from user input. */

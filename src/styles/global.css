@@ -1336,3 +1336,47 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
 
 /* the dock tucks away while reading down, resurfaces on scroll-up */
 .tabbar.tucked { transform: translateX(-50%) translateY(calc(100% + 30px)); opacity: 0; pointer-events: none; }
+
+/* ---------- orientation & flow package ---------- */
+
+/* the Numbers-family segments: one dock tab, three rooms */
+.fin-segs { display: flex; gap: 4px; margin: -4px 0 18px; background: var(--card); border: 1px solid var(--line); border-radius: 100px; padding: 4px; width: max-content; max-width: 100%; }
+.fseg { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); background: transparent; border: 0; border-radius: 100px; padding: 8px 15px; cursor: pointer; transition: background var(--d-fast) var(--ease-out), color var(--d-fast) var(--ease-out), transform var(--d-fast) var(--spring); }
+.fseg.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.fseg:active { transform: scale(0.95); }
+
+/* the orientation minibar — where am I + tap to glide home */
+.minibar { position: fixed; top: 0; left: 50%; transform: translate(-50%, -130%); z-index: 60;
+  margin-top: calc(env(safe-area-inset-top) + 8px);
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-2); background: rgba(26, 35, 28, 0.82);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line); border-radius: 100px; padding: 9px 18px; cursor: pointer;
+  opacity: 0; pointer-events: none;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 240ms var(--ease-out); }
+.minibar.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+.minibar:active { transform: translate(-50%, 0) scale(0.95); }
+
+/* overflow guards: nothing clips off a tile, ever */
+.appbar { gap: 10px; }
+.wordmark, .avatar, .export-btn { flex-shrink: 0; }
+.artifact-btns { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.artifact-btns::-webkit-scrollbar { display: none; }
+.digest-btn { flex-shrink: 0; }
+.titleblock { min-width: 0; }
+.titleblock h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan { flex-shrink: 0; max-width: 44%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.srow .rr { max-width: 46%; }
+.sync { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 110px; }
+.pill { max-width: 100%; }
+
+/* long pages scroll smoother: offscreen cards skip rendering entirely */
+.mcard, .sec { content-visibility: auto; contain-intrinsic-size: auto 240px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+/* narrow phones: the wordmark yields its flourish so all three artifact
+   buttons fit whole — nothing looks amputated at 375px */
+@media (max-width: 430px) {
+  .wordmark span { display: none; }
+  .digest-btn { padding: 7px 10px; gap: 5px; }
+}

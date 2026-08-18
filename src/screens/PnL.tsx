@@ -9,7 +9,7 @@ import { displayName } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { pnl, type PnlLine, type PnlOut, type PnlThin } from "../engine/pnl";
 import { money } from "../engine/tierMath";
-import { Awaiting, Receipt, Reveal, Skeleton, Written } from "../components/ui";
+import { Awaiting, FinanceSegs, Receipt, Reveal, Skeleton, Written } from "../components/ui";
 
 function Delta({ now, prev }: { now: number; prev: number | null }) {
   if (prev === null || prev === 0) return null;
@@ -66,6 +66,7 @@ export default function PnL() {
     return (
       <div className="app">
         <div className="appbar"><div className="titleblock"><div className="kicker">{displayName()}</div><h1>Profit &amp; loss</h1></div></div>
+        <FinanceSegs />
         <Skeleton lines={4} caption="setting the statement…" />
       </div>
     );
@@ -74,6 +75,7 @@ export default function PnL() {
     return (
       <div className="app">
         <div className="appbar"><div className="titleblock"><div className="kicker">{displayName()}</div><h1>Profit &amp; loss</h1></div></div>
+        <FinanceSegs />
         <Awaiting title="The P&L" needs="sales data (connect a source or drop a CSV)"
           unlocks="Revenue by product, expenses by category, net by month — the statement, computed live." />
       </div>
@@ -111,6 +113,7 @@ export default function PnL() {
           Packet
         </button>
       </div>
+      <FinanceSegs />
 
       {/* month pager */}
       <div className="pl-pager">

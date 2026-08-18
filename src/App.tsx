@@ -47,27 +47,6 @@ const TABS = [
     ),
   },
   {
-    to: "/pnl",
-    label: "P&L",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 5.5C10 4 7.5 3.5 4 3.5v15c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2v-15c-3.5 0-6 .5-8 2z" />
-        <path d="M12 5.5v15" />
-        <path d="M7 8.5h2.5M7 12h2.5M14.5 8.5H17M14.5 12H17" opacity=".55" />
-      </svg>
-    ),
-  },
-  {
-    to: "/ledger",
-    label: "Ledger",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4.5 5.5h.01M4.5 12h.01M4.5 18.5h.01" strokeWidth="2.4" />
-        <path d="M8.5 5.5H20M8.5 12H20M8.5 18.5H20" />
-      </svg>
-    ),
-  },
-  {
     to: "/plan",
     label: "Plan",
     icon: (
@@ -118,20 +97,47 @@ function TabBar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   useEffect(() => { setTucked(false); }, [pathname]);
+  // P&L and Ledger live under the Numbers tab (segments on-screen), so
+  // the dock stays four choices wide — breathing room over button soup.
+  const isOn = (to: string) =>
+    to === "/numbers" ? ["/numbers", "/pnl", "/ledger"].includes(pathname) : pathname === to;
   return (
     <nav className={`tabbar ${tucked ? "tucked" : ""}`} aria-label="Main">
       {TABS.map((t) => (
         <button
           key={t.to}
-          className={`tab ${pathname === t.to ? "on" : ""}`}
+          className={`tab ${isOn(t.to) ? "on" : ""}`}
           onClick={() => { try { navigator.vibrate?.(4); } catch { /* no haptics */ } nav(t.to); }}
-          aria-current={pathname === t.to ? "page" : undefined}
+          aria-current={isOn(t.to) ? "page" : undefined}
         >
           {t.icon}
           {t.label}
         </button>
       ))}
     </nav>
+  );
+}
+
+// The orientation minibar: a slim blurred capsule that fades in once you
+// scroll into a page, naming where you are — tap it to glide back to top.
+function MiniTitle({ label }: { label: string }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { setShow(window.scrollY > 170); ticking = false; });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <button className={`minibar ${show ? "show" : ""}`} aria-hidden={!show} tabIndex={show ? 0 : -1}
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} title="Back to top">
+      {label}
+    </button>
   );
 }
 
@@ -245,6 +251,7 @@ export default function App() {
       {/* No dock on /ask: the floating tab bar would sit on the composer.
           Ask is a room you enter by FAB and leave by its close button. */}
       {!inOnboarding && pathname !== "/packet" && pathname !== "/ask" && <TabBar />}
+      {!inOnboarding && pathname !== "/ask" && <MiniTitle label={routeName(pathname)} />}
     </div>
   );
 }
