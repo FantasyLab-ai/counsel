@@ -26,7 +26,8 @@
     // Intuit DEVELOPMENT keys — sandbox companies only. On production
     // approval: swap both to the Production tab's values and set
     // QBO_ENV=production (worker defaults to sandbox without it).
-    "QBO_CLIENT_ID": "ABa6L0dlBnVTEz8XN1hrVYJNuntGRw44Tl9HGaXp8ZzkCKZLyC",
+    "QBO_CLIENT_ID": "AB5ZsysdTOnOdd3WLJ15tLbbzDFnZ6Quw2Mj1IdI2r2DxEpXIO",
+    "QBO_ENV": "production",
     // LIVE Stripe Connect client id (platform review cleared 2026-08-18).
     // Pairs with the live STRIPE_SECRET_KEY secret for token exchange.
     "STRIPE_CLIENT_ID": "ca_V5foouysKSN8v0Yza4bMisFCSKlLqv7M"

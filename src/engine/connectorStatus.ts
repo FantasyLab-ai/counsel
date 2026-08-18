@@ -28,9 +28,8 @@ export const GUIDE_STEPS: ConnectorStep[] = [
   { id: "plaid", name: "Bank account", status: "soon",
     what: "your expenses, straight from the bank",
     note: "bank connections are in final review — days away" },
-  { id: "quickbooks", name: "QuickBooks", status: "soon",
-    what: "your books — expenses feed the money map and cash view",
-    note: "Intuit verification underway" },
+  { id: "quickbooks", name: "QuickBooks", status: "ready",
+    what: "your books — sign in with Intuit once, expenses feed the money map and cash view" },
   // ---- always works ----
   { id: "csv", name: "A simple file", status: "ready",
     what: "export a CSV from anywhere — sales or expenses — and drop it in. Always works, nothing to sign into" },
