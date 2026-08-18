@@ -523,7 +523,10 @@ async function qboTokenCall(env, params) {
   });
   const j = await r.json();
   if (!r.ok || !j.access_token) {
-    throw new Error(String(j.error_description || j.error || "quickbooks token exchange failed").slice(0, 120));
+    // intuit_tid is Intuit's per-request trace id — capturing it turns
+    // "it failed" into a ticket their support can actually look up.
+    const tid = r.headers.get("intuit_tid");
+    throw new Error(String(j.error_description || j.error || "quickbooks token exchange failed").slice(0, 120) + (tid ? ` [intuit_tid ${tid}]` : ""));
   }
   return j;
 }
@@ -544,7 +547,8 @@ async function qboExpenses(env, cred0, sinceUnix) {
       { headers: { Authorization: `Bearer ${access}`, Accept: "application/json" } },
     );
     if (!r.ok) {
-      if (page === 0) throw new Error(`quickbooks query failed (${r.status})`);
+      const tid = r.headers.get("intuit_tid");
+      if (page === 0) throw new Error(`quickbooks query failed (${r.status})${tid ? ` [intuit_tid ${tid}]` : ""}`);
       break;
     }
     const data = await r.json();

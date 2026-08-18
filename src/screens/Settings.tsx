@@ -348,6 +348,18 @@ export default function Settings() {
                 <div className="rr"><Toggle initial={demoView()} onChange={(v) => { setDemoView(v); window.location.reload(); }} /></div>
               </div>
             )}
+            <div className="srow tap" role="button" tabIndex={0}
+                 onClick={() => { window.location.href = "mailto:contact@fantasylab.tech?subject=Counsel%20support"; }}
+                 onKeyDown={(e) => { if (e.key === "Enter") window.location.href = "mailto:contact@fantasylab.tech?subject=Counsel%20support"; }}>
+              <div className="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
+              </div>
+              <div className="rl">
+                <div className="rt">Contact support</div>
+                <div className="rs">contact@fantasylab.tech — a human (the founder) answers.</div>
+              </div>
+              <div className="rr">{CHEV}</div>
+            </div>
             <div className="srow tap" role="button" tabIndex={0} onClick={exportEverything}
                  onKeyDown={(e) => { if (e.key === "Enter") exportEverything(); }}>
               <div className="ico">
