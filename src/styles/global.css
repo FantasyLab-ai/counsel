@@ -1427,3 +1427,6 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
 .row-card .rfoot { flex-wrap: wrap; }
 .row-card .rfoot .pill { max-width: 100%; height: auto; white-space: normal; text-align: left; line-height: 1.45; padding-top: 5px; padding-bottom: 5px; }
 .row-card .acton { display: block; width: 100%; margin-top: 10px; position: static; opacity: 1; }
+
+/* builder rows wrap instead of bleeding off narrow screens */
+.dropin-row { flex-wrap: wrap; }
