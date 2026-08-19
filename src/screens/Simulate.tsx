@@ -2,7 +2,7 @@
 // hit ONE banded 13-week cash path together. Every move is labeled
 // MEASURED or ASSUMED; the graph shows today's path vs the plan.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { displayName } from "../engine/persona";
 import { simulate, type SimMove, type SimResult } from "../engine/simulate";
@@ -69,6 +69,20 @@ export default function Simulate() {
     setBusy(true);
     try { setResult(await simulate(moves)); } finally { setBusy(false); }
   }
+
+  // screenshot rig: ?demoplan=1 stacks a sample plan and runs it once
+  const ranDemo = useRef(false);
+  useEffect(() => {
+    if (ranDemo.current || !window.location.search.includes("demoplan=1")) return;
+    ranDemo.current = true;
+    const preset: SimMove[] = [
+      { kind: "hire", label: "Hire at $1,400/mo", amountMo: 1400 },
+      { kind: "price", label: "Price +5%", pct: 5 },
+      { kind: "purchase", label: "One-time purchase $5,000", amount: 5000, week: 3 },
+    ];
+    setMoves(preset);
+    (async () => { setBusy(true); try { setResult(await simulate(preset)); } finally { setBusy(false); } })();
+  }, []);
 
   return (
     <div className="app">

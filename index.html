@@ -24,6 +24,15 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // screenshot rig: ?ss_v=1&ss_p=<persona> seeds device state pre-render
+      try {
+        var q = new URLSearchParams(location.search);
+        if (q.get("ss_v")) localStorage.setItem("counsel.visited", "1");
+        if (q.get("ss_p")) localStorage.setItem("counsel.persona", q.get("ss_p"));
+        if (q.get("ss_c")) localStorage.setItem("counsel.coach.today", "1");
+      } catch (e) {}
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
