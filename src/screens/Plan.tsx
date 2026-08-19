@@ -18,6 +18,7 @@ import {
 import { listDecisions, logDecision, type Decision } from "../engine/decisions";
 import { clearGoal, getGoal, goalPace, setGoal, suggestTarget, type GoalPace } from "../engine/goals";
 import { getPayFloor, payYourself, setPayFloor, type PayPlan, type PayRefusal } from "../engine/paySelf";
+import { rehearseDay, type DayChangeOut } from "../engine/dayChange";
 import { ActOn, Html, Receipt, Reveal, ShareCard, ProGate } from "../components/ui";
 
 // Pay Yourself — the number nobody computes. The safe draw is the largest
@@ -251,6 +252,7 @@ export default function Plan() {
       <Reveal i={1}><HireCard /></Reveal>
       <Reveal i={2}><PriceCard /></Reveal>
       <Reveal i={3}><PurchaseCard /></Reveal>
+      <Reveal i={4}><DayCard /></Reveal>
 
       {/* ---- was it worth it ---- */}
       <div className="eyebrow">Was it worth it?</div>
@@ -390,6 +392,54 @@ function PriceCard() {
         onClick={() => { logDecision(`Price change ${pct > 0 ? "+" : ""}${pct}%`, "profit impact inside the projected range"); setLogged(true); }}>
         {logged ? "✓ logged — grades in 30 days" : "Log this decision"}
       </button>
+    </article>
+  );
+}
+
+function DayCard() {
+  const [wd, setWd] = useState(1);
+  const [mode, setMode] = useState<"drop" | "add">("drop");
+  const [out, setOut] = useState<DayChangeOut | null>(null);
+  const [busy, setBusy] = useState(false);
+  const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  async function run() {
+    setBusy(true);
+    try { setOut(await rehearseDay(wd, mode)); } finally { setBusy(false); }
+  }
+  return (
+    <article className="mcard open il-card">
+      <div className="il-head">
+        <span className="il-kick">drop or add a trading day</span>
+        <span className="pill lite-fc"><span className="dot" />simulated from YOUR weekday rhythm</span>
+      </div>
+      <div className="mmean">
+        The question every owner asks in January: is that slow day worth opening?
+        Measured from your own last 8 weeks — banded, never promised.
+      </div>
+      <div className="dropin-row" style={{ alignItems: "center" }}>
+        <select className="ps-select" value={mode} aria-label="Add or drop"
+          onChange={(e) => { setMode(e.target.value as "drop" | "add"); setOut(null); }}>
+          <option value="drop">If I close on…</option>
+          <option value="add">If I open on…</option>
+        </select>
+        <select className="ps-select" value={wd} aria-label="Weekday"
+          onChange={(e) => { setWd(Number(e.target.value)); setOut(null); }}>
+          {DAYS.map((d, i) => <option key={d} value={i}>{d}s</option>)}
+        </select>
+        <button className="dbtn primary" disabled={busy} onClick={run}>{busy ? "…" : "Rehearse it"}</button>
+      </div>
+      {out && (
+        <div style={{ marginTop: 12 }}>
+          <div className="mmean"><b>{out.verdict}</b></div>
+          <div className="mmean" style={{ marginTop: 6 }}>{out.detail}</div>
+          <div className="il-cite" style={{ marginTop: 8 }}>{out.cite}</div>
+          {out.ok && (
+            <ActOn source="rehearse · day change"
+              action={`${mode === "drop" ? "Close" : "Open"} on ${DAYS[wd]}s`}
+              expected={out.verdict} impact={out.impactMo ? Math.abs(out.impactMo) : undefined} />
+          )}
+        </div>
+      )}
     </article>
   );
 }

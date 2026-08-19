@@ -13,7 +13,8 @@ import { overdueCount } from "../engine/decisions";
 import { sentinel, type SentinelOut } from "../engine/sentinel";
 import { dataBasis, type DataBasis } from "../engine/dataBasis";
 import { capabilityRead } from "../engine/capability";
-import { CitePill, ConfidencePill, CountUp, Html, Receipt, Reveal, Written } from "../components/ui";
+import { threeMoves, type Move } from "../engine/threeMoves";
+import { ActOn, CitePill, ConfidencePill, CountUp, Html, Receipt, Reveal, Written } from "../components/ui";
 import { BreakSpark, VizView } from "../components/charts";
 
 const SHIELD = (
@@ -41,6 +42,7 @@ export default function Today() {
   const [sent, setSent] = useState<SentinelOut | null>(null);
   const [band, setBand] = useState<RevenueBand | null>(null);
   const [basis, setBasis] = useState<DataBasis | null>(null);
+  const [moves, setMoves] = useState<Move[]>([]);
   const toGrade = overdueCount();
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export default function Today() {
     sentinel().then((s) => on && setSent(s)).catch(() => undefined);
     revenueBand().then((b) => on && setBand(b)).catch(() => undefined);
     dataBasis().then((b) => on && setBasis(b)).catch(() => undefined);
+    threeMoves().then((m) => on && setMoves(m)).catch(() => undefined);
     return () => { on = false; };
   }, []);
 
@@ -284,6 +287,28 @@ export default function Today() {
           </div>
         )}
       </div>
+
+      {moves.length > 0 && (
+        <>
+          <div className="eyebrow">This week’s three moves</div>
+          <div className="eyebrow-sub">every engine’s best proposal, ranked by dollars at stake — each with its receipt</div>
+          <div className="rows">
+            {moves.map((mv, i) => (
+              <Reveal i={i + 1} key={mv.id}>
+                <article className="row-card">
+                  <div className="rank">{i + 1}</div>
+                  <div className="rbody">
+                    <div className="src">{mv.source}{mv.impact ? ` · ~$${Math.round(mv.impact).toLocaleString("en-US")}/mo at stake` : ""}</div>
+                    <div className="txt"><b>{mv.action}</b> — {mv.expected}</div>
+                    <div className="rfoot"><CitePill text={mv.cite} /></div>
+                    <ActOn source={mv.source} action={mv.action} expected={mv.expected} impact={mv.impact} />
+                  </div>
+                </article>
+              </Reveal>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="eyebrow">The numbers, read</div>
       <div className="eyebrow-sub">tap any number to see exactly how it was computed</div>
