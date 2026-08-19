@@ -7,6 +7,7 @@ import { displayName, getPersona, setPersona } from "../engine/persona";
 import { useNavigate } from "react-router-dom";
 import { getBrief, getMetrics, type Brief, type Metric } from "../api/counsel";
 import { demoView, hasUserData } from "../engine/dataSource";
+import { hasCloudAccount, syncNow } from "../engine/cloudSync";
 import { composeDigest } from "../engine/digest";
 import { money, revenueBand, type RevenueBand } from "../engine/insights";
 import { overdueCount } from "../engine/decisions";
@@ -43,6 +44,7 @@ export default function Today() {
   const [band, setBand] = useState<RevenueBand | null>(null);
   const [basis, setBasis] = useState<DataBasis | null>(null);
   const [moves, setMoves] = useState<Move[]>([]);
+  const [syncing, setSyncing] = useState(false);
   const toGrade = overdueCount();
 
   useEffect(() => {
@@ -98,7 +100,23 @@ export default function Today() {
           <div className="wordmark"><b>Counsel</b><span>by Aurora</span></div>
           <div className="avatar">{displayName()[0]}</div>
         </div>
-        <div className="greet">reading your numbers…</div>
+        {hasCloudAccount() && (
+        <button className="sync-chip" disabled={syncing}
+          onClick={async () => {
+            setSyncing(true);
+            try { await syncNow(); window.location.reload(); } catch { setSyncing(false); }
+          }}>
+          <span className={`dot ${syncing ? "breathe" : ""}`} aria-hidden="true" />
+          {syncing ? "pulling fresh numbers from your sources…" : (() => {
+            const t = Number(localStorage.getItem("counsel.lastSync") || 0);
+            if (!t) return "sources connected · tap to sync";
+            const m = Math.round((Date.now() - t) / 60000);
+            const ago = m < 2 ? "just now" : m < 60 ? `${m}m ago` : `${Math.round(m / 60)}h ago`;
+            return `synced ${ago} · tap to refresh`;
+          })()}
+        </button>
+      )}
+      <div className="greet">reading your numbers…</div>
         <div className="skl-voice">
           <div className="skl skl-dark" style={{ width: "40%" }} />
           <div className="skl skl-dark skl-big" style={{ width: "88%" }} />

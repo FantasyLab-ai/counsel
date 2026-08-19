@@ -1430,3 +1430,11 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
 
 /* builder rows wrap instead of bleeding off narrow screens */
 .dropin-row { flex-wrap: wrap; }
+
+/* Today: the freshness chip — auto-sync's visible face */
+.sync-chip { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono);
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+  background: var(--card); border: 1px solid var(--line); border-radius: 100px;
+  padding: 6px 12px; margin: -4px 0 12px; cursor: pointer; }
+.sync-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent, #c9f36a); }
+.sync-chip:disabled { opacity: 0.75; }
