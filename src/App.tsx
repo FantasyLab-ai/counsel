@@ -205,6 +205,12 @@ export default function App() {
   // Every screen opens at its top — carrying scroll position between
   // routes makes pages appear mid-thought.
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+
+  // Connected once = fresh forever: pull new sales/expenses/invoices
+  // silently on open when the last sync is stale.
+  useEffect(() => {
+    import("./engine/cloudSync").then((m) => m.autoSyncIfStale()).catch(() => undefined);
+  }, []);
   const inOnboarding = pathname.startsWith("/welcome");
   if (pathname === "/" && isFirstRun()) {
     return <Navigate to="/welcome" replace />;

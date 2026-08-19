@@ -217,6 +217,7 @@ export async function syncNow(days = 365): Promise<SyncResult> {
   const pulled = (res.pulled as Record<string, number>) ?? {};
   const sources = (res.sources as string[]) ?? [];
   const seeded = !!res.seeded;
+  try { localStorage.setItem("counsel.lastSync", String(Date.now())); } catch { /* fine */ }
   const invoices = (res.invoices as UserInvoice[]) ?? [];
   if (charges.length || expenses.length) {
     const name = `${sources.length ? sources.join(" + ") + " live sync" : "live sync"}${seeded ? " · seeded test history" : ""}`;
@@ -255,4 +256,18 @@ export async function deleteCloudAccount(): Promise<void> {
   } finally {
     localStorage.removeItem(K_ACCOUNT);
   }
+}
+
+/** Auto-sync on app open: connected once means the numbers stay fresh
+ *  without hunting for a button. Silent, throttled to every 4 hours,
+ *  and a no-op when nothing is connected. */
+export async function autoSyncIfStale(): Promise<void> {
+  try {
+    if (!hasCloudAccount()) return;
+    const last = Number(localStorage.getItem("counsel.lastSync") || 0);
+    if (Date.now() - last < 4 * 3600 * 1000) return;
+    const providers = await listCloudConnections();
+    if (!providers.length) return;
+    await syncNow();
+  } catch { /* quiet — manual sync still exists */ }
 }
