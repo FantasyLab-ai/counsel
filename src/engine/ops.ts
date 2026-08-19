@@ -42,7 +42,16 @@ export async function opsReport(): Promise<OpsOut> {
   const lastDate = new Date(dates[dates.length - 1] + "T00:00:00");
   const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  const inventory: InventoryRow[] = (raw.inventory as { product: string; on_hand: number; incoming: number; incoming_eta: string | null }[]).map((r) => {
+  // The demo inventory fixture is keyed to one world's product ids; in the
+  // other demo worlds (or thin live data) we synthesize plausible on-hand
+  // from each product's own selling rate instead of crashing.
+  type InvRaw = { product: string; on_hand: number; incoming: number; incoming_eta: string | null };
+  const invMatched = (raw.inventory as InvRaw[]).filter((r) => led.products.some((pp) => pp.id === r.product));
+  const invSource: InvRaw[] = invMatched.length ? invMatched : led.products.map((pp) => {
+    const rate = (unitsByProduct.get(pp.id) ?? 0) / Math.max(1, Math.min(45, recent.size));
+    return { product: pp.id, on_hand: Math.max(4, Math.round(rate * 18)), incoming: 0, incoming_eta: null };
+  });
+  const inventory: InventoryRow[] = invSource.map((r) => {
     const meta = led.products.find((p) => p.id === r.product)!;
     const rate = (unitsByProduct.get(r.product) ?? 0) / Math.min(45, recent.size);
     const cover = rate > 0 ? r.on_hand / rate : 999;

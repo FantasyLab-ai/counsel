@@ -176,6 +176,12 @@ export default function Simulate() {
                   <div className="il-cite" style={{ marginTop: 4 }}>
                     solid: this plan (mid path, shaded to cautious) · dashed: today's path · {result.scen?.cite}
                   </div>
+                  {result.sims && (
+                    <div className="pill lite-hi" style={{ marginTop: 10 }}>
+                      <span className="dot" />
+                      {result.sims.n} simulated quarters · holds in {result.sims.holdPct}% · likely end cash {money(result.sims.endLo)}–{money(result.sims.endHi)}
+                    </div>
+                  )}
                   <div style={{ marginTop: 12 }}>
                     <div className="pw-csv-lbl">how each move was counted</div>
                     {result.notes.map((n, i) => (

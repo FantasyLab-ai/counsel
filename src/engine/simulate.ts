@@ -27,6 +27,29 @@ export interface SimResult {
   tightDelta?: number; // change in tight weeks
   notes: string[];     // one honest line per move: measured vs assumed
   verdict?: string;
+  sims?: { n: number; holdPct: number; endLo: number; endHi: number };
+}
+
+function mulberry(seed: number) {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+async function weeklyTotals(): Promise<number[]> {
+  const { dates, revenue } = await getDaily();
+  const weekly = new Map<string, number>();
+  dates.forEach((d, i) => {
+    const x = new Date(d + "T00:00:00");
+    x.setDate(x.getDate() - x.getDay());
+    const w = x.toISOString().slice(0, 10);
+    weekly.set(w, (weekly.get(w) ?? 0) + revenue[i]);
+  });
+  return [...weekly.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, v]) => v).slice(-9, -1);
 }
 
 async function weeklyRevMid(): Promise<number> {
@@ -99,10 +122,41 @@ export async function simulate(moves: SimMove[]): Promise<SimResult> {
 
   const endDelta = scen.weeks[12].cumMid - base.weeks[12].cumMid;
   const tightDelta = scen.tightWeeks - base.tightWeeks;
-  const dir = endDelta >= 0 ? "up" : "down";
-  const verdict = scen.tightWeeks === 0
-    ? `This plan holds. Cash stays above water for all 13 weeks and ends ${dir} ${money(Math.abs(endDelta))} vs today's path.`
-    : `Careful: ${scen.tightWeeks} tight week${scen.tightWeeks > 1 ? "s" : ""} on this plan (first: week of ${scen.firstTight?.label}). It ends ${money(Math.abs(endDelta))} ${endDelta >= 0 ? "above" : "below"} today's path.`;
 
-  return { ok: true, base, scen, endDelta, tightDelta, notes, verdict };
+  // Bootstrap Monte Carlo: resample YOUR last 8 weeks 500 times, scale
+  // each simulated quarter's cash-in by its weekly draw, and count how
+  // often the plan stays above water. Seeded — same plan, same answer.
+  const totals = await weeklyTotals();
+  const med = [...totals].sort((a, b) => a - b)[Math.floor(totals.length / 2)] || 1;
+  const N = 500;
+  const rand = mulberry(1234567 + moves.length * 101);
+  let hold = 0;
+  const ends: number[] = [];
+  for (let i = 0; i < N; i++) {
+    let cash = scen.startCash;
+    let ok2 = true;
+    for (let w = 0; w < 13; w++) {
+      const f = totals[Math.floor(rand() * totals.length)] / med;
+      cash += scen.weeks[w].inMid * f - scen.weeks[w].out;
+      if (cash < 0) ok2 = false;
+    }
+    if (ok2) hold++;
+    ends.push(cash);
+  }
+  ends.sort((a, b) => a - b);
+  const sims = {
+    n: N,
+    holdPct: Math.round((hold / N) * 100),
+    endLo: Math.round(ends[Math.floor(N * 0.15)]),
+    endHi: Math.round(ends[Math.floor(N * 0.85)]),
+  };
+
+  const dir = endDelta >= 0 ? "up" : "down";
+  const verdict = sims.holdPct >= 90
+    ? `Ran ${N} simulated quarters from your own weeks: the plan stays above water in ${sims.holdPct}% of them, ending ${dir} ${money(Math.abs(endDelta))} vs today's path on the middle run.`
+    : sims.holdPct >= 60
+      ? `Ran ${N} simulated quarters: the plan survives ${sims.holdPct}% of them — real risk in the tail. First pressure: week of ${scen.firstTight?.label ?? scen.weeks.find((w) => w.tight)?.label ?? "—"}.`
+      : `Ran ${N} simulated quarters: the plan goes underwater in ${100 - sims.holdPct}% of them. As drawn, I can't recommend it — shrink a move and re-run.`;
+
+  return { ok: true, base, scen, endDelta, tightDelta, notes, verdict, sims };
 }
