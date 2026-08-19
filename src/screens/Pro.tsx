@@ -109,7 +109,7 @@ export default function Pro() {
             <div className="il-kick">counsel pro</div>
             <div className="tv" style={{ marginTop: 8 }}>
               <span className="num">$14.99</span>
-              <span className="dlt flat">/ month · or $119/yr (2 months free)</span>
+              <span className="dlt flat">/ month · or $119.99/yr (2 months free)</span>
             </div>
             {pkgs.length > 0 ? (
               <>
@@ -131,15 +131,21 @@ export default function Pro() {
             ) : (
               <>
                 <div className="mmean">
-                  Billing arrives with the app-store builds. Until then, Pro is
-                  open only to founding members — the twelve pilot businesses
-                  helping test Counsel keep it free for life.
+                  Pro is free for founding members — the first fifty businesses
+                  to join Counsel keep it for life, claimed automatically. After
+                  that, the subscription below.
                 </div>
                 {diag && (
                   <div className="honest-note" style={{ marginTop: 10 }}>{diag}</div>
                 )}
               </>
             )}
+            <div className="mmean" style={{ marginTop: 10, fontSize: 12 }}>
+              <a href="https://counsel-demo.pages.dev/terms" target="_blank" rel="noopener noreferrer" style={{ color: "var(--ink-2)" }}>Terms of Use</a>
+              {" · "}
+              <a href="https://counsel-demo.pages.dev/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--ink-2)" }}>Privacy Policy</a>
+              {" · auto-renews until cancelled in your store settings"}
+            </div>
             <div className="field" style={{ marginTop: 14 }}>
               <input
                 value={code}
