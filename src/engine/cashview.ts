@@ -48,6 +48,10 @@ export interface CashViewOpts {
   /** Injected monthly outflows (e.g. the owner's draw on the 1st & 15th,
    * the tax set-aside) — same treatment as any recorded bill. */
   extraMonthly?: { day: number; label: string; amount: number }[];
+  /** Simulations Lab: scale weekly cash-in (1 = unchanged). */
+  revenueMult?: number;
+  /** Simulations Lab: one-time outflows landing in week index 0-12. */
+  extraOneTime?: { week: number; label: string; amount: number }[];
 }
 
 export async function cashView(opts?: CashViewOpts): Promise<CashViewOut | CashViewThin> {
@@ -124,9 +128,13 @@ export async function cashView(opts?: CashViewOpts): Promise<CashViewOut | CashV
       }
     }
 
-    const inLo = (live ? wLo : wLo * margin) + arIn;
-    const inMid = (live ? wMid : wMid * margin) + arIn;
-    const inHi = (live ? wHi : wHi * margin) + arIn;
+    const rm = opts?.revenueMult ?? 1;
+    for (const o of opts?.extraOneTime ?? []) {
+      if (o.week === w) { out += o.amount; billLabels.push(o.label); }
+    }
+    const inLo = (live ? wLo : wLo * margin) * rm + arIn;
+    const inMid = (live ? wMid : wMid * margin) * rm + arIn;
+    const inHi = (live ? wHi : wHi * margin) * rm + arIn;
     cumLo += inLo - out;
     cumMid += inMid - out;
     weeks.push({

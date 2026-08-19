@@ -424,6 +424,11 @@ export default function Today() {
                 icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 3v6L4 20a1.5 1.5 0 0 0 1.4 2h13.2a1.5 1.5 0 0 0 1.4-2L15 9V3M7 3h10" /></svg>,
                 t: "Insights Lab", s: "nine deep reads",
               },
+              simulate: {
+                to: "/simulate",
+                icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 17c3 0 3-10 6-10s3 10 6 10 3-5 4-5" /><path d="M4 21h16" /></svg>,
+                t: "Simulations Lab", s: "rehearse whole plans",
+              },
               money: {
                 to: "/money",
                 icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /></svg>,
@@ -446,7 +451,9 @@ export default function Today() {
                 t: "Marketing", s: "channels · post lift",
               },
             };
-            const order = getPersona()?.deeper ?? ["insights", "money", "ops", "decisions", "marketing"];
+            const DEF = ["insights", "simulate", "money", "ops", "decisions", "marketing"];
+            const chosen = getPersona()?.deeper ?? DEF;
+            const order = [...chosen, ...DEF.filter((k) => !chosen.includes(k))];
             return order.filter((k) => TILES[k]).map((k) => (
               <button className="hub-card" key={k} onClick={() => nav(TILES[k].to)}>
                 {TILES[k].icon}

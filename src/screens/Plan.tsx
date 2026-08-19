@@ -253,6 +253,11 @@ export default function Plan() {
       <Reveal i={2}><PriceCard /></Reveal>
       <Reveal i={3}><PurchaseCard /></Reveal>
       <Reveal i={4}><DayCard /></Reveal>
+      <Reveal i={5}>
+        <button className="acton" onClick={() => window.location.assign("/simulate")}>
+          → Stack several moves at once — open the Simulations Lab
+        </button>
+      </Reveal>
 
       {/* ---- was it worth it ---- */}
       <div className="eyebrow">Was it worth it?</div>

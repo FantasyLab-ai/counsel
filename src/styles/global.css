@@ -1420,3 +1420,10 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
 .demo-worlds { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: -6px 2px 16px; }
 .dw-lbl { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
 .chip-sm.dw { border-radius: 100px; }
+
+/* three moves: room to breathe — nothing clips, the button stands alone */
+.row-card .rbody { min-width: 0; }
+.row-card .txt { overflow: visible; }
+.row-card .rfoot { flex-wrap: wrap; }
+.row-card .rfoot .pill { max-width: 100%; height: auto; white-space: normal; text-align: left; line-height: 1.45; padding-top: 5px; padding-bottom: 5px; }
+.row-card .acton { display: block; width: 100%; margin-top: 10px; position: static; opacity: 1; }
