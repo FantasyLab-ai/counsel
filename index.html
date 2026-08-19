@@ -31,6 +31,23 @@
         if (q.get("ss_v")) localStorage.setItem("counsel.visited", "1");
         if (q.get("ss_p")) localStorage.setItem("counsel.persona", q.get("ss_p"));
         if (q.get("ss_c")) localStorage.setItem("counsel.coach.today", "1");
+        if (q.get("ss_v")) {
+          var st = document.createElement("style");
+          st.textContent = "*{animation-duration:0s!important;animation-delay:0s!important;transition:none!important}";
+          document.documentElement.appendChild(st);
+        }
+        var sy = parseInt(q.get("ss_y") || "0", 10);
+        if (sy) {
+          // walk down first so lazy sections mount at true heights, then lock
+          var step = 0;
+          var walk = function () {
+            step += 500;
+            window.scrollTo(0, Math.min(step, sy));
+            if (step < sy + 3000) requestAnimationFrame(walk);
+            else { var lock = function () { window.scrollTo(0, sy); requestAnimationFrame(lock); }; lock(); }
+          };
+          requestAnimationFrame(walk);
+        }
       } catch (e) {}
     </script>
     <script type="module" src="/src/main.tsx"></script>
