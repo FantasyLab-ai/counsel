@@ -84,9 +84,7 @@ export async function cashView(opts?: CashViewOpts): Promise<CashViewOut | CashV
 
   // ---- AR expected receipts (demo invoice book only — live waits for real invoices) ----
   let ar: Awaited<ReturnType<typeof arAging>> | null = null;
-  if (!live) {
-    try { ar = await arAging(); } catch { /* no invoices — revenue-only view */ }
-  }
+  try { ar = await arAging(); } catch { /* no invoices — revenue-only view */ }
 
   // ---- build 13 weeks ----
   const weeks: CashWeek[] = [];

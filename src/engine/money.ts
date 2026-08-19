@@ -3,7 +3,7 @@
 // schedule the Monte Carlo runway uses (single source of truth).
 
 import { BASELINE } from "./insights";
-import { dataMode, getDaily, userExpenses } from "./dataSource";
+import { userInvoices, dataMode, getDaily, userExpenses } from "./dataSource";
 
 /* ---- cash on hand: the one number no connector knows yet ----------------
    Set by the owner (or later by Plaid balances). Anchors the calendar, the
@@ -199,11 +199,21 @@ export interface ArOut {
   chase: ArInvoice[]; // sorted: oldest+largest first
 }
 export async function arAging(): Promise<ArOut> {
-  const raw = await (await fetch("/kiln_money.json")).json();
-  const asof = new Date(raw.asof + "T00:00:00").getTime();
+  // LIVE: the user's own issued invoices (CSV drop or Stripe/QuickBooks
+  // pull). No invoices yet -> an honest empty book, never demo fixtures.
+  let invoiceRows: { id: string; client: string; issued: string; due: string; amount: number; paid: string | null }[];
+  let asof: number;
+  if (dataMode() === "live") {
+    invoiceRows = userInvoices() ?? [];
+    asof = Date.now();
+  } else {
+    const raw = await (await fetch("/kiln_money.json")).json();
+    invoiceRows = raw.invoices;
+    asof = new Date(raw.asof + "T00:00:00").getTime();
+  }
   const open: ArInvoice[] = [];
   let dsoNum = 0, dsoN = 0;
-  for (const inv of raw.invoices as { id: string; client: string; issued: string; due: string; amount: number; paid: string | null }[]) {
+  for (const inv of invoiceRows) {
     if (inv.paid) {
       dsoNum += (new Date(inv.paid + "T00:00:00").getTime() - new Date(inv.issued + "T00:00:00").getTime()) / 86400000;
       dsoN++;

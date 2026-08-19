@@ -62,6 +62,33 @@ export function userMeta(): UserMeta | null {
   return read<UserMeta>(K_META);
 }
 /** Raw: does stored user data exist (regardless of the showroom view)? */
+export interface UserInvoice {
+  id: string; client: string; issued: string; due: string; amount: number; paid: string | null;
+}
+const K_INVOICES = "counsel.user.invoices";
+
+export function userInvoices(): UserInvoice[] | null {
+  if (demoView()) return null;
+  return read<UserInvoice[]>(K_INVOICES);
+}
+
+/** Store issued invoices (AR). Same no-mixing rule as every real import:
+ *  arriving real data exits the showroom. */
+export function storeInvoices(rows: UserInvoice[], name: string): void {
+  try {
+    localStorage.removeItem(K_DEMO_VIEW);
+    localStorage.setItem(K_INVOICES, JSON.stringify(rows));
+    const meta = read<UserMeta>(K_META);
+    localStorage.setItem(K_META, JSON.stringify({
+      name: meta?.name ? `${meta.name} + ${name}` : name,
+      importedAt: new Date().toISOString().slice(0, 10),
+      rows: (meta?.rows ?? 0) + rows.length,
+    } satisfies UserMeta));
+  } catch {
+    throw new Error("Invoice file too large for on-device storage.");
+  }
+}
+
 export function hasUserData(): boolean {
   return read<Charge[]>(K_CHARGES) !== null;
 }
@@ -87,6 +114,7 @@ export function clearUserData(): void {
   try {
     localStorage.removeItem(K_CHARGES);
     localStorage.removeItem(K_EXPENSES);
+    localStorage.removeItem(K_INVOICES);
     localStorage.removeItem(K_META);
   } catch {
     /* nothing to clear */

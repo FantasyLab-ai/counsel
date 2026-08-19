@@ -120,8 +120,13 @@ export default function Money() {
   useEffect(() => {
     let on = true;
     taxSetAside().then((t) => on && setTax(t)).catch(() => undefined);
-    if (liveMode && !hasExp) return () => { on = false; }; // nothing to compute yet
-    Promise.all([cashCalendar(), liveMode ? Promise.resolve(null) : arAging()])
+    if (liveMode && !hasExp) {
+      // No expense fuel for the calendar yet — but the invoice book stands
+      // on its own: AR loads regardless.
+      arAging().then((a) => on && setAr(a)).catch(() => undefined);
+      return () => { on = false; };
+    }
+    Promise.all([cashCalendar(), arAging().catch(() => null)])
       .then(([c, a]) => { if (on) { setCal(c); setAr(a); } })
       .catch((e) => on && setErr(String(e)));
     return () => { on = false; };
@@ -144,10 +149,45 @@ export default function Money() {
           <Awaiting title="The cash calendar" needs="your expenses/bank (bills on their days)"
             unlocks="Every bill lands on its day against your real inflow rhythm — the tightest day, called in advance." />
         </Reveal>
-        <Reveal i={1}>
-          <Awaiting title="Owed to you — AR aging" needs="your invoices (invoices.csv or Stripe Invoicing)"
-            unlocks="Who owes you, how late, the chase order, and your true DSO." />
-        </Reveal>
+        {ar && ar.open.length ? (
+          <>
+            <div className="eyebrow">Owed to you — chase in this order</div>
+            <Reveal i={1}>
+              <article className="mcard open il-card">
+                <div className="mval"><span className="num">{money(ar.overdue)}</span><span className="dlt">overdue of {money(ar.totalOpen)} open</span></div>
+                {ar.chase.map((inv) => (
+                  <div className="ar-row" key={inv.id}>
+                    <span className={`pill ${inv.bucket === "61+" ? "lite-none" : "lite-mod"}`}><span className="dot" />{inv.daysLate}d late</span>
+                    <div className="ar-body">
+                      <div className="ar-main"><b>{inv.client}</b> · {money(inv.amount)}</div>
+                      <div className="ar-sub">due {inv.due} · {inv.bucket === "61+" ? "call, don't email" : "friendly nudge"}</div>
+                    </div>
+                  </div>
+                ))}
+                {ar.open.filter((i) => i.daysLate === 0).map((inv) => (
+                  <div className="ar-row current" key={inv.id}>
+                    <span className="pill lite-hi"><span className="dot" />current</span>
+                    <div className="ar-body">
+                      <div className="ar-main">{inv.client} · {money(inv.amount)}</div>
+                      <div className="ar-sub">due {inv.due}</div>
+                    </div>
+                  </div>
+                ))}
+                {ar.chase[0] && (
+                  <ActOn source="Money · AR aging" action={`Chase ${ar.chase[0].client} (${money(ar.chase[0].amount)}, ${ar.chase[0].daysLate}d late)`}
+                    expected={`payment or plan within 14 days; escalate if silent`}
+                    impact={ar.chase[0].amount} />
+                )}
+                <div className="il-cite">chase order = days late × amount{ar.dso ? ` · your paid invoices settle in ~${ar.dso} days (DSO)` : ""} · from YOUR invoice book</div>
+              </article>
+            </Reveal>
+          </>
+        ) : (
+          <Reveal i={1}>
+            <Awaiting title="Owed to you — AR aging" needs="your invoices (drop invoices.csv, or they arrive with a Stripe/QuickBooks sync)"
+              unlocks="Who owes you, how late, the chase order, and your true DSO." />
+          </Reveal>
+        )}
         <Reveal i={2}>
           <Awaiting title="The tax pot" needs="your expenses (true profit)"
             unlocks="A monthly set-aside computed from real profit — no surprises in April." />
@@ -216,9 +256,9 @@ export default function Money() {
           </Reveal>
 
           <div className="eyebrow">Owed to you — chase in this order</div>
-          {liveMode ? (
+          {liveMode && !(ar && ar.open.length) ? (
             <Reveal i={3}>
-              <Awaiting title="AR aging" needs="your invoices (invoices.csv or Stripe Invoicing)"
+              <Awaiting title="AR aging" needs="your invoices (drop invoices.csv, or they arrive with a Stripe/QuickBooks sync)"
                 unlocks="Who owes you, how late, the chase order weighted by size, and your true DSO." />
             </Reveal>
           ) : ar && (
@@ -248,7 +288,7 @@ export default function Money() {
                   expected={`payment or plan within 14 days; escalate if silent`}
                   impact={ar.chase[0].amount} />
               )}
-              <div className="il-cite">chase order = days late × amount · your paid invoices settle in ~{ar.dso} days on average (DSO) · wholesale invoices from the demo ledger</div>
+              <div className="il-cite">chase order = days late × amount · your paid invoices settle in ~{ar.dso} days on average (DSO) · {liveMode ? "from YOUR invoice book" : "wholesale invoices from the demo ledger"}</div>
             </article>
           </Reveal>
           )}

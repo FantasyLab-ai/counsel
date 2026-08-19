@@ -5,11 +5,12 @@
 // reader downloads once, on first photo — the photo itself never leaves.
 
 import type { Charge, Expense } from "./tierMath";
-import { normDate, parseCharges, parseExpenses, parseMoney } from "./csvParse";
+import { normDate, parseCharges, parseExpenses, parseInvoices, parseMoney, type InvoiceRow } from "./csvParse";
 
 export interface IntakeResult {
   charges: Charge[];
   expenses: Expense[];
+  invoices: InvoiceRow[];
   notes: string[]; // one honest line per file — what was read, or why not
   okFiles: number;
   failFiles: number;
@@ -173,13 +174,25 @@ function receiptFromLines(lines: string[], file: File): Expense | null {
 
 /* --------------------------------- the drop -------------------------------- */
 export async function intakeFiles(files: File[], onStatus?: (s: string) => void): Promise<IntakeResult> {
-  const out: IntakeResult = { charges: [], expenses: [], notes: [], okFiles: 0, failFiles: 0 };
+  const out: IntakeResult = { charges: [], expenses: [], invoices: [], notes: [], okFiles: 0, failFiles: 0 };
   for (const f of files.slice(0, MAX_FILES)) {
     const name = f.name;
     const ext = (name.toLowerCase().split(".").pop() || "");
     try {
       if (ext === "csv" || ext === "txt" || ext === "tsv" || f.type.includes("csv") || f.type.startsWith("text/")) {
-        const det = detectCsv(await f.text());
+        const text = await f.text();
+        // invoices smell: a due/client pairing that sales exports don't have
+        const head0 = text.slice(0, 400).toLowerCase();
+        if (/\bdue/.test(head0) && /client|customer|payer/.test(head0) && /invoice|amount|total/.test(head0)) {
+          const inv = parseInvoices(text);
+          if (!inv.error && inv.rows.length) {
+            out.invoices.push(...inv.rows);
+            out.okFiles++;
+            out.notes.push(`${name}: ${inv.rows.length} invoices (${inv.note ?? "mapped"})`);
+            continue;
+          }
+        }
+        const det = detectCsv(text);
         if (det.kind === "none") {
           out.failFiles++;
           out.notes.push(`${name}: ${det.error}`);

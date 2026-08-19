@@ -381,6 +381,31 @@ function squareOAuthHost(env) {
     ? "https://connect.squareupsandbox.com"
     : "https://connect.squareup.com";
 }
+// Issued invoices (AR) — the who-owes-you book for service businesses.
+async function stripeInvoices(cred, sinceUnix) {
+  const params = new URLSearchParams({ limit: "100" });
+  params.set("created[gte]", String(sinceUnix));
+  const r = await fetch(`https://api.stripe.com/v1/invoices?${params}`, { headers: stripeAdapter.headers(cred) });
+  if (!r.ok) throw new Error(`stripe invoices ${r.status}`);
+  const j = await r.json();
+  const d = (t) => new Date(t * 1000).toISOString().slice(0, 10);
+  const out = [];
+  for (const inv of j.data ?? []) {
+    if (inv.status === "draft" || inv.status === "void") continue;
+    const amount = Math.round(inv.total ?? 0) / 100;
+    if (!(amount > 0)) continue;
+    out.push({
+      id: `st-${inv.id}`,
+      client: String(inv.customer_name || inv.customer_email || "client").slice(0, 60),
+      issued: d(inv.created),
+      due: inv.due_date ? d(inv.due_date) : d(inv.created),
+      amount,
+      paid: inv.status === "paid" ? d(inv.status_transitions?.paid_at || inv.created) : null,
+    });
+  }
+  return out;
+}
+
 const STRIPE_REDIRECT = "https://counsel-cloud.fantasy-labai.workers.dev/v1/oauth/stripe/callback";
 function stripeAuthorizeUrl(env, state) {
   const u = new URL("https://connect.stripe.com/oauth/authorize");
@@ -569,7 +594,31 @@ async function qboExpenses(env, cred0, sinceUnix) {
     if (purchases.length < 100) break;
   }
   rows.sort((a, b) => (a.d < b.d ? -1 : 1));
-  return { rows, cred };
+  // Issued invoices ride the same access token — AR for the Money screen.
+  const invoices = [];
+  try {
+    const qi = `select * from Invoice where TxnDate >= '${since}' orderby TxnDate maxresults 200`;
+    const ri = await fetch(
+      `${qboApiBase(cred)}/v3/company/${cred.realm}/query?query=${encodeURIComponent(qi)}&minorversion=75`,
+      { headers: { Authorization: `Bearer ${access}`, Accept: "application/json" } },
+    );
+    if (ri.ok) {
+      const di = await ri.json();
+      for (const inv of di.QueryResponse?.Invoice ?? []) {
+        const amount = Math.round(Number(inv.TotalAmt || 0) * 100) / 100;
+        if (!(amount > 0)) continue;
+        invoices.push({
+          id: `qb-${inv.Id}`,
+          client: String(inv.CustomerRef?.name || "client").slice(0, 60),
+          issued: String(inv.TxnDate || "").slice(0, 10),
+          due: String(inv.DueDate || inv.TxnDate || "").slice(0, 10),
+          amount,
+          paid: Number(inv.Balance || 0) === 0 ? String(inv.DueDate || inv.TxnDate || "").slice(0, 10) : null,
+        });
+      }
+    }
+  } catch { /* invoices are optional — expenses still land */ }
+  return { rows, invoices, cred };
 }
 
 // Returns { rows, cred } — cred carries the rotated refresh token + shop_id to persist.
@@ -1593,6 +1642,7 @@ export default {
         const pulled = {};
         const errors = {};
         const liveExpenses = [];
+        const invoicesOut = [];
         for (const provider of Object.keys(acct.providers)) {
           try {
             const cred = JSON.parse(await openToken(env, acct.providers[provider].t));
@@ -1603,9 +1653,10 @@ export default {
               continue;
             }
             if (provider === "quickbooks") {
-              const { rows, cred: fresh } = await qboExpenses(env, cred, sinceUnix);
+              const { rows, invoices: qinv, cred: fresh } = await qboExpenses(env, cred, sinceUnix);
               pulled.quickbooks = rows.length;
               liveExpenses.push(...rows);
+              if (qinv?.length) { invoicesOut.push(...qinv); pulled.quickbooks_invoices = qinv.length; }
               acct.providers.quickbooks.t = await sealToken(env, JSON.stringify(fresh));
               await saveAcct(env, id, acct);
               continue;
@@ -1626,6 +1677,12 @@ export default {
             pulled[provider] = rows.length;
             for (const r of rows) r._src = provider;
             charges.push(...rows);
+            if (provider === "stripe") {
+              try {
+                const sinv = await stripeInvoices(hydrated, sinceUnix);
+                if (sinv.length) { invoicesOut.push(...sinv); pulled.stripe_invoices = sinv.length; }
+              } catch { /* invoices are optional */ }
+            }
           } catch (e) {
             errors[provider] = String(e?.message || e).slice(0, 120);
           }
@@ -1653,6 +1710,7 @@ export default {
           deduped: dd.removed,
           expenses: expensesOut,
           seeded: seededCounts,
+          invoices: invoicesOut.slice(0, 500),
           sources: Object.keys(pulled),
           pulled,
           ...(Object.keys(errors).length ? { errors } : {}),

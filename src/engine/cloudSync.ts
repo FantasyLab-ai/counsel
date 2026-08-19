@@ -5,7 +5,7 @@
 // engine lights up with zero further wiring. Nothing is stored server-side
 // except your encrypted token.
 
-import { storeUserData } from "./dataSource";
+import { storeInvoices, storeUserData, type UserInvoice } from "./dataSource";
 import type { Charge, Expense } from "./tierMath";
 
 const BASE = "https://counsel-cloud.fantasy-labai.workers.dev";
@@ -217,10 +217,12 @@ export async function syncNow(days = 365): Promise<SyncResult> {
   const pulled = (res.pulled as Record<string, number>) ?? {};
   const sources = (res.sources as string[]) ?? [];
   const seeded = !!res.seeded;
+  const invoices = (res.invoices as UserInvoice[]) ?? [];
   if (charges.length || expenses.length) {
     const name = `${sources.length ? sources.join(" + ") + " live sync" : "live sync"}${seeded ? " · seeded test history" : ""}`;
     storeUserData(charges.length ? charges : null, expenses.length ? expenses : null, name);
   }
+  if (invoices.length) storeInvoices(invoices, "invoice sync");
   return {
     rows: charges.length,
     expenseRows: expenses.length,

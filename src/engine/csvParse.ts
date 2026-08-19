@@ -333,3 +333,37 @@ export function parsePosts(text: string): ParsedPosts {
   }
   return { rows, skipped };
 }
+
+export interface InvoiceRow {
+  id: string; client: string; issued: string; due: string; amount: number; paid: string | null;
+}
+/** invoices.csv — issued, due, amount, client, paid_date (headers flexible). */
+export function parseInvoices(text: string): ParseResult<InvoiceRow> {
+  const rows = parseCsv(text);
+  if (!rows.length) return { rows: [], skipped: 0, error: "no rows found" };
+  const keys = Object.keys(rows[0]).map((k) => k.toLowerCase().trim());
+  const find = (...cands: string[]) => {
+    for (const c of cands) { const i = keys.findIndex((k) => k === c || k.includes(c)); if (i >= 0) return Object.keys(rows[0])[i]; }
+    return null;
+  };
+  const kClient = find("client", "customer", "name", "payer");
+  const kIssued = find("issued", "invoice_date", "created", "date");
+  const kDue = find("due");
+  const kAmount = find("amount", "total", "balance");
+  const kPaid = find("paid_date", "paid_on", "paid");
+  if (!kIssued || !kAmount) return { rows: [], skipped: rows.length, error: "needs at least an issued/date column and an amount column" };
+  const out: InvoiceRow[] = [];
+  let skipped = 0;
+  rows.forEach((r, i) => {
+    const issued = normDate(String(r[kIssued] ?? ""));
+    const amount = parseMoney(String(r[kAmount] ?? ""));
+    if (!issued || amount === null || amount <= 0) { skipped++; return; }
+    const dueRaw = kDue ? normDate(String(r[kDue] ?? "")) : null;
+    const due = dueRaw ?? new Date(new Date(issued + "T12:00:00").getTime() + 30 * 86400000).toISOString().slice(0, 10);
+    const paidRaw = kPaid ? String(r[kPaid] ?? "").trim() : "";
+    const paid = paidRaw && !/^(no|false|unpaid|open|0)$/i.test(paidRaw) ? normDate(paidRaw) : null;
+    out.push({ id: `inv-${i}`, client: String(r[kClient!] ?? "client").slice(0, 60) || "client", issued, due, amount, paid });
+  });
+  if (!out.length) return { rows: [], skipped, error: "no usable invoice rows" };
+  return { rows: out, skipped, note: `read "${kIssued}" as issued, "${kAmount}" as amount${kDue ? `, "${kDue}" as due` : ", due = issued + 30d"}` };
+}

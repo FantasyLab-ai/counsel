@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { parseCharges, parseExpenses, parsePosts } from "../engine/csvParse";
-import { clearUserData, dataMode, hasUserData, storeUserData, userCharges, userExpenses, userMeta } from "../engine/dataSource";
+import { clearUserData, dataMode, hasUserData, storeInvoices, storeUserData, userCharges, userExpenses, userMeta } from "../engine/dataSource";
 import { addPostsBulk } from "../engine/socialMath";
 import { displayName, getPersona, PERSONA_GROUPS, PERSONAS, setPersona } from "../engine/persona";
 import {
@@ -134,15 +134,19 @@ function CardDrop() {
     try {
       const { intakeFiles } = await import("../engine/fileIntake");
       const r = await intakeFiles([...list], (s) => setSt({ ok: true, msg: s }));
-      if (!r.charges.length && !r.expenses.length) {
+      if (!r.charges.length && !r.expenses.length && !r.invoices.length) {
         setSt({ ok: false, msg: r.notes.join(" · ") || "nothing usable found" });
         return;
       }
-      storeUserData(r.charges.length ? (r.charges as never) : null, r.expenses.length ? (r.expenses as never) : null,
-        list.length === 1 ? list[0].name : `${list.length} files`);
+      const lbl = list.length === 1 ? list[0].name : `${list.length} files`;
+      if (r.charges.length || r.expenses.length) {
+        storeUserData(r.charges.length ? (r.charges as never) : null, r.expenses.length ? (r.expenses as never) : null, lbl);
+      }
+      if (r.invoices.length) storeInvoices(r.invoices, lbl);
       const summary = [
         r.charges.length ? `${r.charges.length} sales rows` : "",
         r.expenses.length ? `${r.expenses.length} expense rows` : "",
+        r.invoices.length ? `${r.invoices.length} invoices` : "",
       ].filter(Boolean).join(" + ");
       setSt({ ok: true, msg: `${summary} loaded · ${r.notes.join(" · ")} — reloading on your data…` });
       setTimeout(() => window.location.assign("/insights"), 1600);
@@ -704,16 +708,20 @@ function DropIn() {
     try {
       const { intakeFiles } = await import("../engine/fileIntake");
       const r = await intakeFiles(files, (s) => setStatus({ ok: true, msg: s }));
-      if (!r.charges.length && !r.expenses.length) {
+      if (!r.charges.length && !r.expenses.length && !r.invoices.length) {
         setStatus({ ok: false, msg: r.notes.join(" · ") || "nothing usable found in those files" });
         return;
       }
       const label = files.length === 1 ? files[0].name : `${files.length} files`;
-      storeUserData(r.charges.length ? (r.charges as never) : null, r.expenses.length ? (r.expenses as never) : null, label);
+      if (r.charges.length || r.expenses.length) {
+        storeUserData(r.charges.length ? (r.charges as never) : null, r.expenses.length ? (r.expenses as never) : null, label);
+      }
+      if (r.invoices.length) storeInvoices(r.invoices, label);
       setActive(true);
       const summary = [
         r.charges.length ? `${r.charges.length} sales rows` : "",
         r.expenses.length ? `${r.expenses.length} expense rows` : "",
+        r.invoices.length ? `${r.invoices.length} invoices` : "",
       ].filter(Boolean).join(" + ");
       setStatus({ ok: true, msg: `${summary} loaded · ${r.notes.join(" · ")} — reloading on your data…` });
       setTimeout(() => window.location.assign("/insights"), 1600);
