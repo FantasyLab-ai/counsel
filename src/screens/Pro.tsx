@@ -9,8 +9,13 @@ import {
   PRO_FEATURES, isPro, redeemFoundingCode, tierLabel,
 } from "../engine/entitlement";
 import { billingAvailable, billingDiag, listPackages, purchase, restore } from "../engine/billing";
+import { isNativeApp } from "../engine/cloudSync";
 
 export default function Pro() {
+  // App Store guideline 3.1.1: inside the native shells, Pro unlocks
+  // through In-App Purchase ONLY. Founding codes and the first-50
+  // auto-claim exist solely on the web build.
+  const native = isNativeApp();
   const [code, setCode] = useState("");
   const [state, setState] = useState<"idle" | "bad" | "good">("idle");
   const [pkgs, setPkgs] = useState<{ id: string; identifier: string; title: string }[]>([]);
@@ -36,7 +41,7 @@ export default function Pro() {
   // Founding auto-claim: the first 50 public-link installs become founding
   // members automatically, each on its own seat. No code to type.
   useEffect(() => {
-    if (isPro()) return;
+    if (isPro() || isNativeApp()) return;
     (async () => {
       try {
         const { claimFoundingSeat } = await import("../engine/cloudSync");
@@ -98,8 +103,7 @@ export default function Pro() {
             <div className="il-kick">your plan</div>
             <div className="mmean" style={{ marginTop: 8 }}>
               <b>{tierLabel()}.</b> Everything below is yours. Thank you for
-              being early — founding members keep Pro for as long as Counsel
-              exists.
+              being early{native ? "." : " — founding members keep Pro for as long as Counsel exists."}
             </div>
           </article>
         </Reveal>
@@ -131,9 +135,9 @@ export default function Pro() {
             ) : (
               <>
                 <div className="mmean">
-                  Pro is free for founding members — the first fifty businesses
-                  to join Counsel keep it for life, claimed automatically. After
-                  that, the subscription below.
+                  {native
+                    ? "Subscription options load from the App Store. If nothing appears in a moment, the line below says why."
+                    : "Pro is free for founding members — the first fifty businesses to join Counsel keep it for life, claimed automatically. After that, the subscription below."}
                 </div>
                 {diag && (
                   <div className="honest-note" style={{ marginTop: 10 }}>{diag}</div>
@@ -146,28 +150,32 @@ export default function Pro() {
               <a href="https://counsel-demo.pages.dev/privacy" target="_blank" rel="noopener noreferrer" style={{ color: "var(--ink-2)" }}>Privacy Policy</a>
               {" · auto-renews until cancelled in your store settings"}
             </div>
-            <div className="field" style={{ marginTop: 14 }}>
-              <input
-                value={code}
-                onChange={(e) => { setCode(e.target.value); setState("idle"); }}
-                placeholder="founding member code"
-                aria-label="Founding member code"
-                autoCapitalize="characters"
-              />
-              <button className="go" onClick={redeem} aria-label="Redeem code">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-              </button>
-            </div>
-            {state === "bad" && (
-              <div className="mmean" style={{ marginTop: 8 }}>
-                That code didn't match. Codes look like FOUNDER-XXXXXXXXXX.
-              </div>
-            )}
-            {state === "good" && (
-              <div className="mmean" style={{ marginTop: 8 }}>
-                <b>Welcome, founding member.</b> Pro is yours for life —
-                taking you back to Today.
-              </div>
+            {!native && (
+              <>
+                <div className="field" style={{ marginTop: 14 }}>
+                  <input
+                    value={code}
+                    onChange={(e) => { setCode(e.target.value); setState("idle"); }}
+                    placeholder="founding member code"
+                    aria-label="Founding member code"
+                    autoCapitalize="characters"
+                  />
+                  <button className="go" onClick={redeem} aria-label="Redeem code">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  </button>
+                </div>
+                {state === "bad" && (
+                  <div className="mmean" style={{ marginTop: 8 }}>
+                    That code didn't match. Codes look like FOUNDER-XXXXXXXXXX.
+                  </div>
+                )}
+                {state === "good" && (
+                  <div className="mmean" style={{ marginTop: 8 }}>
+                    <b>Welcome, founding member.</b> Pro is yours for life —
+                    taking you back to Today.
+                  </div>
+                )}
+              </>
             )}
           </article>
         </Reveal>
