@@ -259,7 +259,7 @@ const LIVE_HELP: Record<CloudProvider, { hint: string; mint: string; url: string
   },
   plaid: {
     hint: "no key needed — you sign into your bank in Plaid's own window",
-    mint: "sandbox test bank: pick any bank, login user_good / pass_good",
+    mint: "sign in with your real bank in Plaid\u2019s secure window \u2014 Counsel never sees your credentials",
     url: "",
   },
   etsy: {
@@ -492,12 +492,11 @@ function LiveConnect() {
             <div className="guide-name">{g.name}</div>
             <div className="guide-what">{g.what}</div>
             {g.note && <div className="guide-note">{g.note}</div>}
-            {g.id === "plaid" && !isConn && dataMode() === "demo" && (
+            {g.id === "plaid" && !isConn && (
               <div className="guide-note">
-                Want to feel it now? You can walk the real flow with a test bank —
-                pick any bank, sign in with <b>user_good</b> / <b>pass_good</b>.
-                Fake numbers, clearly test; Settings clears them in one tap. This
-                option only appears before real data is connected — never after.
+                You sign in inside Plaid&#39;s own window — the same rails most
+                banking apps use. Counsel never sees your credentials, and the
+                connection is read-only: expenses in, nothing out.
               </div>
             )}
             {g.id === "shopify" && g.status === "ready" && !isConn && (
@@ -517,9 +516,9 @@ function LiveConnect() {
                   Connect {g.name} — sign in
                 </button>
               )}
-              {g.id === "plaid" && !isConn && dataMode() === "demo" && (
+              {g.id === "plaid" && !isConn && (
                 <button className="dbtn primary" disabled={!!busy} onClick={doPlaid}>
-                  Demo the flow — test bank
+                  Connect your bank — sign in
                 </button>
               )}
               <button className="dbtn" onClick={() => gGo(gStep + 1)}>

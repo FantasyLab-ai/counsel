@@ -24,10 +24,8 @@ export const GUIDE_STEPS: ConnectorStep[] = [
     what: "online payments and invoices — sign in once, no keys. Counsel only ever reads" },
   { id: "etsy", name: "Etsy", status: "ready",
     what: "maker sales from your shop — sign in once, no keys" },
-  // ---- in each platform's final review ----
-  { id: "plaid", name: "Bank account", status: "soon",
-    what: "your expenses, straight from the bank",
-    note: "bank connections are in final review — days away" },
+  { id: "plaid", name: "Bank account", status: "ready",
+    what: "your expenses, straight from the bank — sign in through Plaid's secure window, read-only" },
   { id: "quickbooks", name: "QuickBooks", status: "ready",
     what: "your books — sign in with Intuit once, expenses feed the money map and cash view" },
   // ---- always works ----

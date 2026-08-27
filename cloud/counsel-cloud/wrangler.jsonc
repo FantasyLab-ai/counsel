@@ -15,7 +15,7 @@
   // (and set the production secret) once Plaid approves production access.
   "vars": {
     "PLAID_CLIENT_ID": "6a5a5485b55542000ca154b5",
-    "PLAID_ENV": "sandbox",
+    "PLAID_ENV": "production",
     "SQUARE_CLIENT_ID": "sq0idp-t2S6tWCrHRvCMSGwdTG3DA",
     "SQUARE_OAUTH_ENV": "production",
     // "Counsel Sync" personal-tier app (2026-08-18) — provisional access,

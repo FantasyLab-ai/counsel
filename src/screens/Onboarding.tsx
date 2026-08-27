@@ -261,11 +261,13 @@ export default function Onboarding() {
                   Connect {s.name} — sign in
                 </button>
               ))}
-              <div className="ob-persona-note">
-                {soonNames().join(" and ")} connections are in each platform's
-                final review — they arrive as one-tap sign-ins too. The walkthrough
-                in Power Up always shows what's live.
-              </div>
+              {soonNames().length > 0 && (
+                <div className="ob-persona-note">
+                  {soonNames().join(" and ")} connections are in each platform's
+                  final review — they arrive as one-tap sign-ins too. The walkthrough
+                  in Power Up always shows what's live.
+                </div>
+              )}
               {obErr && <div className="dropin-status err">{obErr}</div>}
               <div className="subbtn" role="button" tabIndex={0} onClick={() => setLiveForm(false)}
                 onKeyDown={(e) => { if (e.key === "Enter") setLiveForm(false); }}>← other options</div>
