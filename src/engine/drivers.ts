@@ -78,7 +78,7 @@ export async function drivers(): Promise<DriversOut | DriversThin> {
   const parts: DriverPart[] = [
     { key: "traffic", label: "Traffic — number of sales", dollars: traffic, detail: `${T1} → ${T2} sales` },
     { key: "basket", label: "Basket — units per sale", dollars: basket, detail: `${U1.toFixed(2)} → ${U2.toFixed(2)} units` },
-    { key: "price", label: "Price — $ per unit", dollars: price, detail: `${money(P1)} → ${money(P2)}` },
+    { key: "price", label: "Price — $ per unit", dollars: price, detail: `$${P1.toFixed(2)} → $${P2.toFixed(2)}/unit` },
   ];
 
   // ---- mix: which product's revenue share moved most ----
@@ -121,11 +121,15 @@ export async function drivers(): Promise<DriversOut | DriversThin> {
   const top = ranked[0];
   const pctOf = (d: number) => rev1 > 0 ? Math.abs((d / rev1) * 100).toFixed(0) : "0";
   const dir = deltaDollars >= 0 ? "up" : "down";
-  const topDir = top.dollars >= 0 ? "added" : "cost";
+  const topPhrase = ({
+    traffic: top.dollars >= 0 ? "more sales added" : "fewer sales cost you",
+    basket: top.dollars >= 0 ? "bigger baskets added" : "smaller baskets cost you",
+    price: top.dollars >= 0 ? "higher prices added" : "lower prices cost you",
+  } as Record<string, string>)[top.key] ?? (top.dollars >= 0 ? "added" : "cost you");
   const flatBand = Math.abs(deltaPct) < 3;
   const headline = flatBand
     ? `Held <b>flat</b> (${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%) — no single lever moved it meaningfully.`
-    : `<b>${dir === "up" ? "Up" : "Down"} ${Math.abs(deltaPct).toFixed(0)}%</b> vs the prior 4 weeks — mostly <b>${top.key}</b>: ${top.label.split(" — ")[1]} ${topDir} ${money(Math.abs(top.dollars))} (${pctOf(top.dollars)}% of a normal 4 weeks${ranked[1] && Math.abs(ranked[1].dollars) > Math.abs(deltaDollars) * 0.25 ? `), with ${ranked[1].key} ${ranked[1].dollars >= 0 ? "helping" : "dragging"}` : ")"}.`;
+    : `<b>${dir === "up" ? "Up" : "Down"} ${Math.abs(deltaPct).toFixed(0)}%</b> vs the prior 4 weeks — mostly <b>${top.key}</b>: ${topPhrase} ${money(Math.abs(top.dollars))} (${pctOf(top.dollars)}% of a normal 4 weeks${ranked[1] && Math.abs(ranked[1].dollars) > Math.abs(deltaDollars) * 0.25 ? `), with ${ranked[1].key} ${ranked[1].dollars >= 0 ? "helping" : "dragging"}` : ")"}.`;
 
   return {
     ok: true,

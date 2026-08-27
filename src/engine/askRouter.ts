@@ -111,7 +111,9 @@ const INTENTS: Intent[] = [
         return answer(q,
           ["your own price change (A1)", `elasticity ${e.elasticity.toFixed(2)}`, "menu map"],
           `Your buyers already told you — <em>they can take it.</em>`,
-          `Your last price move measured elasticity <b>${e.elasticity.toFixed(2)}</b> (90% CI [${e.ciLo.toFixed(2)}, ${e.ciHi.toFixed(2)}]) — price-tolerant. A further +5% projects <b>${money(e.monthlyGain)}/mo</b>.` +
+          (e.ciLo <= 0 && e.ciHi >= 0
+            ? `Your last price move measured elasticity <b>${e.elasticity.toFixed(2)}</b>, but the 90% CI [${e.ciLo.toFixed(2)}, ${e.ciHi.toFixed(2)}] includes zero — I can't rule out no effect, so I won't project a gain from it yet.`
+            : `Your last price move measured elasticity <b>${e.elasticity.toFixed(2)}</b> (90% CI [${e.ciLo.toFixed(2)}, ${e.ciHi.toFixed(2)}]) — price-tolerant. A further +5% projects <b>${money(e.monthlyGain)}/mo</b>.`) +
           (horse ? `\n\nBest first move from the product map: <b>${horse.action}</b> — ${strip(horse.expected)}.` : "") +
           `\n\nTrack it as a decision and grade it in 30 days — that's the honest way to raise prices.`,
           "Measured from YOUR data, not an industry average.",

@@ -21,8 +21,8 @@ const DM = (() => {
     headline: "A loud month — <em>the weekend carried it.</em>",
     sub: "Food costs held. Friday and Saturday did the lifting — and Monday is quietly costing you staff hours.",
     rev: "$83,400", margin: "29%", runway: "3.8 mo", cust: "2,150", cash: "$22,800", burn: "$6,000",
-    marginNote: "<b>Healthy for full-service food.</b> Plate costs held; no creep in the walk-in.",
-    custLabel: "New customers · March", custNote: "<b>Walk-ins lead</b>; DoorDash is growing fastest. Watch its fees, not its volume.",
+    marginNote: "<b>A point under your 30% floor.</b> Plate costs held — the watchlist stays on it until two clean weeks print.",
+    custLabel: "Customers · March", custNote: "<b>Walk-ins lead</b>; DoorDash is growing fastest. Watch its fees, not its volume.",
   };
   if (g === "Trades & field") return {
     headline: "Winter-slow — <em>and right on schedule.</em>",
@@ -43,7 +43,7 @@ const DM = (() => {
     sub: "Margins and cash are healthy. The only thing off is revenue, and I know exactly when it started.",
     rev: "$61,200", margin: "34%", runway: "7 mo", cust: "214", cash: "$48,300", burn: "$6,900",
     marginNote: "<b>Healthy and steady</b> for handmade goods. No meaningful change; costs did not creep.",
-    custLabel: "New customers · March", custNote: "<b>Instagram is pulling its weight</b>; your strongest channel right now. Worth leaning into while revenue is soft.",
+    custLabel: "Customers · March", custNote: "<b>Instagram is pulling its weight</b>; your strongest channel right now. Worth leaning into while revenue is soft.",
   };
 })();
 
@@ -171,7 +171,7 @@ const METRICS: Metric[] = [
     label: "Cash runway",
     value: DM.runway,
     delta: { text: `${DM.cash} on hand`, dir: "flat" },
-    meaning: "<b>Comfortable.</b> Even a rough month wouldn't put you in danger.",
+    meaning: "<b>Under your 4-month line.</b> Not danger — but thin enough that the watchlist keeps it lit.",
     confidence: "high",
     confidenceLabel: "High",
     math: {
@@ -264,7 +264,7 @@ const HIRE_ANSWER: AskAnswer = {
   verdict: "Probably — <em>with one caveat.</em>",
   checked: ["3-mo profit", "revenue variance", "◆ Stripe"],
   body:
-    "Your last 3 months averaged <b>$3,050/mo</b> in profit after costs. A $1,400 hire leaves about <b>$1,650</b> of cushion.\n\nThe caveat: your revenue swings <b>±30%</b> month to month. In a slow month like last February, that cushion gets thin — affordable on average, tight on a bad month.",
+    "Your last 3 months averaged <b>$3,050/mo</b> in profit after every cost, including your own pay — a different number from Pay Yourself, which is your draw before those costs. A $1,400 hire leaves about <b>$1,650</b> of cushion.\n\nThe caveat: your revenue swings <b>±30%</b> month to month. In a slow month like last February, that cushion gets thin — affordable on average, tight on a bad month.",
   confidence: "moderate",
   confidenceLabel: "Moderate confidence",
   citationChip: "3 mo · high variance",

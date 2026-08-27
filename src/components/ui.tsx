@@ -253,7 +253,7 @@ export function MathSheet({ block, title, onClose }: { block: MathBlock; title?:
           <p className="sheet-p"><Html text={block.methodPlain} /></p>
           <div className="sheet-lbl">the key figure</div>
           <p className="sheet-p"><b><Html text={block.keyStatPlain} /></b></p>
-          {block.extraPlain && <p className="sheet-p">{block.extraPlain}</p>}
+          {block.extraPlain && <p className="sheet-p"><Html text={block.extraPlain} /></p>}
           {block.viz?.kind === "arithmetic" && (
             <div className="sheet-arith">
               {block.viz.lines.map((l, i) => (

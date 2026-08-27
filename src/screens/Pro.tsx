@@ -9,6 +9,7 @@ import {
   PRO_FEATURES, isPro, redeemFoundingCode, tierLabel,
 } from "../engine/entitlement";
 import { billingAvailable, billingDiag, listPackages, purchase, restore } from "../engine/billing";
+import { dataMode } from "../engine/dataSource";
 import { isNativeApp } from "../engine/cloudSync";
 
 export default function Pro() {
@@ -41,7 +42,7 @@ export default function Pro() {
   // Founding auto-claim: the first 50 public-link installs become founding
   // members automatically, each on its own seat. No code to type.
   useEffect(() => {
-    if (isPro() || isNativeApp()) return;
+    if (isPro() || isNativeApp() || dataMode() !== "live") return;
     (async () => {
       try {
         const { claimFoundingSeat } = await import("../engine/cloudSync");
@@ -137,7 +138,7 @@ export default function Pro() {
                 <div className="mmean">
                   {native
                     ? "Subscription options load from the App Store. If nothing appears in a moment, the line below says why."
-                    : "Pro is free for founding members — the first fifty businesses to join Counsel keep it for life, claimed automatically. After that, the subscription below."}
+                    : "Pro is free for founding members — the first fifty businesses to bring real data keep it for life, claimed automatically the moment you connect. After that, the subscription below."}
                 </div>
                 {diag && (
                   <div className="honest-note" style={{ marginTop: 10 }}>{diag}</div>

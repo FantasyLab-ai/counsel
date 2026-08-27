@@ -276,18 +276,28 @@ export default function Insights() {
                 <div className="il-head"><span className="il-kick">A1 · price power</span>
                   <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
                     <ShareCard kicker="A1 · price power" business={displayName()}
-                      headline={`Elasticity ${out.elasticity.elasticity.toFixed(2)} — measured from our own price change, not an industry average.`}
-                      sub={out.elasticity.inelastic && out.elasticity.monthlyGain > 0 ? `A further +5% test projects ${money(out.elasticity.monthlyGain)}/mo of margin.` : undefined}
+                      headline={out.elasticity.ciLo <= 0 && out.elasticity.ciHi >= 0
+                        ? `Elasticity ${out.elasticity.elasticity.toFixed(2)} — but the 90% interval spans zero, so "no effect" can't be ruled out yet.`
+                        : `Elasticity ${out.elasticity.elasticity.toFixed(2)} — measured from our own price change, not an industry average.`}
+                      sub={out.elasticity.inelastic && out.elasticity.monthlyGain > 0 && !(out.elasticity.ciLo <= 0 && out.elasticity.ciHi >= 0) ? `A further +5% test projects ${money(out.elasticity.monthlyGain)}/mo of margin.` : undefined}
                       cite={`natural experiment · 90% CI [${out.elasticity.ciLo.toFixed(2)}, ${out.elasticity.ciHi.toFixed(2)}] · ${out.elasticity.nPre}+${out.elasticity.nPost} selling days`} />
-                    <span className="pill lite-hi"><span className="dot" />measured, not guessed</span>
+                    <span className={`pill ${out.elasticity.ciLo <= 0 && out.elasticity.ciHi >= 0 ? "lite-mod" : "lite-hi"}`}><span className="dot" />{out.elasticity.ciLo <= 0 && out.elasticity.ciHi >= 0 ? "measured · not yet conclusive" : "measured, not guessed"}</span>
                   </span></div>
                 <div className="mval"><span className="num">{out.elasticity.elasticity.toFixed(2)}</span><span className="dlt">elasticity</span></div>
                 <div className="mmean">
-                  Your Feb 1 price move (+{out.elasticity.pricePct.toFixed(0)}% on the {out.elasticity.productName}) cost only{" "}
-                  <b>{Math.abs(out.elasticity.qtyPct).toFixed(0)}% of unit demand</b> — your buyers are{" "}
-                  {out.elasticity.inelastic ? <b>price-tolerant</b> : <b>price-sensitive</b>}.{" "}
-                  {out.elasticity.inelastic && out.elasticity.monthlyGain > 0 && (
-                    <>A further +5% test projects <b>{money(out.elasticity.monthlyGain)}/mo</b> of margin.</>
+                  {out.elasticity.ciLo <= 0 && out.elasticity.ciHi >= 0 ? (
+                    <>Your price move (+{out.elasticity.pricePct.toFixed(0)}% on the {out.elasticity.productName}) cost{" "}
+                    <b>{Math.abs(out.elasticity.qtyPct).toFixed(0)}% of unit demand</b> on its face — but the 90% interval
+                    [{out.elasticity.ciLo.toFixed(2)}, {out.elasticity.ciHi.toFixed(2)}] includes zero, so I can&#39;t rule out{" "}
+                    <b>no effect at all</b>. More selling days before I&#39;d call your buyers either way — and no revenue
+                    projection until then. The receipt shows everything.</>
+                  ) : (
+                    <>Your price move (+{out.elasticity.pricePct.toFixed(0)}% on the {out.elasticity.productName}) cost only{" "}
+                    <b>{Math.abs(out.elasticity.qtyPct).toFixed(0)}% of unit demand</b> — your buyers are{" "}
+                    {out.elasticity.inelastic ? <b>price-tolerant</b> : <b>price-sensitive</b>}.{" "}
+                    {out.elasticity.inelastic && out.elasticity.monthlyGain > 0 && (
+                      <>A further +5% test projects <b>{money(out.elasticity.monthlyGain)}/mo</b> of margin.</>
+                    )}</>
                   )}
                 </div>
                 {out.elasticity.inelastic && out.elasticity.monthlyGain > 0 && (

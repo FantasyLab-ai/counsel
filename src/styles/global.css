@@ -1438,3 +1438,6 @@ main.screen:focus { outline: none; } /* programmatic focus target, not a visual 
   padding: 6px 12px; margin: -4px 0 12px; cursor: pointer; }
 .sync-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent, #c9f36a); }
 .sync-chip:disabled { opacity: 0.75; }
+
+/* pills in card headers wrap below the title instead of escaping the card */
+.il-head { flex-wrap: wrap; row-gap: 6px; }

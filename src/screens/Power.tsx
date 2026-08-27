@@ -1065,7 +1065,7 @@ export default function Power() {
             <div className="il-head">
               <span className="il-kick">{it.title}</span>
               <span className={`pill ${it.status === "demo" ? "lite-mod" : "lite-none"}`}>
-                <span className="dot" />{it.status === "demo" ? "demo fuel · yours goes live on drop-in" : "engine ready · needs your file"}
+                <span className="dot" />{it.status === "demo" ? "demo fuel · live on drop-in" : "engine ready · needs your file"}
               </span>
             </div>
             <div className="il-row-sub" style={{ marginBottom: 10 }}>
