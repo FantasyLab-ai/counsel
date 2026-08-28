@@ -1,0 +1,34 @@
+# TEMPORARY — re-wraps the iOS distribution p12 with a new password so the
+# cert can be reused on other repos (spotless) after the original password
+# was lost. The private key never appears in logs; the artifact is a p12
+# protected by NEW_P12_PASSWORD. Delete this workflow after use.
+name: Re-export dist p12
+
+on: workflow_dispatch
+
+jobs:
+  reexport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Re-wrap p12 with new password
+        env:
+          OLD_P12: ${{ secrets.IOS_DIST_P12 }}
+          OLD_PW: ${{ secrets.IOS_DIST_P12_PASSWORD }}
+          NEW_PW: ${{ secrets.NEW_P12_PASSWORD }}
+        run: |
+          set -e
+          if [ -z "$NEW_PW" ]; then echo "NEW_P12_PASSWORD secret not set"; exit 1; fi
+          printf '%s' "$OLD_P12" | base64 -d > old.p12
+          # openssl 3 needs -legacy for p12s built with old RC2 ciphers; try both
+          openssl pkcs12 -in old.p12 -passin env:OLD_PW -nodes -out kc.pem 2>/dev/null \
+            || openssl pkcs12 -legacy -in old.p12 -passin env:OLD_PW -nodes -out kc.pem
+          openssl pkcs12 -export -in kc.pem -passout env:NEW_PW -out ios-dist-new.p12
+          rm -f kc.pem old.p12
+          echo "re-export OK"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-dist-new
+          path: ios-dist-new.p12
+          retention-days: 1
