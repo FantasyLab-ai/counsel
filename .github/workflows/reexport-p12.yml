@@ -23,9 +23,15 @@ jobs:
           # openssl 3 needs -legacy for p12s built with old RC2 ciphers; try both
           openssl pkcs12 -in old.p12 -passin env:OLD_PW -nodes -out kc.pem 2>/dev/null \
             || openssl pkcs12 -legacy -in old.p12 -passin env:OLD_PW -nodes -out kc.pem
-          openssl pkcs12 -export -in kc.pem -passout env:NEW_PW -out ios-dist-new.p12
+          # macOS `security` can't import OpenSSL 3's default p12 ciphers and
+          # fails with a misleading "MAC verification failed (wrong password?)"
+          # — export with the legacy 3DES/SHA1 scheme Apple tooling accepts.
+          openssl pkcs12 -export -in kc.pem -passout env:NEW_PW \
+            -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1 \
+            -out ios-dist-new.p12
+          openssl pkcs12 -in ios-dist-new.p12 -passin env:NEW_PW -noout
           rm -f kc.pem old.p12
-          echo "re-export OK"
+          echo "re-export OK (legacy ciphers, password verified)"
 
       - uses: actions/upload-artifact@v4
         with:
