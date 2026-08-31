@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { noteReceiptOpen } from "../engine/review";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Confidence } from "../api/counsel";
@@ -229,6 +230,8 @@ export function MathSheet({ block, title, onClose }: { block: MathBlock; title?:
   // when it isn't working for a small business.
   const ped = findPedigree(`${block.citation.method} ${block.methodPlain} ${block.keyStatNotation}`);
   const closeRef = useRef<HTMLButtonElement>(null);
+  // Every opened receipt counts toward the one-time rating ask.
+  useEffect(() => { noteReceiptOpen(); }, []);
   // Dialog manners: focus moves in on open, Escape closes, focus returns.
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;

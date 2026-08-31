@@ -218,6 +218,7 @@ export async function syncNow(days = 365): Promise<SyncResult> {
   const sources = (res.sources as string[]) ?? [];
   const seeded = !!res.seeded;
   try { localStorage.setItem("counsel.lastSync", String(Date.now())); } catch { /* fine */ }
+  { const { maybeRequestReview } = await import("./review"); void maybeRequestReview("sync"); }
   const invoices = (res.invoices as UserInvoice[]) ?? [];
   if (charges.length || expenses.length) {
     const name = `${sources.length ? sources.join(" + ") + " live sync" : "live sync"}${seeded ? " · seeded test history" : ""}`;

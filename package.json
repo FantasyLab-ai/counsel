@@ -12,6 +12,7 @@
     "test:exec": "node tools/shopify-exec-test.mjs"
   },
   "dependencies": {
+    "@capacitor-community/in-app-review": "^8.0.0",
     "@capacitor/browser": "^8.0.4",
     "@revenuecat/purchases-capacitor": "^13.4.0",
     "pdfjs-dist": "^6.2.108",
