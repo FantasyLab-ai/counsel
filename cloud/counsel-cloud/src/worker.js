@@ -1094,6 +1094,18 @@ export default {
       }
 
       // -- create account (no auth) --
+      // Printed-QR redirects: /go/<tag> counts the scan and bounces to the
+      // App Store. Public, unauthenticated, repointable without reprinting.
+      if (path.startsWith("/go/") && req.method === "GET") {
+        const tag = path.slice(4).replace(/[^a-z0-9-]/gi, "").slice(0, 32) || "unknown";
+        try {
+          const key = `go:${tag}`;
+          const n = parseInt((await env.ACCOUNTS.get(key)) || "0", 10) + 1;
+          await env.ACCOUNTS.put(key, String(n));
+        } catch { /* counting must never block the redirect */ }
+        return Response.redirect("https://apps.apple.com/us/app/counsel-honest-ai-cfo/id6802312256", 302);
+      }
+
       if (path === "/v1/account" && req.method === "POST") {
         if (await limited(env.RL_STRICT, `mint:${clientKey(req)}`, 10)) return tooMany(req);
         const accountId = `ca_${randHex(9)}`;
