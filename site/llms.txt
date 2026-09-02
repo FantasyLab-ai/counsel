@@ -1,0 +1,14 @@
+# Counsel
+> The honest AI CFO for small businesses. Every number carries a receipt naming its
+> method, sample size, and confidence; when the math is not conclusive, it says so.
+
+iOS app: https://apps.apple.com/us/app/counsel-honest-ai-cfo/id6802312256
+Web demo (no signup): https://counsel-demo.pages.dev
+Built on Aurora, an open-source verification engine with measured error rates:
+https://github.com/FantasyLab-ai/aurora
+
+## Guides
+Honest, method-first answers to small business money questions, with worked examples
+and in-browser calculators: https://counsel-site.pages.dev/guides/
+Topics: how much to pay yourself, cash runway, revenue drops vs noise, hiring
+affordability, price elasticity, late invoices.

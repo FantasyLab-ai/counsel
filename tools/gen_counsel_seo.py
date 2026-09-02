@@ -113,7 +113,10 @@ def page(slug, title, desc, h1, lede, body, faqs=None, related=None):
 <meta property="og:description" content="{html.escape(desc)}">
 <meta property="og:type" content="article">
 <meta property="og:url" content="{SITE}/guides/{slug}">
+<meta property="og:image" content="{SITE}/guides/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="{DEMO}/icon-192.png">
+<script type="application/ld+json">{{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{{"@type":"ListItem","position":1,"name":"Counsel","item":"{SITE}/"}},{{"@type":"ListItem","position":2,"name":"Guides","item":"{SITE}/guides/"}},{{"@type":"ListItem","position":3,"name":{jstr(h1)}}}]}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script type="application/ld+json">{{"@context":"https://schema.org","@type":"Article","headline":{jstr(h1)},"datePublished":"{TODAY}","author":{{"@type":"Person","name":"Brandon Grutkowski"}},"publisher":{{"@type":"Organization","name":"Counsel"}}}}</script>
@@ -542,6 +545,37 @@ the <a href="/guides/pay-yourself-calculator">calculator</a> sorts your months f
 <p>{VERT_SPECIFIC[vslug]}</p>""",
         related=["how-much-to-pay-yourself", "pay-yourself-calculator", "cash-runway"])
 
+RUNWAY_SPECIFIC = {
+  "restaurant": "Restaurant burn is lumpy: rent and payroll are fixed but food cost rides revenue, so compute burn from your heaviest recent month. A slow January against December burn is how 3.8 months becomes 2 in practice.",
+  "landscaping": "Seasonal businesses should read runway at the season trough, not the annual average. The question is never whether June survives; it is whether the cash on October 1 carries the crew to March.",
+  "etsy": "Inventory is cash wearing a costume. A materials buy converts runway into shelf stock, so count planned buys as burn in the month you place them, and remember December revenue lands after December bills.",
+  "musician": "With a $2,250 monthly burn against $9,400 of cash, the demo musician holds about four months, and that is the healthy version of creative income. Irregular earners should target six months, because the gap between paydays is the business model.",
+}
+for vslug, (aud, _vi) in VERTICALS.items():
+    w = WORLDS[vslug]
+    months = w["cash"] / w["burn"]
+    slug = f"cash-runway-{vslug}"
+    GUIDE_TITLES[slug] = f"Cash runway for {aud.split(' and ')[0]}: how many months do you really have?"
+    PAGES[slug] = page(
+        slug,
+        f"Cash Runway for {aud.title()}: The Honest Number | Counsel",
+        f"Runway math applied to {aud}: a worked example with ${w['cash']:,} cash against ${w['burn']:,} monthly burn, and the four-month watch line explained.",
+        f"Cash runway for {aud}: how many months do you really have?",
+        f"Runway turns money stress into a plan. For {aud} the calculation has one twist worth knowing.",
+        f"""
+<div class="example"><span class="k">The worked example</span>
+<p>{w['name']}, {w['kind']}, holds <b>${w['cash']:,}</b> in cash against a monthly burn of
+<b>${w['burn']:,}</b>, everything included: rent, gear, software, and the owner draw. That is
+<b>{months:.1f} months of runway</b> at current burn. {'Under the four-month line, so the watchlist stays lit.' if months < 4 else 'Above the four-month line, which buys the freedom to think in seasons instead of weeks.'}</p></div>
+<div class="method"><span class="k">The method, plainly</span>
+<p>Runway = cash on hand ÷ monthly burn, using your heaviest recent burn month rather than
+your cheapest. The full reasoning, including what to do at each runway level, lives in the
+<a href="/guides/cash-runway">main runway guide</a>; the
+<a href="/guides/runway-calculator">calculator</a> runs it with your numbers in your browser.</p></div>
+<h2>The twist for {aud}</h2>
+<p>{RUNWAY_SPECIFIC[vslug]}</p>""",
+        related=["cash-runway", "runway-calculator", f"pay-yourself-{vslug}"])
+
 # ---------------- hub ----------------
 def hub():
     groups = [
@@ -549,7 +583,7 @@ def hub():
                                 "revenue-drop-real-or-noise", "can-i-afford-to-hire",
                                 "should-i-raise-prices", "which-invoice-to-chase"]),
         ("Calculators", ["pay-yourself-calculator", "runway-calculator", "hire-calculator"]),
-        ("By business type", [f"pay-yourself-{v}" for v in VERTICALS]),
+        ("By business type", [f"pay-yourself-{v}" for v in VERTICALS] + [f"cash-runway-{v}" for v in VERTICALS]),
     ]
     body = ""
     for gname, slugs in groups:
