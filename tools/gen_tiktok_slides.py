@@ -10,12 +10,13 @@ os.makedirs(OUT, exist_ok=True)
 
 # slide order is hook-first, not App Store order
 SLIDES = [
-    ("01-today.png",         "you own the business", "and still don't know what to pay yourself"),
-    ("03-insights.png",      "tap any number",       "it shows you the math behind it"),
-    ("07-money.png",         "it flags the thin day","before you book something expensive on it"),
-    ("02-simulations-lab.png","rehearse the hire",   "against your own history, before you make it"),
-    ("09-connect-guide.png", "plugs into your tools","square, stripe, shopify, quickbooks, your bank"),
-    ("10-pro.png",           "the math is free",     "every receipt, every honest refusal, forever"),
+    ("01-today.png",          "you own the business",  "and still don't know what to pay yourself"),
+    ("05-ask.png",            'it said "probably"',     "not yes. probably, with one caveat."),
+    ("03-insights.png",       "tap any number",        "it shows you the math behind it"),
+    ("07-money.png",          "it flags the thin day", "before you book something expensive on it"),
+    ("02-simulations-lab.png","stack the moves",       "and see whether the whole plan actually holds"),
+    ("09-connect-guide.png",  "plugs into your tools", "square, stripe, shopify, quickbooks, your bank"),
+    ("10-pro.png",            "the math is free",      "every receipt, every honest refusal, forever"),
 ]
 
 TPL = """<!doctype html><html><head><meta charset="utf-8">
