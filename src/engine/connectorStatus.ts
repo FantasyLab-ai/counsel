@@ -11,6 +11,10 @@ export interface ConnectorStep {
   what: string;
   status: "ready" | "soon";
   note?: string;
+  /** Bank feeds cost us a monthly fee per connected bank for as long as the
+   *  connection lives, so they sit in Pro. Every other connector is free
+   *  forever because serving it costs nothing. */
+  pro?: true;
 }
 
 export const GUIDE_STEPS: ConnectorStep[] = [
@@ -24,7 +28,7 @@ export const GUIDE_STEPS: ConnectorStep[] = [
     what: "online payments and invoices — sign in once, no keys. Counsel only ever reads" },
   { id: "etsy", name: "Etsy", status: "ready",
     what: "maker sales from your shop — sign in once, no keys" },
-  { id: "plaid", name: "Bank account", status: "ready",
+  { id: "plaid", name: "Bank account", status: "ready", pro: true,
     what: "your expenses, straight from the bank — sign in through Plaid's secure window, read-only" },
   { id: "quickbooks", name: "QuickBooks", status: "ready",
     what: "your books — sign in with Intuit once, expenses feed the money map and cash view" },

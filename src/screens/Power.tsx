@@ -13,6 +13,7 @@ import {
   type CloudProvider,
 } from "../engine/cloudSync";
 import { BackBtn, Reveal, ProGate } from "../components/ui";
+import { isPro } from "../engine/entitlement";
 import {
   executePrice, listActions, previewPrice, revertAction, suggestTrigger,
   type ActionPreview, type ActionTrigger, type ExecutedAction,
@@ -359,6 +360,9 @@ function LiveConnect() {
   }
 
   async function doPlaid() {
+    // Belt and braces: never open a billable bank connection off a free tier,
+    // whatever surface called us.
+    if (!isPro()) { window.location.assign("/pro"); return; }
     setStatus(null);
     setBusy("opening Plaid Link…");
     try {
@@ -486,13 +490,22 @@ function LiveConnect() {
             <div className="guide-top">
               <span className="guide-count">{gStep + 1} of {GUIDE_STEPS.length}</span>
               <span className={`pill ${g.status === "ready" ? "lite-hi" : "lite-fc"}`}>
-                <span className="dot" />{isConn ? "connected" : g.status === "ready" ? "ready to connect" : "coming soon"}
+                <span className="dot" />{isConn ? "connected"
+                  : g.pro && !isPro() ? "in Counsel Pro"
+                  : g.status === "ready" ? "ready to connect" : "coming soon"}
               </span>
             </div>
             <div className="guide-name">{g.name}</div>
             <div className="guide-what">{g.what}</div>
             {g.note && <div className="guide-note">{g.note}</div>}
-            {g.id === "plaid" && !isConn && (
+            {g.id === "plaid" && !isConn && !isPro() && (
+              <div className="guide-note">
+                Bank connections carry a real monthly cost per connected bank, so
+                they live in Pro. Every other source here is free forever, because
+                serving those costs us nothing.
+              </div>
+            )}
+            {g.id === "plaid" && !isConn && isPro() && (
               <div className="guide-note">
                 You sign in inside Plaid&#39;s own window — the same rails most
                 banking apps use. Counsel never sees your credentials, and the
@@ -516,11 +529,15 @@ function LiveConnect() {
                   Connect {g.name} — sign in
                 </button>
               )}
-              {g.id === "plaid" && !isConn && (
+              {g.id === "plaid" && !isConn && (isPro() ? (
                 <button className="dbtn primary" disabled={!!busy} onClick={doPlaid}>
                   Connect your bank — sign in
                 </button>
-              )}
+              ) : (
+                <button className="dbtn primary" onClick={() => window.location.assign("/pro")}>
+                  Bank feeds are in Pro — see what Pro pays for
+                </button>
+              ))}
               <button className="dbtn" onClick={() => gGo(gStep + 1)}>
                 {isConn || g.status === "soon" ? "Next" : "I don't have this — skip"}
               </button>
