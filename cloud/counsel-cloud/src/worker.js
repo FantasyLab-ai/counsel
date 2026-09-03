@@ -984,6 +984,28 @@ const PLAID_HOSTS = {
   production: "https://production.plaid.com",
 };
 
+/* Plaid bills Transactions as a monthly SUBSCRIPTION for as long as a valid
+   access_token exists for an Item, whether or not we ever call the API. The
+   ONLY way to stop it is /item/remove. Deleting our copy of the token without
+   calling this orphans the Item: it bills forever and we can no longer stop
+   it ourselves. So every path that drops a plaid credential releases it first.
+   Best-effort by design: a failure here must never block the user's
+   disconnect, but it does leave a breadcrumb so the Item can be chased. */
+async function releasePlaidItem(env, acct, who) {
+  const held = acct?.providers?.plaid;
+  if (!held) return;
+  try {
+    const cred = JSON.parse(await openToken(env, held.t));
+    if (!cred?.access_token) return;
+    await plaidCall(env, "/item/remove", { access_token: cred.access_token });
+    await logOAuth(env, "plaid", "item_removed", { who, item: cred.item_id || null });
+  } catch (e) {
+    await logOAuth(env, "plaid", "item_remove_failed", {
+      who, err: String(e?.message || e).slice(0, 140),
+    });
+  }
+}
+
 async function plaidCall(env, path, body) {
   if (!env.PLAID_CLIENT_ID || !env.PLAID_SECRET) {
     throw new Error("Plaid not configured — set PLAID_SECRET via `npx wrangler secret put PLAID_SECRET`");
@@ -1343,6 +1365,7 @@ export default {
       }
 
       if (path === "/v1/account" && req.method === "DELETE") {
+        await releasePlaidItem(env, acct, `account_delete:${id}`);
         await env.ACCOUNTS.delete(`bf:${id}`);
         await env.ACCOUNTS.delete(`act:${id}`);
         await env.ACCOUNTS.delete(`acct:${id}`);
@@ -1608,6 +1631,7 @@ export default {
         if (!PROVIDERS.includes(provider)) return json(req, 404, { error: `unknown provider "${provider}"` });
 
         if (req.method === "DELETE") {
+          if (provider === "plaid") await releasePlaidItem(env, acct, `disconnect:${id}`);
           delete acct.providers[provider];
           await saveAcct(env, id, acct);
           return json(req, 200, { ok: true, disconnected: provider });
