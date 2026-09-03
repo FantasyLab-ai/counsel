@@ -773,6 +773,33 @@ async function writeActions(env, acctId, list) {
   await env.ACCOUNTS.put(`act:${acctId}`, JSON.stringify(list.slice(-50)));
 }
 
+/* the reaper: a Plaid Item bills every month it stays alive, and a user who
+   simply deletes the app never tells us to stop. Any account that has not
+   synced in PLAID_IDLE_DAYS gets its bank released at Plaid and forgotten
+   here, so an abandoned install cannot bill forever. Accounts that are still
+   syncing are never touched. */
+const PLAID_IDLE_DAYS = 90;
+
+async function runPlaidReaper(env) {
+  const cutoff = new Date(Date.now() - PLAID_IDLE_DAYS * 86400e3).toISOString().slice(0, 10);
+  const list = await env.ACCOUNTS.list({ prefix: "acct:", limit: 100 });
+  for (const k of list.keys) {
+    const raw = await env.ACCOUNTS.get(k.name);
+    if (!raw) continue;
+    let acct;
+    try { acct = JSON.parse(raw); } catch { continue; }
+    if (!acct.providers?.plaid) continue;
+    // never reap an account we have never seen sync: fall back to the day the
+    // bank was linked, so a fresh connection always gets its full window.
+    const last = acct.seen || acct.providers.plaid.at || acct.created;
+    if (!last || last > cutoff) continue;
+    const acctId = k.name.slice(5);
+    await releasePlaidItem(env, acct, `reaper:${acctId}:idle_since_${last}`);
+    delete acct.providers.plaid;
+    await saveAcct(env, acctId, acct);
+  }
+}
+
 /* the watchdog: evaluate every armed action's trigger against real sales */
 async function runWatchdog(env) {
   const list = await env.ACCOUNTS.list({ prefix: "acct:", limit: 100 });
@@ -1542,6 +1569,13 @@ export default {
       }
 
       if (path === "/v1/plaid/link-token" && req.method === "POST") {
+        // Every live Item bills monthly, so the server caps the exposure at one
+        // bank per account regardless of what the client believes it may do.
+        if (acct.providers?.plaid) {
+          return json(req, 409, {
+            error: "a bank is already connected to this account — disconnect it first",
+          });
+        }
         const j = await plaidCall(env, "/link/token/create", {
           user: { client_user_id: id },
           client_name: "Counsel",
@@ -1671,6 +1705,13 @@ export default {
       }
 
       if (path === "/v1/sync" && req.method === "POST") {
+        // Liveness stamp for the Plaid reaper below. Written at most once a
+        // day per account, so it costs nothing on a 4-hourly auto-sync.
+        const todayStamp = new Date().toISOString().slice(0, 10);
+        if (acct.seen !== todayStamp) {
+          acct.seen = todayStamp;
+          await saveAcct(env, id, acct);
+        }
         const body = (await readBody(req)) ?? {};
         const days = Math.min(730, Math.max(30, Number(body.days) || DEFAULT_DAYS));
         const sinceUnix = Math.floor(Date.now() / 1000) - days * 86400;
@@ -1763,5 +1804,6 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runPulse(env));
     ctx.waitUntil(runWatchdog(env));
+    ctx.waitUntil(runPlaidReaper(env));
   },
 };
